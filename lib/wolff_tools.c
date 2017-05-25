@@ -168,7 +168,7 @@ int32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps)
   cluster_t *c = flip_cluster(s->g, ps, H, s->spins, r);
 
   s->M += 2 * c->nv;
-  s->H += c->dH;
+  s->H += 2 * c->dH;
 
   int32_t n_flipped = c->nv;
 
