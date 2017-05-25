@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   dE1 = 0; dM1 = 0; Mmu2 = 0; Mmu4 = 0; Emu2 = 0; Emu4 = 0;
 
   printf("\n");
-  while (diff > eps || diff == 0. || diff != diff || n_runs < min_runs) {
+  while (diff > eps || diff == 0. || n_runs < min_runs) {
     printf("\033[F\033[JWOLFF: sweep %llu, dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n", n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
 
     uint32_t n_flips = 0;

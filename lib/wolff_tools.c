@@ -66,6 +66,7 @@ double get_hamiltonian(graph_t *g, double *coupling, bool *x) {
 
 cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, gsl_rng *r) {
   uint32_t v0;
+  int32_t n_h_bonds, n_bonds;
   bool x0;
   cluster_t *c;
   
@@ -80,9 +81,11 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
   c->nv = 0;
   c->dH = 0;
 
+  n_h_bonds = 0; n_bonds = 0;
+
   while (stack != NULL) {
     uint32_t v;
-    uint16_t nn;
+    uint32_t nn;
 
     v = stack_pop(&stack);
     nn = g->vei[v + 1] - g->vei[v];
@@ -90,8 +93,9 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
     if (x[v] == x0) { // if the vertex hasn't already been flipped
       x[v] = !x[v]; // flip the vertex
 
-      for (uint16_t i = 0; i < nn; i++) {
+      for (uint32_t i = 0; i < nn; i++) {
         uint32_t e, v1, v2, vn;
+        int32_t *bond_counter;
 
         e = g->ve[g->vei[v] + i]; // select the ith bond connected to site
         v1 = g->ev[2 * e];
@@ -99,22 +103,16 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
 
         vn = v == v1 ? v2 : v1; // distinguish neighboring site from site itself
 
+        bond_counter = (v1 == g->nv - 1 || v2 == g->nv - 1) ? &n_h_bonds : &n_bonds;
+
         if (x[vn] == x0) { // if the neighboring site matches the flipping cluster...
-          if (v1 == g->nv - 1 || v2 == g->nv - 1) {
-            c->dH += H;
-          } else {
-            c->dH += 1;
-          }
+          (*bond_counter)++;
 
           if (gsl_rng_uniform(r) < ps[e]) { // and with probability ps[e]...
             stack_push(&stack, vn); // push the neighboring vertex to the stack
           }
         } else {
-          if (v1 == g->nv - 1 || v2 == g->nv - 1) {
-            c->dH -= H;
-          } else {
-            c->dH -= 1;
-          }
+          (*bond_counter)--;
         }
       }
 
@@ -123,6 +121,8 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
       }
     }
   }
+
+  c->dH = n_bonds + H * n_h_bonds;
 
   if (x0) {
     c->nv = -c->nv;
