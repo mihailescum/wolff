@@ -82,13 +82,20 @@ int main(int argc, char *argv[]) {
       n_clust++;
     }
 
-    E1 = E1 * (n_runs / (n_runs + 1.)) + s->H * 1. / (n_runs + 1.);
-    M1 = M1 * (n_runs / (n_runs + 1.)) + abs(s->M) * 1. / (n_runs + 1.);
-    E2 = E2 * (n_runs / (n_runs + 1.)) + pow(s->H, 2) * 1. / (n_runs + 1.);
-    M2 = M2 * (n_runs / (n_runs + 1.)) + pow(s->M, 2) * 1. / (n_runs + 1.);
+    int32_t MM;
+    if (s->spins[h->nv]) {
+      MM = s->M;
+    } else {
+      MM = -s->M;
+    }
 
-    Mmu2 = Mmu2 * (n_runs / (n_runs + 1.)) + pow(abs(s->M) - M1, 2) * 1. / (n_runs + 1.);
-    Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) + pow(abs(s->M) - M1, 4) * 1. / (n_runs + 1.);
+    E1 = E1 * (n_runs / (n_runs + 1.)) + s->H * 1. / (n_runs + 1.);
+    M1 = M1 * (n_runs / (n_runs + 1.)) + MM * 1. / (n_runs + 1.);
+    E2 = E2 * (n_runs / (n_runs + 1.)) + pow(s->H, 2) * 1. / (n_runs + 1.);
+    M2 = M2 * (n_runs / (n_runs + 1.)) + pow(MM, 2) * 1. / (n_runs + 1.);
+
+    Mmu2 = Mmu2 * (n_runs / (n_runs + 1.)) + pow(MM - M1, 2) * 1. / (n_runs + 1.);
+    Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) + pow(MM - M1, 4) * 1. / (n_runs + 1.);
     Emu2 = Emu2 * (n_runs / (n_runs + 1.)) + pow(s->H - E1, 2) * 1. / (n_runs + 1.);
     Emu4 = Emu4 * (n_runs / (n_runs + 1.)) + pow(s->H - E1, 4) * 1. / (n_runs + 1.);
 
