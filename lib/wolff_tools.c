@@ -79,7 +79,6 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
   // initiate the data structure for returning flip information
   c = (cluster_t *)calloc(1, sizeof(cluster_t));
   c->nv = 0;
-  c->dH = 0;
 
   n_h_bonds = 0; n_bonds = 0;
 
@@ -152,7 +151,7 @@ double *get_bond_probs(double T, double H, ising_state_t *s) {
   return ps;
 }
 
-int32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps) {
+uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps) {
   if (r == NULL) {
     r = gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(r, jst_rand_seed());
@@ -167,8 +166,10 @@ int32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps)
   s->M += -2 * c->dM;
   s->H += 2 * c->dH;
 
+  uint32_t n_flips = c->nv;
+
   free(c);
 
-  return c->nv;
+  return n_flips;
 }
 

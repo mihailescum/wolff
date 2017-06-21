@@ -27,7 +27,7 @@ typedef struct ll_tag {
 } ll_t;
 
 typedef struct {
-  int32_t nv;
+  uint32_t nv;
   double dH;
   int32_t dM;
 } cluster_t;
@@ -48,5 +48,5 @@ double hh(double th);
 
 double *get_bond_probs(double T, double H, ising_state_t *s);
 
-int32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps);
+uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps);
 

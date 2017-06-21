@@ -3,23 +3,24 @@
 
 int main(int argc, char *argv[]) {
   int opt;
-  bool output_state;
+  bool output_state, use_dual;
   lattice_t lat;
   uint16_t L;
-  uint32_t min_runs;
+  uint32_t min_runs, lattice_i;
   uint64_t N;
   double T, H, eps;
 
   L = 128;
   N = 1000;
   lat = SQUARE_LATTICE;
+  use_dual = false;
   T = 2.3;
   H = 0;
   eps = 1e30;
   output_state = false;
   min_runs = 10;
 
-  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:o")) != -1) {
+  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:D")) != -1) {
     switch (opt) {
       case 'N':
         N = (uint64_t)atof(optarg);
@@ -42,6 +43,32 @@ int main(int argc, char *argv[]) {
       case 'o':
         output_state = true;
         break;
+      case 'D':
+        use_dual = true;
+        break;
+			case 'q':
+				lattice_i = atoi(optarg);
+				switch (lattice_i) {
+					case 0:
+            lat = SQUARE_LATTICE;
+						break;
+					case 1:
+						lat = DIAGONAL_LATTICE;
+						break;
+					case 2:
+						lat = TRIANGULAR_LATTICE;
+						break;
+					case 3:
+						lat = VORONOI_HYPERUNIFORM_LATTICE;
+						break;
+          case 4:
+						lat = VORONOI_LATTICE;
+            break;
+					default:
+						printf("lattice specifier must be 0 (VORONOI_LATTICE), 1 (DIAGONAL_LATTICE), or 2 (VORONOI_HYPERUNIFORM_LATTICE).\n");
+						exit(EXIT_FAILURE);
+				}
+				break;
       default:
         exit(EXIT_FAILURE);
     }
@@ -50,7 +77,7 @@ int main(int argc, char *argv[]) {
   gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(r, jst_rand_seed());
 
-  graph_t *h = graph_create(lat, TORUS_BOUND, L, false);
+  graph_t *h = graph_create(lat, TORUS_BOUND, L, use_dual);
 
   ising_state_t *s = (ising_state_t *)calloc(1, sizeof(ising_state_t));
 
@@ -72,13 +99,13 @@ int main(int argc, char *argv[]) {
 
   printf("\n");
   while (diff > eps || diff == 0. || n_runs < min_runs) {
-    printf("\033[F\033[JWOLFF: sweep %llu, dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n", n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
+    printf("\033[F\033[JWOLFF: sweep %lu, dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n", n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
 
     uint32_t n_flips = 0;
     uint32_t n_clust = 0;
 
     while (n_flips / h->nv < N) {
-      n_flips += abs(wolff_step(T, H, s, r, bond_probs));
+      n_flips += wolff_step(T, H, s, r, bond_probs);
       n_clust++;
     }
 
@@ -111,7 +138,7 @@ int main(int argc, char *argv[]) {
 
     n_runs++;
   }
-  printf("\033[F\033[JWOLFF: sweep %llu, dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n", n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
+  printf("\033[F\033[JWOLFF: sweep %lu, dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n", n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
 
   FILE *outfile = fopen("out.dat", "a");
   fprintf(outfile, "%u %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L, T, H, E1 / h->nv, dE1 / h->nv, M1 / h->nv, dM1 / h->nv, C / h->nv, dC / h->nv, X / h->nv, dX / h->nv);
