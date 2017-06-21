@@ -29,6 +29,7 @@ typedef struct ll_tag {
 typedef struct {
   int32_t nv;
   double dH;
+  int32_t dM;
 } cluster_t;
 
 double get_hamiltonian(graph_t *g, double *coupling, bool *x);

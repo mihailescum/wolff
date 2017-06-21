@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   s->g = graph_add_ext(h);
   s->spins = (bool *)calloc(h->nv + 1, sizeof(bool));
-  s->M = -h->nv;
+  s->M = h->nv;
   s->H = -(1.0 * h->ne) - H * h->nv;
 
   double *bond_probs = get_bond_probs(T, H, s);
@@ -82,24 +82,17 @@ int main(int argc, char *argv[]) {
       n_clust++;
     }
 
-    int32_t MM;
-    if (s->spins[h->nv]) {
-      MM = s->M;
-    } else {
-      MM = -s->M;
-    }
-
     E1 = E1 * (n_runs / (n_runs + 1.)) + s->H * 1. / (n_runs + 1.);
-    M1 = M1 * (n_runs / (n_runs + 1.)) + MM * 1. / (n_runs + 1.);
+    M1 = M1 * (n_runs / (n_runs + 1.)) + s->M * 1. / (n_runs + 1.);
     E2 = E2 * (n_runs / (n_runs + 1.)) + pow(s->H, 2) * 1. / (n_runs + 1.);
-    M2 = M2 * (n_runs / (n_runs + 1.)) + pow(MM, 2) * 1. / (n_runs + 1.);
+    M2 = M2 * (n_runs / (n_runs + 1.)) + pow(s->M, 2) * 1. / (n_runs + 1.);
 
-    Mmu2 = Mmu2 * (n_runs / (n_runs + 1.)) + pow(MM - M1, 2) * 1. / (n_runs + 1.);
-    Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) + pow(MM - M1, 4) * 1. / (n_runs + 1.);
+    Mmu2 = Mmu2 * (n_runs / (n_runs + 1.)) + pow(s->M - M1, 2) * 1. / (n_runs + 1.);
+    Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) + pow(s->M - M1, 4) * 1. / (n_runs + 1.);
     Emu2 = Emu2 * (n_runs / (n_runs + 1.)) + pow(s->H - E1, 2) * 1. / (n_runs + 1.);
     Emu4 = Emu4 * (n_runs / (n_runs + 1.)) + pow(s->H - E1, 4) * 1. / (n_runs + 1.);
 
-    if (n_runs > 1){
+    if (n_runs > 1) {
       double Msigma2 = n_runs / (n_runs - 1) * (M2 - pow(M1, 2));
       X = Msigma2 / T;
       dX = sqrt((Mmu4 - (n_runs - 3.) / (n_runs - 1.) * pow(Mmu2, 2)) / n_runs) / T;

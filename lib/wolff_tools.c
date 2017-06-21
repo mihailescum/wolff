@@ -123,10 +123,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
   }
 
   c->dH = n_bonds + H * n_h_bonds;
-
-  if (x0) {
-    c->nv = -c->nv;
-  }
+  c->dM = n_h_bonds;
 
   return c;
 }
@@ -137,7 +134,7 @@ double hh(double th) {
 
 double *get_bond_probs(double T, double H, ising_state_t *s) {
   double p = 1 - exp(-2 / T);
-  double q = 1 - exp(-2 * H / T);
+  double q = 1 - exp(-2 * fabs(H) / T);
 
   double *ps = (double *)malloc(s->g->ne * sizeof(double));
 
@@ -167,13 +164,11 @@ int32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps)
 
   cluster_t *c = flip_cluster(s->g, ps, H, s->spins, r);
 
-  s->M += 2 * c->nv;
+  s->M += -2 * c->dM;
   s->H += 2 * c->dH;
-
-  int32_t n_flipped = c->nv;
 
   free(c);
 
-  return n_flipped;
+  return c->nv;
 }
 
