@@ -9,7 +9,7 @@
 #include <gsl/gsl_rng.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <omp.h>
+#include <fftw3.h>
 
 #include <jst/graph.h>
 #include <jst/rand.h>
