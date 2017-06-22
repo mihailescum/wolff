@@ -1,4 +1,5 @@
 
+#include "queue.h"
 #include "wolff.h"
 
 graph_t *graph_add_ext(const graph_t *g) {
@@ -9,7 +10,7 @@ graph_t *graph_add_ext(const graph_t *g) {
 
   h->ev = (uint32_t *)malloc(2 * h->ne * sizeof(uint32_t));
   h->vei = (uint32_t *)malloc((h->nv + 1) * sizeof(uint32_t));
-  h->ve = (uint32_t *) malloc(2 * h->ne * sizeof(uint32_t));
+  h->ve = (uint32_t *)malloc(2 * h->ne * sizeof(uint32_t));
   h->vx = (double *)malloc(2 * h->nv * sizeof(double));
   h->bq = (bool *)malloc(h->nv * sizeof(bool));
 
@@ -45,42 +46,21 @@ graph_t *graph_add_ext(const graph_t *g) {
   return h;
 }
 
-double get_hamiltonian(graph_t *g, double *coupling, bool *x) {
-  double hamiltonian = 0;
-
-  for (uint32_t i = 0; i < g->ne; i++) {
-    uint32_t v1, v2;
-
-    v1 = g->ev[2 * i];
-    v2 = g->ev[2 * i + 1];
-
-    if (x[v1] == x[v2]) {
-      hamiltonian -= coupling[i];
-    } else {
-      hamiltonian += coupling[i];
-    }
-  }
-
-  return hamiltonian;
-}
-
-cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, gsl_rng *r) {
+cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
+                        gsl_rng *r) {
   uint32_t v0;
   int32_t n_h_bonds, n_bonds;
   bool x0;
   cluster_t *c;
-  
-  v0 = gsl_rng_uniform_int(r, g->nv); // pick a random vertex
-  x0 = x[v0]; // record its orientation
 
-  ll_t *stack = NULL; // create a new stack
+  v0 = gsl_rng_uniform_int(r, g->nv); // pick a random vertex
+  x0 = x[v0];                         // record its orientation
+
+  ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
 
   // initiate the data structure for returning flip information
   c = (cluster_t *)calloc(1, sizeof(cluster_t));
-  c->nv = 0;
-
-  n_h_bonds = 0; n_bonds = 0;
 
   while (stack != NULL) {
     uint32_t v;
@@ -90,7 +70,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
     nn = g->vei[v + 1] - g->vei[v];
 
     if (x[v] == x0) { // if the vertex hasn't already been flipped
-      x[v] = !x[v]; // flip the vertex
+      x[v] = !x[v];   // flip the vertex
 
       for (uint32_t i = 0; i < nn; i++) {
         uint32_t e, v1, v2, vn;
@@ -102,9 +82,11 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
 
         vn = v == v1 ? v2 : v1; // distinguish neighboring site from site itself
 
-        bond_counter = (v1 == g->nv - 1 || v2 == g->nv - 1) ? &n_h_bonds : &n_bonds;
+        bond_counter =
+            (v1 == g->nv - 1 || v2 == g->nv - 1) ? &(c->dHb) : &(c->dJb);
 
-        if (x[vn] == x0) { // if the neighboring site matches the flipping cluster...
+        if (x[vn] ==
+            x0) { // if the neighboring site matches the flipping cluster...
           (*bond_counter)++;
 
           if (gsl_rng_uniform(r) < ps[e]) { // and with probability ps[e]...
@@ -115,20 +97,13 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, double H, bool *x, g
         }
       }
 
-      if (v != g->nv - 1) {
+      if (v != g->nv - 1) { // count the number of non-external sites that flip
         c->nv++;
       }
     }
   }
 
-  c->dH = n_bonds + H * n_h_bonds;
-  c->dM = n_h_bonds;
-
   return c;
-}
-
-double hh(double th) {
-  return (th - pow(th, 3) / 1.16951) * (1 - 0.222389 * pow(th, 2) - 0.043547 * pow(th, 4) - 0.014809 * pow(th, 6) - 0.007168 * pow(th, 8));
 }
 
 double *get_bond_probs(double T, double H, ising_state_t *s) {
@@ -151,7 +126,8 @@ double *get_bond_probs(double T, double H, ising_state_t *s) {
   return ps;
 }
 
-uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps) {
+uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
+                    double *ps) {
   if (r == NULL) {
     r = gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(r, jst_rand_seed());
@@ -161,10 +137,10 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps
     ps = get_bond_probs(T, H, s);
   }
 
-  cluster_t *c = flip_cluster(s->g, ps, H, s->spins, r);
+  cluster_t *c = flip_cluster(s->g, ps, s->spins, r);
 
-  s->M += -2 * c->dM;
-  s->H += 2 * c->dH;
+  s->M += -2 * c->dHb;
+  s->H += 2 * (c->dJb + H * c->dHb);
 
   uint32_t n_flips = c->nv;
 
@@ -172,4 +148,3 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r, double *ps
 
   return n_flips;
 }
-

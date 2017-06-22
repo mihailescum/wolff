@@ -1,8 +1,8 @@
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.0)
 project(wolff)
 
-include_directories(src ~/.local/include)
+include_directories(lib ~/.local/include)
 link_directories(~/.local/lib)
 
 file(GLOB SOURCES lib/*.c)
