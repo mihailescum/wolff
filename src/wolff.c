@@ -175,8 +175,6 @@ int main(int argc, char *argv[]) {
           dC / h->nv, X / h->nv, dX / h->nv);
   fclose(outfile);
 
-  free(bond_probs);
-
   if (output_state) {
     FILE *state_file = fopen("state.dat", "a");
     for (uint32_t i = 0; i < h->nv; i++) {

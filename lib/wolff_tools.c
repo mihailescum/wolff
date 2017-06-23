@@ -74,7 +74,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
 
       for (uint32_t i = 0; i < nn; i++) {
         bool is_ext;
-        uint32_t e, v1, v2, vn, ind;
+        uint32_t e, v1, v2, vn;
         int32_t *bond_counter;
         double prob;
 
