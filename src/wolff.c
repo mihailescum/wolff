@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
 
   s->g = graph_add_ext(h);
   s->spins = (bool *)calloc(h->nv + 1, sizeof(bool));
-  s->M = h->nv;
-  s->H = -(1.0 * h->ne) - H * h->nv;
+  s->M = sign(H) * h->nv;
+  s->H = -(1.0 * h->ne) - sign (H) * H * h->nv;
 
   double *bond_probs = (double *)malloc(2 * sizeof(double));
   bond_probs[0] = 1 - exp(-2 / T);

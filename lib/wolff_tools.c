@@ -2,6 +2,10 @@
 #include "queue.h"
 #include "wolff.h"
 
+int32_t sign(double x) {
+  return x > 0 ? 1 : -1;
+}
+
 graph_t *graph_add_ext(const graph_t *g) {
   graph_t *h = (graph_t *)calloc(1, sizeof(graph_t));
 
@@ -131,8 +135,8 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
 
   cluster_t *c = flip_cluster(s->g, ps, s->spins, r);
 
-  s->M += -2 * c->dHb;
-  s->H += 2 * (c->dJb + H * c->dHb);
+  s->M += - sign(H) * 2 * c->dHb;
+  s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
 
   uint32_t n_flips = c->nv;
 

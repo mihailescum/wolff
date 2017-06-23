@@ -31,6 +31,8 @@ typedef struct {
   int32_t dHb;
 } cluster_t;
 
+int32_t sign(double x);
+
 cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
                         gsl_rng *r);
 
