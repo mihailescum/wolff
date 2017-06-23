@@ -73,8 +73,10 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
       x[v] = !x[v];   // flip the vertex
 
       for (uint32_t i = 0; i < nn; i++) {
-        uint32_t e, v1, v2, vn;
+        bool is_ext;
+        uint32_t e, v1, v2, vn, ind;
         int32_t *bond_counter;
+        double prob;
 
         e = g->ve[g->vei[v] + i]; // select the ith bond connected to site
         v1 = g->ev[2 * e];
@@ -82,14 +84,16 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
 
         vn = v == v1 ? v2 : v1; // distinguish neighboring site from site itself
 
-        bond_counter =
-            (v1 == g->nv - 1 || v2 == g->nv - 1) ? &(c->dHb) : &(c->dJb);
+        is_ext = (v1 == g->nv - 1 || v2 == g->nv - 1);
+
+        bond_counter = is_ext ? &(c->dHb) : &(c->dJb);
+        prob = is_ext ? ps[1] : ps[0];
 
         if (x[vn] ==
             x0) { // if the neighboring site matches the flipping cluster...
           (*bond_counter)++;
 
-          if (gsl_rng_uniform(r) < ps[e]) { // and with probability ps[e]...
+          if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
             stack_push(&stack, vn); // push the neighboring vertex to the stack
           }
         } else {
@@ -106,35 +110,23 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
   return c;
 }
 
-double *get_bond_probs(double T, double H, ising_state_t *s) {
-  double p = 1 - exp(-2 / T);
-  double q = 1 - exp(-2 * fabs(H) / T);
-
-  double *ps = (double *)malloc(s->g->ne * sizeof(double));
-
-  for (uint32_t i = 0; i < s->g->ne; i++) {
-    uint32_t v1, v2;
-    v1 = s->g->ev[2 * i];
-    v2 = s->g->ev[2 * i + 1];
-    if (v1 == s->g->nv - 1 || v2 == s->g->nv - 1) {
-      ps[i] = q;
-    } else {
-      ps[i] = p;
-    }
-  }
-
-  return ps;
-}
-
 uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
                     double *ps) {
+  bool no_r, no_ps;
+  no_r = false;
+  no_ps = false;
+
   if (r == NULL) {
+    no_r = true;
     r = gsl_rng_alloc(gsl_rng_mt19937);
     gsl_rng_set(r, jst_rand_seed());
   }
 
   if (ps == NULL) {
-    ps = get_bond_probs(T, H, s);
+    no_ps = true;
+    ps = (double *)malloc(2 * sizeof(double));
+    ps[0] = 1 - exp(-2 / T);
+    ps[1] = 1 - exp(-2 * fabs(H) / T);
   }
 
   cluster_t *c = flip_cluster(s->g, ps, s->spins, r);
@@ -145,6 +137,14 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
   uint32_t n_flips = c->nv;
 
   free(c);
+
+  if (no_ps) {
+    free(ps);
+  }
+
+  if (no_r) {
+    gsl_rng_free(r);
+  }
 
   return n_flips;
 }

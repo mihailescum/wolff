@@ -87,7 +87,9 @@ int main(int argc, char *argv[]) {
   s->M = h->nv;
   s->H = -(1.0 * h->ne) - H * h->nv;
 
-  double *bond_probs = get_bond_probs(T, H, s);
+  double *bond_probs = (double *)malloc(2 * sizeof(double));
+  bond_probs[0] = 1 - exp(-2 / T);
+  bond_probs[1] = 1 - exp(-2 * fabs(H) / T);
 
   double diff = 1e31;
   uint64_t n_runs = 0;

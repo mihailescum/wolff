@@ -36,7 +36,5 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
 
 graph_t *graph_add_ext(const graph_t *g);
 
-double *get_bond_probs(double T, double H, ising_state_t *s);
-
 uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
                     double *ps);
