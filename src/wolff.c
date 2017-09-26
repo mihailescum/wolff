@@ -94,21 +94,25 @@ int main(int argc, char *argv[]) {
   double diff = 1e31;
   uint64_t n_runs = 0;
 
-  double E1, E2, dE1, M1, M2, dM1, C, dC, X, dX, Mmu2, Mmu4, Emu2, Emu4;
+  double E1, E2, dE1, aM1, daM1, M1, M2, dM1, C, dC, aX, daX, X, dX, aMmu2, Mmu2, aMmu4, Mmu4, Emu2, Emu4;
   double clust_per_sweep = 0;
 
   E1 = 0;
   E2 = 0;
   M1 = 0;
+  aM1 = 0;
   M2 = 0;
   C = 0;
   dC = 0;
   X = 0;
+  aX = 0;
   dX = 0;
   dE1 = 0;
   dM1 = 0;
   Mmu2 = 0;
   Mmu4 = 0;
+  aMmu2 = 0;
+  aMmu4 = 0;
   Emu2 = 0;
   Emu4 = 0;
 
@@ -128,6 +132,7 @@ int main(int argc, char *argv[]) {
 
     E1 = E1 * (n_runs / (n_runs + 1.)) + s->H * 1. / (n_runs + 1.);
     M1 = M1 * (n_runs / (n_runs + 1.)) + s->M * 1. / (n_runs + 1.);
+    aM1 = aM1 * (n_runs / (n_runs + 1.)) + abs(s->M) * 1. / (n_runs + 1.);
     E2 = E2 * (n_runs / (n_runs + 1.)) + pow(s->H, 2) * 1. / (n_runs + 1.);
     M2 = M2 * (n_runs / (n_runs + 1.)) + pow(s->M, 2) * 1. / (n_runs + 1.);
 
@@ -135,6 +140,10 @@ int main(int argc, char *argv[]) {
            pow(s->M - M1, 2) * 1. / (n_runs + 1.);
     Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) +
            pow(s->M - M1, 4) * 1. / (n_runs + 1.);
+    aMmu2 = aMmu2 * (n_runs / (n_runs + 1.)) +
+           pow(abs(s->M) - aM1, 2) * 1. / (n_runs + 1.);
+    aMmu4 = aMmu4 * (n_runs / (n_runs + 1.)) +
+           pow(abs(s->M) - aM1, 4) * 1. / (n_runs + 1.);
     Emu2 = Emu2 * (n_runs / (n_runs + 1.)) +
            pow(s->H - E1, 2) * 1. / (n_runs + 1.);
     Emu4 = Emu4 * (n_runs / (n_runs + 1.)) +
@@ -142,10 +151,16 @@ int main(int argc, char *argv[]) {
 
     if (n_runs > 1) {
       double Msigma2 = n_runs / (n_runs - 1) * (M2 - pow(M1, 2));
+      double aMsigma2 = n_runs / (n_runs - 1) * (M2 - pow(aM1, 2));
       X = Msigma2 / T;
+      aX = aMsigma2 / T;
       dX =
           sqrt((Mmu4 - (n_runs - 3.) / (n_runs - 1.) * pow(Mmu2, 2)) / n_runs) /
           T;
+      daX =
+          sqrt((aMmu4 - (n_runs - 3.) / (n_runs - 1.) * pow(aMmu2, 2)) / n_runs) /
+          T;
+      
 
       double Esigma2 = n_runs / (n_runs - 1) * (E2 - pow(E1, 2));
       C = Esigma2 / T;
@@ -155,6 +170,7 @@ int main(int argc, char *argv[]) {
 
       dE1 = sqrt(Esigma2 / n_runs);
       dM1 = sqrt(Msigma2 / n_runs);
+      daM1 = sqrt(aMsigma2 / n_runs);
 
       diff = fabs(dX / X);
     }
@@ -170,9 +186,9 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.dat", "a");
   fprintf(outfile,
-          "%u %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
+          "%u %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
           T, H, E1 / h->nv, dE1 / h->nv, M1 / h->nv, dM1 / h->nv, C / h->nv,
-          dC / h->nv, X / h->nv, dX / h->nv);
+          dC / h->nv, X / h->nv, dX / h->nv, aM1 / h->nv, daM1 / h->nv, aX / h->nv, daX / h->nv);
   fclose(outfile);
 
   if (output_state) {
