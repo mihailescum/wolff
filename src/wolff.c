@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[]) {
   int opt;
-  bool output_state, use_dual;
+  bool output_state, use_dual, M_stop;
   lattice_t lat;
   uint16_t L;
   uint32_t min_runs, lattice_i;
@@ -14,13 +14,14 @@ int main(int argc, char *argv[]) {
   N = 1000;
   lat = SQUARE_LATTICE;
   use_dual = false;
+  M_stop = false;
   T = 2.3;
   H = 0;
   eps = 1e30;
   output_state = false;
   min_runs = 10;
 
-  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:D")) != -1) {
+  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:DM")) != -1) {
     switch (opt) {
     case 'N':
       N = (uint64_t)atof(optarg);
@@ -36,6 +37,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'm':
       min_runs = atoi(optarg);
+      break;
+    case 'M':
+      M_stop = true;
       break;
     case 'e':
       eps = atof(optarg);
@@ -172,7 +176,11 @@ int main(int argc, char *argv[]) {
       dM1 = sqrt(Msigma2 / n_runs);
       daM1 = sqrt(aMsigma2 / n_runs);
 
-      diff = fabs(dX / X);
+      if (M_stop) {
+        diff = fabs(dM1 / M1);
+      } else {
+        diff = fabs(dX / X);
+      }
     }
 
     clust_per_sweep = clust_per_sweep * (n_runs / (n_runs + 1.)) +
