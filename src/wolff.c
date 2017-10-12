@@ -123,11 +123,6 @@ int main(int argc, char *argv[]) {
       n_clust++;
     }
 
-    double ss = 1;
-    if (s->spins[s->g->nv - 1]) {
-      ss = -1;
-    }
-
     double HH = 1;
     if (H < 0) {
       HH = -1;
@@ -137,7 +132,7 @@ int main(int argc, char *argv[]) {
     update_meas(aM, HH * fabs((double)(s->M)));
     update_meas(E, s->H);
 
-    if (HH * s->M * ss > 0) {
+    if (s->M > 0) {
       update_meas(eM, HH * fabs((double)(s->M)));
       update_meas(eE, s->H);
     } else {
