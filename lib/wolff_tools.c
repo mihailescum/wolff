@@ -152,3 +152,26 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
 
   return n_flips;
 }
+
+double add_to_avg(double mx, double x, uint64_t n) {
+  return mx * (n / (n + 1.)) + x * 1. / (n + 1.);
+}
+
+void update_meas(meas_t *m, double x) {
+  uint64_t n = m->n;
+
+  m->x = add_to_avg(m->x, x, n);
+  m->x2 = add_to_avg(m->x2, pow(x, 2), n);
+
+  m->m2 = add_to_avg(m->m2, pow(x - m->x, 2), n);
+  m->m4 = add_to_avg(m->m4, pow(x - m->x, 4), n);
+
+  if (n > 1) {
+    double s2 = n / (n - 1.) * (m->x2 - pow(m->x, 2));
+    m->dx = sqrt(s2 / n);
+    m->c = s2;
+    m->dc = sqrt((m->m4 - (n - 3.)/(n - 1.) * pow(m->m2, 2)) / n);
+  }
+
+  (m->n)++;
+}

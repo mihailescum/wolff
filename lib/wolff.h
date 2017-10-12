@@ -31,6 +31,17 @@ typedef struct {
   int32_t dHb;
 } cluster_t;
 
+typedef struct {
+  uint64_t n;
+  double x;
+  double dx;
+  double x2;
+  double m2;
+  double m4;
+  double c;
+  double dc;
+} meas_t;
+
 int32_t sign(double x);
 
 cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
@@ -40,3 +51,8 @@ graph_t *graph_add_ext(const graph_t *g);
 
 uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
                     double *ps);
+
+void update_meas(meas_t *m, double x);
+
+double add_to_avg(double mx, double x, uint64_t n);
+

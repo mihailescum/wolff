@@ -97,34 +97,23 @@ int main(int argc, char *argv[]) {
 
   double diff = 1e31;
   uint64_t n_runs = 0;
-
-  double E1, E2, dE1, aM1, daM1, M1, M2, dM1, C, dC, aX, daX, X, dX, aMmu2, Mmu2, aMmu4, Mmu4, Emu2, Emu4;
   double clust_per_sweep = 0;
 
-  E1 = 0;
-  E2 = 0;
-  M1 = 0;
-  aM1 = 0;
-  M2 = 0;
-  C = 0;
-  dC = 0;
-  X = 0;
-  aX = 0;
-  dX = 0;
-  dE1 = 0;
-  dM1 = 0;
-  Mmu2 = 0;
-  Mmu4 = 0;
-  aMmu2 = 0;
-  aMmu4 = 0;
-  Emu2 = 0;
-  Emu4 = 0;
+  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE;
+
+  M = calloc(1, sizeof(meas_t));
+  aM = calloc(1, sizeof(meas_t));
+  eM = calloc(1, sizeof(meas_t));
+  mM = calloc(1, sizeof(meas_t));
+  E = calloc(1, sizeof(meas_t));
+  eE = calloc(1, sizeof(meas_t));
+  mE = calloc(1, sizeof(meas_t));
 
   printf("\n");
   while (diff > eps || diff == 0. || n_runs < min_runs) {
     printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-           n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
+           n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
 
     uint32_t n_flips = 0;
     uint32_t n_clust = 0;
@@ -134,69 +123,52 @@ int main(int argc, char *argv[]) {
       n_clust++;
     }
 
-    E1 = E1 * (n_runs / (n_runs + 1.)) + s->H * 1. / (n_runs + 1.);
-    M1 = M1 * (n_runs / (n_runs + 1.)) + s->M * 1. / (n_runs + 1.);
-    aM1 = aM1 * (n_runs / (n_runs + 1.)) + abs(s->M) * 1. / (n_runs + 1.);
-    E2 = E2 * (n_runs / (n_runs + 1.)) + pow(s->H, 2) * 1. / (n_runs + 1.);
-    M2 = M2 * (n_runs / (n_runs + 1.)) + pow(s->M, 2) * 1. / (n_runs + 1.);
-
-    Mmu2 = Mmu2 * (n_runs / (n_runs + 1.)) +
-           pow(s->M - M1, 2) * 1. / (n_runs + 1.);
-    Mmu4 = Mmu4 * (n_runs / (n_runs + 1.)) +
-           pow(s->M - M1, 4) * 1. / (n_runs + 1.);
-    aMmu2 = aMmu2 * (n_runs / (n_runs + 1.)) +
-           pow(abs(s->M) - aM1, 2) * 1. / (n_runs + 1.);
-    aMmu4 = aMmu4 * (n_runs / (n_runs + 1.)) +
-           pow(abs(s->M) - aM1, 4) * 1. / (n_runs + 1.);
-    Emu2 = Emu2 * (n_runs / (n_runs + 1.)) +
-           pow(s->H - E1, 2) * 1. / (n_runs + 1.);
-    Emu4 = Emu4 * (n_runs / (n_runs + 1.)) +
-           pow(s->H - E1, 4) * 1. / (n_runs + 1.);
-
-    if (n_runs > 1) {
-      double Msigma2 = n_runs / (n_runs - 1) * (M2 - pow(M1, 2));
-      double aMsigma2 = n_runs / (n_runs - 1) * (M2 - pow(aM1, 2));
-      X = Msigma2 / T;
-      aX = aMsigma2 / T;
-      dX =
-          sqrt((Mmu4 - (n_runs - 3.) / (n_runs - 1.) * pow(Mmu2, 2)) / n_runs) /
-          T;
-      daX =
-          sqrt((aMmu4 - (n_runs - 3.) / (n_runs - 1.) * pow(aMmu2, 2)) / n_runs) /
-          T;
-      
-
-      double Esigma2 = n_runs / (n_runs - 1) * (E2 - pow(E1, 2));
-      C = Esigma2 / T;
-      dC =
-          sqrt((Emu4 - (n_runs - 3.) / (n_runs - 1.) * pow(Emu2, 2)) / n_runs) /
-          T;
-
-      dE1 = sqrt(Esigma2 / n_runs);
-      dM1 = sqrt(Msigma2 / n_runs);
-      daM1 = sqrt(aMsigma2 / n_runs);
-
-      if (M_stop) {
-        diff = fabs(dM1 / M1);
-      } else {
-        diff = fabs(dX / X);
-      }
+    double ss = 1;
+    if (s->spins[s->g->nv - 1]) {
+      ss = -1;
     }
 
-    clust_per_sweep = clust_per_sweep * (n_runs / (n_runs + 1.)) +
-                      (n_clust * 1. / N) * 1. / (n_runs + 1.);
+    double HH = 1;
+    if (H < 0) {
+      HH = -1;
+    }
+
+    update_meas(M, (double)(s->M));
+    update_meas(aM, HH * fabs((double)(s->M)));
+    update_meas(E, s->H);
+
+    if (HH * s->M * ss > 0) {
+      update_meas(eM, HH * fabs((double)(s->M)));
+      update_meas(eE, s->H);
+    } else {
+      update_meas(mM, - HH * fabs((double)(s->M)));
+      update_meas(mE, s->H);
+    }
+
+    if (M_stop) {
+      diff = fabs(M->dx / M->x);
+    } else {
+      diff = fabs(M->dc / M->c);
+    }
+
+    clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / N, n_runs);
 
     n_runs++;
   }
+
   printf("\033[F\033[JWOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-         n_runs, fabs(dE1 / E1), dM1 / M1, dC / C, dX / X, clust_per_sweep);
+         n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
 
   FILE *outfile = fopen("out.dat", "a");
+
   fprintf(outfile,
-          "%u %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
-          T, H, E1 / h->nv, dE1 / h->nv, M1 / h->nv, dM1 / h->nv, C / h->nv,
-          dC / h->nv, X / h->nv, dX / h->nv, aM1 / h->nv, daM1 / h->nv, aX / h->nv, daX / h->nv);
+          "%u %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
+          T, H, n_runs,
+          E->x / h->nv, E->dx / h->nv, M->x / h->nv, M->dx / h->nv, E->c / h->nv, E->dc / h->nv, M->c / h->nv, M->dc / h->nv,
+          eE->n, eE->x / h->nv, eE->dx / h->nv, eM->x / h->nv, eM->dx / h->nv, eE->c / h->nv, eE->dc / h->nv, eM->c / h->nv, eM->dc / h->nv,
+          mE->n, mE->x / h->nv, mE->dx / h->nv, mM->x / h->nv, mM->dx / h->nv, mE->c / h->nv, mE->dc / h->nv, mM->c / h->nv, mM->dc / h->nv,
+          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv);
   fclose(outfile);
 
   if (output_state) {
@@ -212,6 +184,13 @@ int main(int argc, char *argv[]) {
   graph_free(s->g);
   free(s->spins);
   free(s);
+  free(M);
+  free(aM);
+  free(eM);
+  free(mM);
+  free(E);
+  free(eE);
+  free(mE);
   free(bond_probs);
   graph_free(h);
 
