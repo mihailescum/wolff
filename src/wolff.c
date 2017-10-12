@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (M_stop) {
-      diff = fabs(M->dx / M->x);
+      diff = fabs(eM->dx / eM->x);
     } else {
       diff = fabs(M->dc / M->c);
     }
