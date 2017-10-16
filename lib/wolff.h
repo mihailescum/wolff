@@ -18,6 +18,12 @@
 
 #include "queue.h"
 
+typedef enum {
+  WOLFF,
+  WOLFF_GHOST,
+  METROPOLIS
+} sim_t;
+
 typedef struct {
   graph_t *g;
   bool *spins;
@@ -29,6 +35,7 @@ typedef struct {
   uint32_t nv;
   int32_t dJb;
   int32_t dHb;
+  bool hit_ghost;
 } cluster_t;
 
 typedef struct {
@@ -44,12 +51,12 @@ typedef struct {
 
 int32_t sign(double x);
 
-cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
+cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_on_ghost,
                         gsl_rng *r);
 
 graph_t *graph_add_ext(const graph_t *g);
 
-uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
+uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
                     double *ps);
 
 void update_meas(meas_t *m, double x);

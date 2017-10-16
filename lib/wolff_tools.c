@@ -2,6 +2,14 @@
 #include "queue.h"
 #include "wolff.h"
 
+int32_t spin_to_sign(bool spin) {
+  if (spin) {
+    return -1;
+  } else {
+    return 1;
+  }
+}
+
 int32_t sign(double x) {
   return x > 0 ? 1 : -1;
 }
@@ -50,7 +58,7 @@ graph_t *graph_add_ext(const graph_t *g) {
   return h;
 }
 
-cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
+cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_on_ghost,
                         gsl_rng *r) {
   uint32_t v0;
   int32_t n_h_bonds, n_bonds;
@@ -73,7 +81,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
     v = stack_pop(&stack);
     nn = g->vei[v + 1] - g->vei[v];
 
-    if (x[v] == x0) { // if the vertex hasn't already been flipped
+    if (x[v] == x0 && !(c->hit_ghost && stop_on_ghost)) { // if the vertex hasn't already been flipped
       x[v] = !x[v];   // flip the vertex
 
       for (uint32_t i = 0; i < nn; i++) {
@@ -88,7 +96,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
 
         vn = v == v1 ? v2 : v1; // distinguish neighboring site from site itself
 
-        is_ext = (v1 == g->nv - 1 || v2 == g->nv - 1);
+        is_ext = (v1 == g->nv - 1 || v2 == g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
 
         bond_counter = is_ext ? &(c->dHb) : &(c->dJb);
         prob = is_ext ? ps[1] : ps[0];
@@ -98,6 +106,9 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
           (*bond_counter)++;
 
           if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
+            if (is_ext && stop_on_ghost) {
+              c->hit_ghost = true;
+            }
             stack_push(&stack, vn); // push the neighboring vertex to the stack
           }
         } else {
@@ -114,8 +125,9 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x,
   return c;
 }
 
-uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
+uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
                     double *ps) {
+  uint32_t n_flips;
   bool no_r, no_ps;
   no_r = false;
   no_ps = false;
@@ -133,14 +145,74 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, gsl_rng *r,
     ps[1] = 1 - exp(-2 * fabs(H) / T);
   }
 
-  cluster_t *c = flip_cluster(s->g, ps, s->spins, r);
+  switch (sim) {
+    case METROPOLIS: {
+      uint32_t v0 = gsl_rng_uniform_int(r, s->g->nv); // pick a random vertex
+      uint32_t nn = s->g->vei[v0 + 1] - s->g->vei[v0];
 
-  s->M += - sign(H) * 2 * c->dHb;
-  s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
+      double dE = 0;
+      for (uint32_t i = 0; i < nn; i++) {
+        bool is_ext;
+        uint32_t e, v1, v2, vn;
+        int32_t *bond_counter;
+        double prob;
 
-  uint32_t n_flips = c->nv;
+        e = s->g->ve[s->g->vei[v0] + i]; // select the ith bond connected to site
+        v1 = s->g->ev[2 * e];
+        v2 = s->g->ev[2 * e + 1];
 
-  free(c);
+        vn = v0 == v1 ? v2 : v1; // distinguish neighboring site from site itself
+
+        is_ext = (v1 == s->g->nv - 1 || v2 == s->g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
+
+        if (is_ext) {
+          dE += 2 * H * spin_to_sign(s->spins[vn]) * spin_to_sign(s->spins[v0]);
+        } else {
+          dE += 2 * spin_to_sign(s->spins[vn]) * spin_to_sign(s->spins[v0]);
+        }
+      }
+
+      double p = exp(-dE / T);
+      if (gsl_rng_uniform(r) < p) {
+        s->M += - sign(H) * 2 * spin_to_sign(s->spins[v0]) * spin_to_sign(s->spins[s->g->nv - 1]);
+        s->H += dE;
+        s->spins[v0] = !s->spins[v0];
+      }
+
+      n_flips = 1;
+                     }
+                     break;
+
+    case WOLFF: {
+      cluster_t *c = flip_cluster(s->g, ps, s->spins, false, r);
+      s->M += - sign(H) * 2 * c->dHb;
+      s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
+      n_flips = c->nv;
+
+      free(c);
+                }
+                break;
+    case WOLFF_GHOST: {
+      bool *spins_bak;
+      spins_bak = (bool *)malloc(s->g->nv * sizeof(bool));
+      memcpy(spins_bak, s->spins, s->g->nv * sizeof(bool));
+
+      cluster_t *c = flip_cluster(s->g, ps, s->spins, true, r);
+
+      if (c->hit_ghost) {
+        memcpy(s->spins, spins_bak, s->g->nv * sizeof(bool));
+      } else {
+        s->M += - sign(H) * 2 * c->dHb;
+        s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
+      }
+      free(spins_bak);
+
+      n_flips = c->nv;
+
+      free(c);
+                      }
+                break;
+  }
 
   if (no_ps) {
     free(ps);

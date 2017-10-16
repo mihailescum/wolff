@@ -3,25 +3,28 @@
 
 int main(int argc, char *argv[]) {
   int opt;
-  bool output_state, use_dual, M_stop;
+  sim_t sim;
+  bool output_state, use_dual, M_stop, record_autocorrelation;
   lattice_t lat;
   uint16_t L;
-  uint32_t min_runs, lattice_i;
+  uint32_t min_runs, lattice_i, sim_i;
   uint64_t N;
   double T, H, eps;
 
+  sim = WOLFF;
   L = 128;
   N = 1000;
   lat = SQUARE_LATTICE;
   use_dual = false;
   M_stop = false;
+  record_autocorrelation = false;
   T = 2.3;
   H = 0;
   eps = 1e30;
   output_state = false;
   min_runs = 10;
 
-  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:DM")) != -1) {
+  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:DMas:")) != -1) {
     switch (opt) {
     case 'N':
       N = (uint64_t)atof(optarg);
@@ -49,6 +52,27 @@ int main(int argc, char *argv[]) {
       break;
     case 'D':
       use_dual = true;
+      break;
+    case 'a':
+      record_autocorrelation = true;
+      break;
+    case 's':
+      sim_i = atoi(optarg);
+      switch (sim_i) {
+      case 0:
+        sim = WOLFF;
+        break;
+      case 1:
+        sim = WOLFF_GHOST;
+        break;
+      case 2:
+        sim = METROPOLIS;
+        break;
+      default:
+        printf("lattice specifier must be 0 (VORONOI_LATTICE), 1 "
+               "(DIAGONAL_LATTICE), or 2 (VORONOI_HYPERUNIFORM_LATTICE).\n");
+        exit(EXIT_FAILURE);
+      }
       break;
     case 'q':
       lattice_i = atoi(optarg);
@@ -97,7 +121,18 @@ int main(int argc, char *argv[]) {
 
   double diff = 1e31;
   uint64_t n_runs = 0;
+  uint64_t n_steps = 0;
   double clust_per_sweep = 0;
+
+  uint64_t auto_n = 10 * h->nv;
+  uint64_t *auto_time;
+  double *auto_energy;
+  if (record_autocorrelation) {
+    auto_time = (uint64_t *)malloc(auto_n * sizeof(uint64_t));
+    auto_energy = (double *)malloc(auto_n * sizeof(double));
+    auto_time[0] = 0;
+    auto_energy[0] = s->H / h->nv;
+  }
 
   meas_t *M, *aM, *eM, *mM, *E, *eE, *mE;
 
@@ -119,7 +154,7 @@ int main(int argc, char *argv[]) {
     uint32_t n_clust = 0;
 
     while (n_flips / h->nv < N) {
-      n_flips += wolff_step(T, H, s, r, bond_probs);
+      n_flips += wolff_step(T, H, s, sim, r, bond_probs);
       n_clust++;
     }
 
@@ -149,6 +184,17 @@ int main(int argc, char *argv[]) {
     clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / N, n_runs);
 
     n_runs++;
+    n_steps += n_flips;
+
+    if (record_autocorrelation) {
+      if (n_runs == auto_n) {
+        auto_n *= 2;
+        auto_time = (uint64_t *)realloc(auto_time, auto_n * sizeof(uint64_t));
+        auto_energy = (double *)realloc(auto_energy, auto_n * sizeof(double));
+      }
+      auto_time[n_runs] = n_steps;
+      auto_energy[n_runs] = s->H / h->nv;
+    }
   }
 
   printf("\033[F\033[JWOLFF: sweep %" PRIu64
@@ -173,6 +219,17 @@ int main(int argc, char *argv[]) {
     }
     fprintf(state_file, "\n");
     fclose(state_file);
+  }
+
+  if (record_autocorrelation) {
+    FILE *auto_file = fopen("autocorrelation.dat", "a");
+    for (uint64_t i = 0; i < n_runs + 1; i++) { 
+      fprintf(auto_file, "%" PRIu64 " %.15f ", auto_time[i], auto_energy[i]);
+    }
+    fprintf(auto_file, "\n");
+    fclose(auto_file);
+    free(auto_time);
+    free(auto_energy);
   }
 
   gsl_rng_free(r);
