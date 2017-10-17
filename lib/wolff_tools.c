@@ -58,6 +58,16 @@ graph_t *graph_add_ext(const graph_t *g) {
   return h;
 }
 
+uint32_t get_neighbor(const graph_t *g, uint32_t v, uint32_t i) {
+  uint32_t e, v1, v2;
+
+  e = g->ve[g->vei[v] + i]; // select the ith bond connected to site
+  v1 = g->ev[2 * e];
+  v2 = g->ev[2 * e + 1];
+
+  return v == v1 ? v2 : v1; // distinguish neighboring site from site itself
+}
+
 cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_on_ghost,
                         gsl_rng *r) {
   uint32_t v0;
@@ -86,17 +96,13 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_o
 
       for (uint32_t i = 0; i < nn; i++) {
         bool is_ext;
-        uint32_t e, v1, v2, vn;
+        uint32_t vn;
         int32_t *bond_counter;
         double prob;
 
-        e = g->ve[g->vei[v] + i]; // select the ith bond connected to site
-        v1 = g->ev[2 * e];
-        v2 = g->ev[2 * e + 1];
+        vn = get_neighbor(g, v, i);
 
-        vn = v == v1 ? v2 : v1; // distinguish neighboring site from site itself
-
-        is_ext = (v1 == g->nv - 1 || v2 == g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
+        is_ext = (v == g->nv - 1 || vn == g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
 
         bond_counter = is_ext ? &(c->dHb) : &(c->dJb);
         prob = is_ext ? ps[1] : ps[0];
@@ -153,17 +159,13 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
       double dE = 0;
       for (uint32_t i = 0; i < nn; i++) {
         bool is_ext;
-        uint32_t e, v1, v2, vn;
+        uint32_t vn;
         int32_t *bond_counter;
         double prob;
 
-        e = s->g->ve[s->g->vei[v0] + i]; // select the ith bond connected to site
-        v1 = s->g->ev[2 * e];
-        v2 = s->g->ev[2 * e + 1];
+        vn = get_neighbor(s->g, v0, i);
 
-        vn = v0 == v1 ? v2 : v1; // distinguish neighboring site from site itself
-
-        is_ext = (v1 == s->g->nv - 1 || v2 == s->g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
+        is_ext = (v0 == s->g->nv - 1 || vn == s->g->nv - 1); // our edge contained the "ghost" spin if either of its vertices was the last in the graph
 
         if (is_ext) {
           dE += 2 * H * spin_to_sign(s->spins[vn]) * spin_to_sign(s->spins[v0]);

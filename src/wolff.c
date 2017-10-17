@@ -8,26 +8,30 @@ int main(int argc, char *argv[]) {
   lattice_t lat;
   uint16_t L;
   uint32_t min_runs, lattice_i, sim_i;
-  uint64_t N;
+  uint64_t N, n;
   double T, H, eps;
 
   sim = WOLFF;
   L = 128;
-  N = 1000;
+  N = 100000000000000;
+  n = 3;
   lat = SQUARE_LATTICE;
   use_dual = false;
   M_stop = false;
   record_autocorrelation = false;
   T = 2.3;
   H = 0;
-  eps = 1e30;
+  eps = 1e-30;
   output_state = false;
   min_runs = 10;
 
-  while ((opt = getopt(argc, argv, "N:L:T:H:m:e:oq:DMas:")) != -1) {
+  while ((opt = getopt(argc, argv, "n:N:L:T:H:m:e:oq:DMas:")) != -1) {
     switch (opt) {
     case 'N':
       N = (uint64_t)atof(optarg);
+      break;
+    case 'n':
+      n = (uint64_t)atof(optarg);
       break;
     case 'L':
       L = atoi(optarg);
@@ -124,17 +128,7 @@ int main(int argc, char *argv[]) {
   uint64_t n_steps = 0;
   double clust_per_sweep = 0;
 
-  uint64_t auto_n = 10 * h->nv;
-  uint64_t *auto_time;
-  double *auto_energy;
-  if (record_autocorrelation) {
-    auto_time = (uint64_t *)malloc(auto_n * sizeof(uint64_t));
-    auto_energy = (double *)malloc(auto_n * sizeof(double));
-    auto_time[0] = 0;
-    auto_energy[0] = s->H / h->nv;
-  }
-
-  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE;
+  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *corrE, *corrmE;
 
   M = calloc(1, sizeof(meas_t));
   aM = calloc(1, sizeof(meas_t));
@@ -144,8 +138,15 @@ int main(int argc, char *argv[]) {
   eE = calloc(1, sizeof(meas_t));
   mE = calloc(1, sizeof(meas_t));
 
+  corrE = (meas_t *)calloc(1, sizeof(meas_t));
+  corrmE = (meas_t *)calloc(1, sizeof(meas_t));
+  double batch_mean_energy;
+  uint64_t batch_size = exp(0.667 * log(N));
+  uint64_t n_batch = 0;
+  uint64_t batch_flips = 0;
+
   printf("\n");
-  while (diff > eps || diff == 0. || n_runs < min_runs) {
+  while ((diff > eps && n_steps < N) || n_runs < min_runs) {
     printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
            n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
@@ -153,9 +154,25 @@ int main(int argc, char *argv[]) {
     uint32_t n_flips = 0;
     uint32_t n_clust = 0;
 
-    while (n_flips / h->nv < N) {
-      n_flips += wolff_step(T, H, s, sim, r, bond_probs);
+    while (n_flips / h->nv < n) {
+      uint32_t tmp_flips = wolff_step(T, H, s, sim, r, bond_probs);
+      n_flips += tmp_flips;
       n_clust++;
+
+      n_steps += tmp_flips;
+
+      if (n_runs > 0) {
+        update_meas(corrE, s->H);
+        if (batch_flips <= batch_size && batch_flips + tmp_flips > batch_size) {
+          update_meas(corrmE, batch_mean_energy / n_batch);
+          batch_mean_energy = 0;
+          n_batch = 0;
+          batch_flips = (int64_t)(batch_flips + tmp_flips) - (int64_t)batch_size;
+        }
+        batch_mean_energy += s->H;
+        n_batch++;
+        batch_flips += tmp_flips;
+      }
     }
 
     double HH = 1;
@@ -181,20 +198,9 @@ int main(int argc, char *argv[]) {
       diff = fabs(M->dc / M->c);
     }
 
-    clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / N, n_runs);
+    clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / n, n_runs);
 
     n_runs++;
-    n_steps += n_flips;
-
-    if (record_autocorrelation) {
-      if (n_runs == auto_n) {
-        auto_n *= 2;
-        auto_time = (uint64_t *)realloc(auto_time, auto_n * sizeof(uint64_t));
-        auto_energy = (double *)realloc(auto_energy, auto_n * sizeof(double));
-      }
-      auto_time[n_runs] = n_steps;
-      auto_energy[n_runs] = s->H / h->nv;
-    }
   }
 
   printf("\033[F\033[JWOLFF: sweep %" PRIu64
@@ -203,13 +209,16 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.dat", "a");
 
+  double tau = batch_size * corrmE->c / corrE->c;
+  double dtau = tau * sqrt(pow(corrmE->dc / corrmE->c, 2) + pow(corrE->dc / corrE->c, 2));
+
   fprintf(outfile,
-          "%u %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
+          "%u %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
           T, H, n_runs,
           E->x / h->nv, E->dx / h->nv, M->x / h->nv, M->dx / h->nv, E->c / h->nv, E->dc / h->nv, M->c / h->nv, M->dc / h->nv,
           eE->n, eE->x / h->nv, eE->dx / h->nv, eM->x / h->nv, eM->dx / h->nv, eE->c / h->nv, eE->dc / h->nv, eM->c / h->nv, eM->dc / h->nv,
           mE->n, mE->x / h->nv, mE->dx / h->nv, mM->x / h->nv, mM->dx / h->nv, mE->c / h->nv, mE->dc / h->nv, mM->c / h->nv, mM->dc / h->nv,
-          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv);
+          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, tau, dtau);
   fclose(outfile);
 
   if (output_state) {
@@ -219,17 +228,6 @@ int main(int argc, char *argv[]) {
     }
     fprintf(state_file, "\n");
     fclose(state_file);
-  }
-
-  if (record_autocorrelation) {
-    FILE *auto_file = fopen("autocorrelation.dat", "a");
-    for (uint64_t i = 0; i < n_runs + 1; i++) { 
-      fprintf(auto_file, "%" PRIu64 " %.15f ", auto_time[i], auto_energy[i]);
-    }
-    fprintf(auto_file, "\n");
-    fclose(auto_file);
-    free(auto_time);
-    free(auto_energy);
   }
 
   gsl_rng_free(r);
@@ -243,6 +241,8 @@ int main(int argc, char *argv[]) {
   free(E);
   free(eE);
   free(mE);
+  free(corrE);
+  free(corrmE);
   free(bond_probs);
   graph_free(h);
 
