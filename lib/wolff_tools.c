@@ -206,6 +206,9 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
           s->spins[v] = !s->spins[v];
         }
       } else {
+        while (c->spins != NULL) {
+          stack_pop(&(c->spins));
+        }
         s->M += - sign(H) * 2 * c->dHb;
         s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
       }
