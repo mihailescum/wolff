@@ -210,15 +210,14 @@ int main(int argc, char *argv[]) {
   FILE *outfile = fopen("out.dat", "a");
 
   double tau = batch_size * corrmE->c / corrE->c;
-  double dtau = tau * sqrt(pow(corrmE->dc / corrmE->c, 2) + pow(corrE->dc / corrE->c, 2));
 
   fprintf(outfile,
-          "%u %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n", L,
-          T, H, n_runs,
+          "%u %.15f %.15f %" PRIu64 " %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
+          L, T, H, n_runs, n_steps,
           E->x / h->nv, E->dx / h->nv, M->x / h->nv, M->dx / h->nv, E->c / h->nv, E->dc / h->nv, M->c / h->nv, M->dc / h->nv,
           eE->n, eE->x / h->nv, eE->dx / h->nv, eM->x / h->nv, eM->dx / h->nv, eE->c / h->nv, eE->dc / h->nv, eM->c / h->nv, eM->dc / h->nv,
           mE->n, mE->x / h->nv, mE->dx / h->nv, mM->x / h->nv, mM->dx / h->nv, mE->c / h->nv, mE->dc / h->nv, mM->c / h->nv, mM->dc / h->nv,
-          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, tau, dtau);
+          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, tau); 
   fclose(outfile);
 
   if (output_state) {

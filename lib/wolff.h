@@ -36,6 +36,7 @@ typedef struct {
   int32_t dJb;
   int32_t dHb;
   bool hit_ghost;
+  ll_t *spins;
 } cluster_t;
 
 typedef struct {

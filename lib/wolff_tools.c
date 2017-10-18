@@ -93,6 +93,9 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_o
 
     if (x[v] == x0 && !(c->hit_ghost && stop_on_ghost)) { // if the vertex hasn't already been flipped
       x[v] = !x[v];   // flip the vertex
+      if (stop_on_ghost) {
+        stack_push(&(c->spins), v);
+      }
 
       for (uint32_t i = 0; i < nn; i++) {
         bool is_ext;
@@ -195,19 +198,17 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
                 }
                 break;
     case WOLFF_GHOST: {
-      bool *spins_bak;
-      spins_bak = (bool *)malloc(s->g->nv * sizeof(bool));
-      memcpy(spins_bak, s->spins, s->g->nv * sizeof(bool));
-
       cluster_t *c = flip_cluster(s->g, ps, s->spins, true, r);
 
       if (c->hit_ghost) {
-        memcpy(s->spins, spins_bak, s->g->nv * sizeof(bool));
+        while (c->spins != NULL) {
+          uint32_t v = stack_pop(&(c->spins));
+          s->spins[v] = !s->spins[v];
+        }
       } else {
         s->M += - sign(H) * 2 * c->dHb;
         s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
       }
-      free(spins_bak);
 
       n_flips = c->nv;
 
