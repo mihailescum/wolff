@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
   record_autocorrelation = false;
   T = 2.3;
   H = 0;
-  eps = 1e-30;
+  eps = 0;
   output_state = false;
   min_runs = 10;
 
