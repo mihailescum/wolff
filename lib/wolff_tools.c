@@ -113,6 +113,7 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_o
         if (x[vn] ==
             x0) { // if the neighboring site matches the flipping cluster...
           (*bond_counter)++;
+          c->nt++;
 
           if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
             if (is_ext && stop_on_ghost) {
@@ -192,7 +193,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
       cluster_t *c = flip_cluster(s->g, ps, s->spins, false, r);
       s->M += - sign(H) * 2 * c->dHb;
       s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
-      n_flips = c->nv;
+      n_flips = c->nt;
 
       free(c);
                 }
@@ -213,7 +214,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
         s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
       }
 
-      n_flips = c->nv;
+      n_flips = c->nt;
 
       free(c);
                       }

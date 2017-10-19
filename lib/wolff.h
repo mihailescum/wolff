@@ -33,6 +33,7 @@ typedef struct {
 
 typedef struct {
   uint32_t nv;
+  uint32_t nt;
   int32_t dJb;
   int32_t dHb;
   bool hit_ghost;
