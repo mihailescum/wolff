@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   uint64_t batch_flips = 0;
 
   printf("\n");
-  while ((diff > eps && n_steps < N) || n_runs < min_runs) {
+  while (((diff > eps || diff != diff) && n_steps < N) || n_runs < min_runs) {
     printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
            n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
