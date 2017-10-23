@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     if (M_stop) {
       diff = fabs(eM->dx / eM->x);
     } else {
-      diff = fabs(M->dc / M->c);
+      diff = fabs(eM->dc / eM->c);
     }
 
     clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / n, n_runs);
