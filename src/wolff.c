@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
       n_steps += tmp_flips;
 
-      if (n_runs > 0) {
+      if (n_runs > 0 && record_autocorrelation) {
         update_meas(corrE, s->H);
         if (batch_flips <= batch_size && batch_flips + tmp_flips > batch_size) {
           update_meas(corrmE, batch_mean_energy / n_batch);
