@@ -2,7 +2,11 @@
 #include "queue.h"
 #include "wolff.h"
 
-int32_t spin_to_sign(bool spin) {
+int8_t spin_to_sign(bool spin) {
+  /* takes a spin (represented by a bool) and converts it to an integer (plus
+   * or minus one). our convention takes true to be negative spin and false to
+   * be positive spin
+   */
   if (spin) {
     return -1;
   } else {
@@ -10,55 +14,63 @@ int32_t spin_to_sign(bool spin) {
   }
 }
 
-int32_t sign(double x) {
-  return x > 0 ? 1 : -1;
+int8_t sign(double x) {
+  // the sign function. zero returns positive sign.
+  return x >= 0 ? 1 : -1;
 }
 
-graph_t *graph_add_ext(const graph_t *g) {
-  graph_t *h = (graph_t *)calloc(1, sizeof(graph_t));
+graph_t *graph_add_ext(const graph_t *G) {
+  /* takes a graph object G and returns tG, the same graph with an extra vertex
+   * that is connected to every other vertex.
+   */
+  graph_t *tG = (graph_t *)calloc(1, sizeof(graph_t));
 
-  h->nv = g->nv + 1;
-  h->ne = g->ne + g->nv;
+  tG->nv = G->nv + 1;
+  tG->ne = G->ne + G->nv;
 
-  h->ev = (uint32_t *)malloc(2 * h->ne * sizeof(uint32_t));
-  h->vei = (uint32_t *)malloc((h->nv + 1) * sizeof(uint32_t));
-  h->ve = (uint32_t *)malloc(2 * h->ne * sizeof(uint32_t));
-  h->vx = (double *)malloc(2 * h->nv * sizeof(double));
-  h->bq = (bool *)malloc(h->nv * sizeof(bool));
+  tG->ev = (uint32_t *)malloc(2 * tG->ne * sizeof(uint32_t));
+  tG->vei = (uint32_t *)malloc((tG->nv + 1) * sizeof(uint32_t));
+  tG->ve = (uint32_t *)malloc(2 * tG->ne * sizeof(uint32_t));
+  tG->vx = (double *)malloc(2 * tG->nv * sizeof(double));
+  tG->bq = (bool *)malloc(tG->nv * sizeof(bool));
 
-  memcpy(h->ev, g->ev, 2 * g->ne * sizeof(uint32_t));
-  memcpy(h->vx, g->vx, 2 * g->nv * sizeof(double));
-  memcpy(h->bq, g->bq, g->nv * sizeof(bool));
-  h->vx[2 * g->nv] = -1;
-  h->vx[2 * g->nv + 1] = -0.5;
-  h->bq[g->nv] = false;
+  memcpy(tG->ev, G->ev, 2 * G->ne * sizeof(uint32_t));
+  memcpy(tG->vx, G->vx, 2 * G->nv * sizeof(double));
+  memcpy(tG->bq, G->bq, G->nv * sizeof(bool));
 
-  for (uint32_t i = 0; i < g->nv; i++) {
-    h->ev[2 * g->ne + 2 * i] = i;
-    h->ev[2 * g->ne + 2 * i + 1] = g->nv;
+  tG->vx[2 * G->nv] = -1;
+  tG->vx[2 * G->nv + 1] = -0.5;
+  tG->bq[G->nv] = false;
+
+  for (uint32_t i = 0; i < G->nv; i++) {
+    tG->ev[2 * G->ne + 2 * i] = i;
+    tG->ev[2 * G->ne + 2 * i + 1] = G->nv;
   }
 
-  for (uint32_t i = 0; i < g->nv; i++) {
-    h->vei[i] = g->vei[i] + i;
+  for (uint32_t i = 0; i < G->nv; i++) {
+    tG->vei[i] = G->vei[i] + i;
 
-    for (uint32_t j = 0; j < g->vei[i + 1] - g->vei[i]; j++) {
-      h->ve[h->vei[i] + j] = g->ve[g->vei[i] + j];
+    for (uint32_t j = 0; j < G->vei[i + 1] - G->vei[i]; j++) {
+      tG->ve[tG->vei[i] + j] = G->ve[G->vei[i] + j];
     }
 
-    h->ve[h->vei[i] + g->vei[i + 1] - g->vei[i]] = g->ne + i;
+    tG->ve[tG->vei[i] + G->vei[i + 1] - G->vei[i]] = G->ne + i;
   }
 
-  h->vei[g->nv] = g->vei[g->nv] + g->nv;
-  h->vei[g->nv + 1] = h->vei[g->nv] + g->nv;
+  tG->vei[G->nv] = G->vei[G->nv] + G->nv;
+  tG->vei[G->nv + 1] = tG->vei[G->nv] + G->nv;
 
-  for (uint32_t i = 0; i < g->nv; i++) {
-    h->ve[h->vei[g->nv] + i] = g->ne + i;
+  for (uint32_t i = 0; i < G->nv; i++) {
+    tG->ve[tG->vei[G->nv] + i] = G->ne + i;
   }
 
-  return h;
+  return tG;
 }
 
 uint32_t get_neighbor(const graph_t *g, uint32_t v, uint32_t i) {
+  // returns the index of the ith neighbor of vertex v on graph g.
+  assert(i < g->vei[v + 1] - g->vei[v]); // don't request a neighbor over the total number of neighbors!
+  
   uint32_t e, v1, v2;
 
   e = g->ve[g->vei[v] + i]; // select the ith bond connected to site
@@ -68,15 +80,23 @@ uint32_t get_neighbor(const graph_t *g, uint32_t v, uint32_t i) {
   return v == v1 ? v2 : v1; // distinguish neighboring site from site itself
 }
 
-cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_on_ghost,
+cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *s, bool stop_on_ghost,
                         gsl_rng *r) {
+  /* flips a wolff cluster on the graph g with initial state s. s is always
+   * changed by the routine. the probability of adding a normal bond to the
+   * cluster is passed by ps[0], and the probability of adding a bond with the
+   * external field spin to the cluster is passed by ps[1]. if stop_on_ghost is
+   * true, adding the external field spin to the cluster stops execution of the
+   * routine. flip_cluster returns an object of type cluster_t, which encodes
+   * information about the flipped cluster.
+   */
   uint32_t v0;
   int32_t n_h_bonds, n_bonds;
-  bool x0;
+  bool s0;
   cluster_t *c;
 
   v0 = gsl_rng_uniform_int(r, g->nv); // pick a random vertex
-  x0 = x[v0];                         // record its orientation
+  s0 = s[v0];                         // record its orientation
 
   ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
@@ -91,8 +111,8 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_o
     v = stack_pop(&stack);
     nn = g->vei[v + 1] - g->vei[v];
 
-    if (x[v] == x0 && !(c->hit_ghost && stop_on_ghost)) { // if the vertex hasn't already been flipped
-      x[v] = !x[v];   // flip the vertex
+    if (s[v] == s0 && !(c->hit_ghost && stop_on_ghost)) { // if the vertex hasn't already been flipped
+      s[v] = !s[v];   // flip the vertex
       if (stop_on_ghost) {
         stack_push(&(c->spins), v);
       }
@@ -110,8 +130,8 @@ cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_o
         bond_counter = is_ext ? &(c->dHb) : &(c->dJb);
         prob = is_ext ? ps[1] : ps[0];
 
-        if (x[vn] ==
-            x0) { // if the neighboring site matches the flipping cluster...
+        if (s[vn] ==
+            s0) { // if the neighboring site matches the flipping cluster...
           (*bond_counter)++;
 
           if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
@@ -147,7 +167,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
     gsl_rng_set(r, jst_rand_seed());
   }
 
-  if (ps == NULL) {
+  if (ps == NULL) { // computing exponentials is relatively expensive, so calling functions are given the option to supply values calculated once in the entire runtime
     no_ps = true;
     ps = (double *)malloc(2 * sizeof(double));
     ps[0] = 1 - exp(-2 / T);
@@ -185,8 +205,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
       }
 
       n_flips = 1;
-                     }
-                     break;
+      } break;
 
     case WOLFF: {
       cluster_t *c = flip_cluster(s->g, ps, s->spins, false, r);
@@ -195,8 +214,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
       n_flips = c->nv;
 
       free(c);
-                }
-                break;
+      } break;
     case WOLFF_GHOST: {
       cluster_t *c = flip_cluster(s->g, ps, s->spins, true, r);
 
@@ -204,10 +222,12 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
         while (c->spins != NULL) {
           uint32_t v = stack_pop(&(c->spins));
           s->spins[v] = !s->spins[v];
+          // if we hit the external spin, undo the cluster flip
         }
       } else {
         while (c->spins != NULL) {
           stack_pop(&(c->spins));
+          // we have to clear the memory on the stack anyway...
         }
         s->M += - sign(H) * 2 * c->dHb;
         s->H += 2 * (c->dJb + sign (H) * H * c->dHb);
@@ -216,8 +236,7 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
       n_flips = c->nv;
 
       free(c);
-                      }
-                break;
+      } break;
   }
 
   if (no_ps) {
@@ -233,6 +252,32 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
 
 double add_to_avg(double mx, double x, uint64_t n) {
   return mx * (n / (n + 1.)) + x * 1. / (n + 1.);
+}
+
+void update_autocorr(autocorr_t *OO, double O) {
+  OO->O = add_to_avg(OO->O, O, OO->n);
+  OO->O2 = add_to_avg(OO->O2, pow(O, 2), OO->n);
+
+  uint64_t lim = OO->W;
+
+  if (OO->n < OO->W) {
+    lim = OO->n;
+  }
+
+  for (uint64_t t = 0; t < lim; t++) {
+    OO->OO[t] = add_to_avg(OO->OO[t], O * OO->Op[t], OO->n - t - 1);
+  }
+
+  for (uint64_t t = 0; t < OO->W - 1; t++) {
+    OO->Op[OO->W - 1 - t] = OO->Op[OO->W - 2 - t];
+  }
+
+  OO->Op[0] = O;
+  OO->n++;
+}
+
+double rho(autocorr_t *o, uint64_t i) {
+  return (o->OO[i] - pow(o->O, 2)) / (o->O2 - pow(o->O, 2));
 }
 
 void update_meas(meas_t *m, double x) {

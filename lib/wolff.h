@@ -50,7 +50,16 @@ typedef struct {
   double dc;
 } meas_t;
 
-int32_t sign(double x);
+typedef struct {
+  uint64_t n;
+  uint64_t W;
+  double *OO;
+  double *Op;
+  double O;
+  double O2;
+} autocorr_t;
+
+int8_t sign(double x);
 
 cluster_t *flip_cluster(const graph_t *g, const double *ps, bool *x, bool stop_on_ghost,
                         gsl_rng *r);
@@ -62,5 +71,9 @@ uint32_t wolff_step(double T, double H, ising_state_t *s, sim_t sim, gsl_rng *r,
 
 void update_meas(meas_t *m, double x);
 
+void update_autocorr(autocorr_t *OO, double O);
+
 double add_to_avg(double mx, double x, uint64_t n);
+
+double rho(autocorr_t *o, uint64_t i);
 
