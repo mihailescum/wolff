@@ -54,7 +54,7 @@ typedef struct {
   uint64_t n;
   uint64_t W;
   double *OO;
-  double *Op;
+  dll_t *Op;
   double O;
   double O2;
 } autocorr_t;

@@ -8,13 +8,14 @@ int main(int argc, char *argv[]) {
   lattice_t lat;
   uint16_t L;
   uint32_t min_runs, lattice_i, sim_i;
-  uint64_t N, n, W;
+  uint64_t N, n, W, ac_skip;
   double T, H, eps;
 
   sim = WOLFF;
   L = 128;
   N = 100000000000000;
   W = 10;
+  ac_skip = 1;
   n = 3;
   lat = SQUARE_LATTICE;
   use_dual = false;
@@ -26,13 +27,16 @@ int main(int argc, char *argv[]) {
   output_state = false;
   min_runs = 10;
 
-  while ((opt = getopt(argc, argv, "n:N:L:T:H:m:e:oq:DMas:W:")) != -1) {
+  while ((opt = getopt(argc, argv, "n:N:L:T:H:m:S:e:oq:DMas:W:")) != -1) {
     switch (opt) {
     case 'N':
       N = (uint64_t)atof(optarg);
       break;
     case 'W':
       W = (uint64_t)atof(optarg);
+      break;
+    case 'S':
+      ac_skip = (uint64_t)atof(optarg);
       break;
     case 'n':
       n = (uint64_t)atof(optarg);
@@ -148,7 +152,6 @@ int main(int argc, char *argv[]) {
     autocorr = (autocorr_t *)calloc(1, sizeof(autocorr_t));
     autocorr->W = W;
     autocorr->OO = (double *)calloc(W, sizeof(double));
-    autocorr->Op = (double *)calloc(W, sizeof(double));
   }
 
   printf("\n");
@@ -167,7 +170,9 @@ int main(int argc, char *argv[]) {
       n_steps++;
 
       if (record_autocorrelation && n_runs > 0) {
-        update_autocorr(autocorr, s->H);
+        if (n_steps % ac_skip == 0) {
+          update_autocorr(autocorr, s->H);
+        }
         update_meas(clust, tmp_flips);
       }
     }
@@ -228,10 +233,12 @@ int main(int argc, char *argv[]) {
     double dttau = sqrt(4.0 / autocorr->n * (pow(ttau, 2) * (W +(1+kappa)/(1-kappa)-0.5) + kappa * X / pow(1-kappa, 2) + pow(kappa, 2) * Y / pow(1-kappa, 4)));
     
     free(autocorr->OO);
-    free(autocorr->Op);
+    while (autocorr->Op != NULL) {
+      stack_pop_d(&(autocorr->Op));
+    }
     free(autocorr);
     
-    tau = ttau * clust->x / h->nv;
+    tau = ttau * ac_skip * clust->x / h->nv;
     dtau = tau * sqrt(pow(dttau / ttau, 2) + pow(clust->dx / clust->x, 2));
   }
 

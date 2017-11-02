@@ -258,21 +258,31 @@ void update_autocorr(autocorr_t *OO, double O) {
   OO->O = add_to_avg(OO->O, O, OO->n);
   OO->O2 = add_to_avg(OO->O2, pow(O, 2), OO->n);
 
-  uint64_t lim = OO->W;
+  dll_t *Otmp = OO->Op;
+  dll_t *Osave;
+  uint64_t t = 0;
 
-  if (OO->n < OO->W) {
-    lim = OO->n;
+  while (Otmp != NULL) {
+    OO->OO[t] = add_to_avg(OO->OO[t], O * (Otmp->x), OO->n - t - 1);
+    t++;
+    if (t == OO->W - 1) {
+      Osave = Otmp;
+    }
+    Otmp = Otmp->next;
   }
 
-  for (uint64_t t = 0; t < lim; t++) {
-    OO->OO[t] = add_to_avg(OO->OO[t], O * OO->Op[t], OO->n - t - 1);
+  if (t == OO->W) {
+    if (OO->W == 1) {
+      free(OO->Op);
+      OO->Op = NULL;
+    } else {
+      free(Osave->next);
+      Osave->next = NULL;
+    }
   }
 
-  for (uint64_t t = 0; t < OO->W - 1; t++) {
-    OO->Op[OO->W - 1 - t] = OO->Op[OO->W - 2 - t];
-  }
+  stack_push_d(&(OO->Op), O);
 
-  OO->Op[0] = O;
   OO->n++;
 }
 
