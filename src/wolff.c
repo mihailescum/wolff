@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
       printf("WARNING: correlation function never hit the noise floor.\n");
     }
 
-    if (n < 1) {
+    if (n < 2) {
       printf("WARNING: correlation function only has one nonnegative term.\n");
     }
 
