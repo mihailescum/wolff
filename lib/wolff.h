@@ -17,6 +17,7 @@
 #include <jst/rand.h>
 
 #include "queue.h"
+#include "convex.h"
 
 typedef enum {
   WOLFF,

@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   uint64_t n_steps = 0;
   double clust_per_sweep = 0;
 
-  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *clust;
+  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *clust, *everyE, *blockE;
 
   M = calloc(1, sizeof(meas_t));
   aM = calloc(1, sizeof(meas_t));
@@ -146,12 +146,18 @@ int main(int argc, char *argv[]) {
   eE = calloc(1, sizeof(meas_t));
   mE = calloc(1, sizeof(meas_t));
   clust = calloc(1, sizeof(meas_t));
+  everyE = calloc(1, sizeof(meas_t));
+
+  blockE = calloc(1,sizeof(meas_t));
+
+  uint64_t blocksize = 1000;
+  double Etot = 0;
 
   autocorr_t *autocorr;
   if (record_autocorrelation) {
     autocorr = (autocorr_t *)calloc(1, sizeof(autocorr_t));
-    autocorr->W = W;
-    autocorr->OO = (double *)calloc(W, sizeof(double));
+    autocorr->W = 2 * W + 1;
+    autocorr->OO = (double *)calloc(2 * W + 1, sizeof(double));
   }
 
   printf("\n");
@@ -167,9 +173,17 @@ int main(int argc, char *argv[]) {
       uint32_t tmp_flips = wolff_step(T, H, s, sim, r, bond_probs);
       n_flips += tmp_flips;
       n_clust++;
-      n_steps++;
+      if (n_runs > 0){
+        n_steps++;
+      }
 
       if (record_autocorrelation && n_runs > 0) {
+        update_meas(everyE, s->H);
+        if (n_steps % blocksize == 0) {
+          update_meas(blockE, Etot / blocksize);
+          Etot = 0;
+        }
+        Etot += s->H;
         if (n_steps % ac_skip == 0) {
           update_autocorr(autocorr, s->H);
         }
@@ -213,25 +227,36 @@ int main(int argc, char *argv[]) {
 
   double tau = 0;
   double dtau = 0;
-  if (record_autocorrelation) {
-    double kappa = rho(autocorr, W - 1) / rho(autocorr, W - 2);
-    double R = rho(autocorr, W - 1) / (1-kappa);
 
-    double ttau = 0.5 + R;
-    double X = 0.5;
-    double Y = 0;
-    for (uint64_t i = 0; i < W - 1; i++) {
-      ttau += rho(autocorr, i);
-      X += pow(rho(autocorr, i), 2);
-      if (i > 0) {
-        Y += 0.5 * pow(rho(autocorr, i) - rho(autocorr, i-1), 2);
-      } else {
-        Y += 0.5 * pow(rho(autocorr, i) - 1, 2);
+  if (record_autocorrelation) {
+    double *Gammas = (double *)malloc((W + 1) * sizeof(double));
+
+    Gammas[0] = 1 + rho(autocorr, 0);
+    printf("%g ", Gammas[0]);
+    for (uint64_t i = 0; i < W; i++) {
+      Gammas[1 + i] = rho(autocorr, 2 * i + 1) + rho(autocorr, 2 * i + 2);
+    } 
+
+    uint64_t n;
+    for (n = 0; n < W + 1; n++) {
+      if (Gammas[n] <= 0) {
+        break;
       }
     }
 
-    double dttau = sqrt(4.0 / autocorr->n * (pow(ttau, 2) * (W +(1+kappa)/(1-kappa)-0.5) + kappa * X / pow(1-kappa, 2) + pow(kappa, 2) * Y / pow(1-kappa, 4)));
+    if (n == W) {
+      printf("WARNING: correlation function never hit the noise floor.\n");
+    }
+
+    double *conv_Gamma = get_convex_minorant(n, Gammas);
+
+    double ttau = - 0.5;
+
+    for (uint64_t i = 0; i < n; i++) {
+      ttau += conv_Gamma[i];
+    }
     
+    free(Gammas);
     free(autocorr->OO);
     while (autocorr->Op != NULL) {
       stack_pop_d(&(autocorr->Op));
@@ -239,7 +264,7 @@ int main(int argc, char *argv[]) {
     free(autocorr);
     
     tau = ttau * ac_skip * clust->x / h->nv;
-    dtau = tau * sqrt(pow(dttau / ttau, 2) + pow(clust->dx / clust->x, 2));
+    dtau = 0;
   }
 
   fprintf(outfile,
