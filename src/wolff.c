@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
 
     double ttau = - 0.5;
 
-    for (uint64_t i = 0; i < n; i++) {
+    for (uint64_t i = 0; i < n + 1; i++) {
       ttau += conv_Gamma[i];
     }
     

@@ -66,22 +66,28 @@ double *get_convex_minorant(uint64_t n, double *Gammas) {
 
   pos = L;
 
-  double *g = (double *)calloc(n, sizeof(double));
+  double *g = (double *)calloc(n + 1, sizeof(double));
   double rho = 0;
 
-  for (uint64_t i = 0; i < n; i++) {
+  for (uint64_t i = 0; i < n + 1; i++) {
     if (i > pos->next->p->x) {
       pos = pos->next;
     }
 
     g[i] = pos->p->y + ((double)i - (double)(pos->p->x)) *  (pos->next->p->y - pos->p->y) / ((double)(pos->next->p->x) - (double)(pos->p->x));
 
-    if (Gammas[i] - g[i] > rho) {
-      rho = Gammas[i] - g[i];
+    if (i <n) {
+      if (Gammas[i] - g[i] > rho) {
+        rho = Gammas[i] - g[i];
+      }
+    } else {
+      if (0 - g[i] > rho) {
+        rho = 0 - g[i];
+      }
     }
   }
 
-  for (uint64_t i = 0; i < n; i++) {
+  for (uint64_t i = 0; i < n + 1; i++) {
     g[i] += rho / 2;
   }
 
