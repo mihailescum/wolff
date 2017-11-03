@@ -6,6 +6,10 @@ double slope(point_t *P, point_t *Q) {
 }
 
 double *get_convex_minorant(uint64_t n, double *Gammas) {
+  if (n < 2) {
+    return Gammas;
+  }
+
   list_t *L = (list_t *)calloc(1, sizeof(list_t));
   L->p = (point_t *)calloc(1, sizeof(point_t));
   L->p->x = 0;
