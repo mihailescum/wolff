@@ -232,7 +232,6 @@ int main(int argc, char *argv[]) {
     double *Gammas = (double *)malloc((W + 1) * sizeof(double));
 
     Gammas[0] = 1 + rho(autocorr, 0);
-    printf("%g ", Gammas[0]);
     for (uint64_t i = 0; i < W; i++) {
       Gammas[1 + i] = rho(autocorr, 2 * i + 1) + rho(autocorr, 2 * i + 2);
     } 
@@ -244,7 +243,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (n == W) {
+    if (n == W + 1) {
       printf("WARNING: correlation function never hit the noise floor.\n");
     }
 
