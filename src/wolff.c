@@ -247,6 +247,10 @@ int main(int argc, char *argv[]) {
       printf("WARNING: correlation function never hit the noise floor.\n");
     }
 
+    if (n < 1) {
+      printf("WARNING: correlation function only has one nonnegative term.\n");
+    }
+
     double *conv_Gamma = get_convex_minorant(n, Gammas);
 
     double ttau = - 0.5;
