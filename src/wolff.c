@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   uint64_t n_steps = 0;
   double clust_per_sweep = 0;
 
-  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *clust, *everyE, *blockE;
+  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *clust;
 
   M = calloc(1, sizeof(meas_t));
   aM = calloc(1, sizeof(meas_t));
@@ -146,12 +146,6 @@ int main(int argc, char *argv[]) {
   eE = calloc(1, sizeof(meas_t));
   mE = calloc(1, sizeof(meas_t));
   clust = calloc(1, sizeof(meas_t));
-  everyE = calloc(1, sizeof(meas_t));
-
-  blockE = calloc(1,sizeof(meas_t));
-
-  uint64_t blocksize = 1000;
-  double Etot = 0;
 
   autocorr_t *autocorr;
   if (record_autocorrelation) {
@@ -178,12 +172,6 @@ int main(int argc, char *argv[]) {
       }
 
       if (record_autocorrelation && n_runs > 0) {
-        update_meas(everyE, s->H);
-        if (n_steps % blocksize == 0) {
-          update_meas(blockE, Etot / blocksize);
-          Etot = 0;
-        }
-        Etot += s->H;
         if (n_steps % ac_skip == 0) {
           update_autocorr(autocorr, s->H);
         }
