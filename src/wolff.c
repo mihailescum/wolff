@@ -182,6 +182,7 @@ int main(int argc, char *argv[]) {
   free(s);
   free(H);
   graph_free(h);
+  gsl_rng_free(r);
 
   return 0;
 }
