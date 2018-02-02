@@ -9,8 +9,8 @@ typedef uint_fast64_t count_t;
 
 #define MAX_Q 256
 
-#define PRID PRIu8
-#define PRIL PRIu16
-#define PRIcount PRIu64
-#define PRIq PRIu8
+#define PRIq PRIuFAST8
+#define PRID PRIuFAST8
+#define PRIL PRIuFAST16
+#define PRIcount PRIuFAST64
 
