@@ -16,3 +16,5 @@ graph_t *graph_create_square(D_t D, L_t L);
 
 graph_t *graph_add_ext(const graph_t *G);
 
+void graph_free(graph_t *h);
+

@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
   if (pretend_ising) {
     fprintf(outfile,
-            "%u %.15f %" PRIu64 "  %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
+            "%" PRIL " %.15f %" PRIcount "  %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
             L, 2 * T, n_runs,
             (2 * E->x - h->ne) / h->nv, 2 * E->dx / h->nv, (M[0]->x - M[1]->x) / h->nv, M[0]->dx / h->nv, 4 * E->c / h->nv, 4 * E->dc / h->nv, 4 * M[0]->c / h->nv, 4 * M[0]->dc / h->nv); 
   } else {
@@ -178,10 +178,10 @@ int main(int argc, char *argv[]) {
   free(s->H_probs);
   free(s->M);
   free(s->spins);
-  free(s->g);
+  graph_free(s->g);
   free(s);
   free(H);
-  free(h);
+  graph_free(h);
 
   return 0;
 }
