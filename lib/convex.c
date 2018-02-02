@@ -5,7 +5,7 @@ double slope(point_t *P, point_t *Q) {
   return (Q->y - P->y) / ((double)(Q->x) - (double)(P->x));
 }
 
-double *get_convex_minorant(uint64_t n, double *Gammas) {
+double *get_convex_minorant(count_t n, double *Gammas) {
   if (n < 2) {
     return Gammas;
   }
@@ -17,7 +17,7 @@ double *get_convex_minorant(uint64_t n, double *Gammas) {
 
   list_t *pos = L;
 
-  for (uint64_t i = 1; i < n; i++) {
+  for (count_t i = 1; i < n; i++) {
     pos->next = (list_t *)calloc(1, sizeof(list_t));
     pos->next->p = (point_t *)calloc(1, sizeof(point_t));
     pos->next->p->x = i;
@@ -69,7 +69,7 @@ double *get_convex_minorant(uint64_t n, double *Gammas) {
   double *g = (double *)calloc(n + 1, sizeof(double));
   double rho = 0;
 
-  for (uint64_t i = 0; i < n + 1; i++) {
+  for (count_t i = 0; i < n + 1; i++) {
     if (i > pos->next->p->x) {
       pos = pos->next;
     }
@@ -87,7 +87,7 @@ double *get_convex_minorant(uint64_t n, double *Gammas) {
     }
   }
 
-  for (uint64_t i = 0; i < n + 1; i++) {
+  for (count_t i = 0; i < n + 1; i++) {
     g[i] += rho / 2;
   }
 

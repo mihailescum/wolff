@@ -1,0 +1,18 @@
+
+#include <inttypes.h>
+#include <math.h>
+#include <stdlib.h>
+
+#include "types.h"
+
+typedef struct {
+  v_t ne;
+  v_t nv;
+  v_t *v_i;
+  v_t *v_adj;
+} graph_t;
+
+graph_t *graph_create_square(D_t D, L_t L);
+
+graph_t *graph_add_ext(const graph_t *G);
+

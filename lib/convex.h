@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
+
 typedef struct {
-  uint64_t x;
+  count_t x;
   double y;
 } point_t;
 
@@ -17,5 +19,5 @@ typedef struct list_tag {
   point_t *p;
 } list_t;
 
-double *get_convex_minorant(uint64_t n, double *Gammas);
+double *get_convex_minorant(count_t n, double *Gammas);
 

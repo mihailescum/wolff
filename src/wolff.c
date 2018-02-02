@@ -2,113 +2,53 @@
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
+
+  L_t L = 128;
+  count_t N = (count_t)1e7;
+  count_t min_runs = 10;
+  count_t n = 3;
+  q_t q = 2;
+  D_t D = 2;
+  double T = 2.26918531421;
+  double *H = (double *)calloc(MAX_Q, sizeof(double));
+  double eps = 0;
+  bool pretend_ising = false;
+
   int opt;
-  sim_t sim;
-  bool output_state, use_dual, M_stop, record_autocorrelation;
-  lattice_t lat;
-  uint16_t L;
-  uint32_t min_runs, lattice_i, sim_i;
-  uint64_t N, n, W, ac_skip;
-  double T, H, eps;
+  q_t H_ind = 0;
 
-  sim = WOLFF;
-  L = 128;
-  N = 100000000000000;
-  W = 10;
-  ac_skip = 1;
-  n = 3;
-  lat = SQUARE_LATTICE;
-  use_dual = false;
-  M_stop = false;
-  record_autocorrelation = false;
-  T = 2.3;
-  H = 0;
-  eps = 0;
-  output_state = false;
-  min_runs = 10;
-
-  while ((opt = getopt(argc, argv, "n:N:L:T:H:m:S:e:oq:DMas:W:")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:H:m:e:I")) != -1) {
     switch (opt) {
     case 'N':
-      N = (uint64_t)atof(optarg);
-      break;
-    case 'W':
-      W = (uint64_t)atof(optarg);
-      break;
-    case 'S':
-      ac_skip = (uint64_t)atof(optarg);
+      N = (count_t)atof(optarg);
       break;
     case 'n':
-      n = (uint64_t)atof(optarg);
+      n = (count_t)atof(optarg);
+      break;
+    case 'D':
+      D = atoi(optarg);
       break;
     case 'L':
       L = atoi(optarg);
+      break;
+    case 'q':
+      q = atoi(optarg);
       break;
     case 'T':
       T = atof(optarg);
       break;
     case 'H':
-      H = atof(optarg);
+      H[H_ind] = atof(optarg);
+      H_ind++;
       break;
     case 'm':
       min_runs = atoi(optarg);
       break;
-    case 'M':
-      M_stop = true;
-      break;
     case 'e':
       eps = atof(optarg);
       break;
-    case 'o':
-      output_state = true;
-      break;
-    case 'D':
-      use_dual = true;
-      break;
-    case 'a':
-      record_autocorrelation = true;
-      break;
-    case 's':
-      sim_i = atoi(optarg);
-      switch (sim_i) {
-      case 0:
-        sim = WOLFF;
-        break;
-      case 1:
-        sim = WOLFF_GHOST;
-        break;
-      case 2:
-        sim = METROPOLIS;
-        break;
-      default:
-        printf("lattice specifier must be 0 (VORONOI_LATTICE), 1 "
-               "(DIAGONAL_LATTICE), or 2 (VORONOI_HYPERUNIFORM_LATTICE).\n");
-        exit(EXIT_FAILURE);
-      }
-      break;
-    case 'q':
-      lattice_i = atoi(optarg);
-      switch (lattice_i) {
-      case 0:
-        lat = SQUARE_LATTICE;
-        break;
-      case 1:
-        lat = DIAGONAL_LATTICE;
-        break;
-      case 2:
-        lat = TRIANGULAR_LATTICE;
-        break;
-      case 3:
-        lat = VORONOI_HYPERUNIFORM_LATTICE;
-        break;
-      case 4:
-        lat = VORONOI_LATTICE;
-        break;
-      default:
-        printf("lattice specifier must be 0 (VORONOI_LATTICE), 1 "
-               "(DIAGONAL_LATTICE), or 2 (VORONOI_HYPERUNIFORM_LATTICE).\n");
-        exit(EXIT_FAILURE);
-      }
+    case 'I':
+      pretend_ising = true;
       break;
     default:
       exit(EXIT_FAILURE);
@@ -116,180 +56,133 @@ int main(int argc, char *argv[]) {
   }
 
   gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
-  gsl_rng_set(r, jst_rand_seed());
+  gsl_rng_set(r, rand_seed());
 
-  graph_t *h = graph_create(lat, TORUS_BOUND, L, use_dual);
+  if (pretend_ising) {
+    q = 2;
+    T /= 2;
+    H[0] /= 2;
+    H[1] = -H[0];
+  }
 
   ising_state_t *s = (ising_state_t *)calloc(1, sizeof(ising_state_t));
 
+  graph_t *h = graph_create_square(D, L);
   s->g = graph_add_ext(h);
-  s->spins = (bool *)calloc(h->nv + 1, sizeof(bool));
-  s->M = sign(H) * h->nv;
-  s->H = -(1.0 * h->ne) - sign (H) * H * h->nv;
 
-  double *bond_probs = (double *)malloc(2 * sizeof(double));
-  bond_probs[0] = 1 - exp(-2 / T);
-  bond_probs[1] = 1 - exp(-2 * fabs(H) / T);
+  s->q = q;
+
+  s->spins = (q_t *)calloc(h->nv + 1, sizeof(q_t));
+
+  s->T = T;
+  s->H = H;
+
+  s->T_prob = 1.0 - exp(- 1.0 / T);
+  s->H_probs = (double *)calloc(pow(q, 2), sizeof(double));
+  for (q_t i = 0; i < q; i++) {
+    for (q_t j = 0; j < q; j++) {
+      s->H_probs[q * i + j] = 1.0 - exp((s->H[i] - s->H[j]) / T);
+    }
+  }
+
+  s->M = (v_t *)calloc(q, sizeof(v_t));
+  s->M[0] = h->nv;
+  s->E = - ((double)h->nv) * s->H[0];
 
   double diff = 1e31;
-  uint64_t n_runs = 0;
-  uint64_t n_steps = 0;
-  double clust_per_sweep = 0;
+  count_t n_runs = 0;
 
-  meas_t *M, *aM, *eM, *mM, *E, *eE, *mE, *clust;
+  meas_t *E, *clust, **M;
 
-  M = calloc(1, sizeof(meas_t));
-  aM = calloc(1, sizeof(meas_t));
-  eM = calloc(1, sizeof(meas_t));
-  mM = calloc(1, sizeof(meas_t));
-  E = calloc(1, sizeof(meas_t));
-  eE = calloc(1, sizeof(meas_t));
-  mE = calloc(1, sizeof(meas_t));
-  clust = calloc(1, sizeof(meas_t));
-
-  autocorr_t *autocorr;
-  if (record_autocorrelation) {
-    autocorr = (autocorr_t *)calloc(1, sizeof(autocorr_t));
-    autocorr->W = 2 * W + 1;
-    autocorr->OO = (double *)calloc(2 * W + 1, sizeof(double));
+  M = (meas_t **)malloc(q * sizeof(meas_t *));
+  for (q_t i = 0; i < q; i++) {
+    M[i] = (meas_t *)calloc(1, sizeof(meas_t));
   }
+
+  E = calloc(1, sizeof(meas_t));
+  clust = calloc(1, sizeof(meas_t));
 
   printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-           n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
+           n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
 
-    uint32_t n_flips = 0;
-    uint32_t n_clust = 0;
+    count_t n_flips = 0;
 
     while (n_flips / h->nv < n) {
-      uint32_t tmp_flips = wolff_step(T, H, s, sim, r, bond_probs);
+      v_t v0 = gsl_rng_uniform_int(r, h->nv);
+      q_t step = 1 + gsl_rng_uniform_int(r, q - 1);
+
+      v_t tmp_flips = flip_cluster(s, v0, step, r);
       n_flips += tmp_flips;
-      n_clust++;
-      if (n_runs > 0){
-        n_steps++;
-      }
 
-      if (record_autocorrelation && n_runs > 0) {
-        if (n_steps % ac_skip == 0) {
-          update_autocorr(autocorr, s->H);
-        }
-        update_meas(clust, tmp_flips);
-      }
+      update_meas(clust, tmp_flips);
     }
 
-    double HH = 1;
-    if (H < 0) {
-      HH = -1;
+    for (q_t i = 0; i < q; i++) {
+      update_meas(M[i], s->M[i]);
     }
 
-    update_meas(M, (double)(s->M));
-    update_meas(aM, HH * fabs((double)(s->M)));
-    update_meas(E, s->H);
+    update_meas(E, s->E);
 
-    if (s->M > 0) {
-      update_meas(eM, HH * fabs((double)(s->M)));
-      update_meas(eE, s->H);
-    } else {
-      update_meas(mM, - HH * fabs((double)(s->M)));
-      update_meas(mE, s->H);
-    }
-
-    if (M_stop) {
-      diff = fabs(eM->dx / eM->x);
-    } else {
-      diff = fabs(eM->dc / eM->c);
-    }
-
-    clust_per_sweep = add_to_avg(clust_per_sweep, n_clust * 1. / n, n_runs);
+    diff = fabs(M[0]->dc / M[0]->c);
 
     n_runs++;
   }
 
   printf("\033[F\033[JWOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-         n_runs, fabs(E->dx / E->x), M->dx / M->x, E->dc / E->c, M->dc / M->c, clust_per_sweep);
+         n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
 
-  FILE *outfile = fopen("out.dat", "a");
+  FILE *outfile = fopen("out.m", "a");
 
-  double tau = 0;
-  double dtau = 0;
-
-  if (record_autocorrelation) {
-    double *Gammas = (double *)malloc((W + 1) * sizeof(double));
-
-    Gammas[0] = 1 + rho(autocorr, 0);
-    for (uint64_t i = 0; i < W; i++) {
-      Gammas[1 + i] = rho(autocorr, 2 * i + 1) + rho(autocorr, 2 * i + 2);
-    } 
-
-    uint64_t n;
-    for (n = 0; n < W + 1; n++) {
-      if (Gammas[n] <= 0) {
-        break;
+  if (pretend_ising) {
+    fprintf(outfile,
+            "%u %.15f %" PRIu64 "  %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
+            L, 2 * T, n_runs,
+            (2 * E->x - h->ne) / h->nv, 2 * E->dx / h->nv, (M[0]->x - M[1]->x) / h->nv, M[0]->dx / h->nv, 4 * E->c / h->nv, 4 * E->dc / h->nv, 4 * M[0]->c / h->nv, 4 * M[0]->dc / h->nv); 
+  } else {
+    fprintf(outfile, "{\"D\"->%" PRID ",\"L\"->%" PRIL ",\"q\"->%" PRIq ",\"T\"->%.15f,\"H\"->{", D, L, q, T);
+    for (q_t i = 0; i < q; i++) {
+      fprintf(outfile, "%.15f", H[i]);
+      if (i != q-1) {
+        fprintf(outfile, ",");
       }
     }
-
-    if (n == W + 1) {
-      printf("WARNING: correlation function never hit the noise floor.\n");
+    fprintf(outfile, "},\"E\"->{%.15f,%.15f},\"C\"->{%.15f,%.15f},\"M\"->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
+    for (q_t i = 0; i < q; i++) {
+      fprintf(outfile, "{%.15f,%.15f}", M[i]->x / h->nv, M[i]->dx / h->nv);
+      if (i != q-1) {
+        fprintf(outfile, ",");
+      }
     }
-
-    if (n < 2) {
-      printf("WARNING: correlation function only has one nonnegative term.\n");
+    fprintf(outfile, "},\"X\"->{");
+    for (q_t i = 0; i < q; i++) {
+      fprintf(outfile, "{%.15f,%.15f}", M[i]->c / h->nv, M[i]->dc / h->nv);
+      if (i != q-1) {
+        fprintf(outfile, ",");
+      }
     }
-
-    double *conv_Gamma = get_convex_minorant(n, Gammas);
-
-    double ttau = - 0.5;
-
-    for (uint64_t i = 0; i < n + 1; i++) {
-      ttau += conv_Gamma[i];
-    }
-    
-    free(Gammas);
-    free(autocorr->OO);
-    while (autocorr->Op != NULL) {
-      stack_pop_d(&(autocorr->Op));
-    }
-    free(autocorr);
-    
-    tau = ttau * ac_skip * clust->x / h->nv;
-    dtau = 0;
+    fprintf(outfile, "},\"n\"->{%.15f,%.15f}}\n", clust->c / h->nv, clust->dc / h->nv);
   }
 
-  fprintf(outfile,
-          "%u %.15f %.15f %" PRIu64 " %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %" PRIu64 " %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
-          L, T, H, n_runs, n_steps,
-          E->x / h->nv, E->dx / h->nv, M->x / h->nv, M->dx / h->nv, E->c / h->nv, E->dc / h->nv, M->c / h->nv, M->dc / h->nv,
-          eE->n, eE->x / h->nv, eE->dx / h->nv, eM->x / h->nv, eM->dx / h->nv, eE->c / h->nv, eE->dc / h->nv, eM->c / h->nv, eM->dc / h->nv,
-          mE->n, mE->x / h->nv, mE->dx / h->nv, mM->x / h->nv, mM->dx / h->nv, mE->c / h->nv, mE->dc / h->nv, mM->c / h->nv, mM->dc / h->nv,
-          aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, tau, dtau); 
   fclose(outfile);
 
-  if (output_state) {
-    FILE *state_file = fopen("state.dat", "a");
-    for (uint32_t i = 0; i < h->nv; i++) {
-      fprintf(state_file, "%d ", s->spins[i]);
-    }
-    fprintf(state_file, "\n");
-    fclose(state_file);
-  }
-
-  gsl_rng_free(r);
-  graph_free(s->g);
-  free(s->spins);
-  free(s);
-  free(M);
-  free(aM);
-  free(eM);
-  free(mM);
   free(E);
-  free(eE);
-  free(mE);
   free(clust);
-  free(bond_probs);
-  graph_free(h);
+  for (q_t i = 0; i < q; i++) {
+    free(M[i]);
+  }
+  free(M);
+  free(s->H_probs);
+  free(s->M);
+  free(s->spins);
+  free(s->g);
+  free(s);
+  free(H);
+  free(h);
 
   return 0;
 }
+
