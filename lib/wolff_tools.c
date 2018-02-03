@@ -12,17 +12,20 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
   ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
 
-  node_t *T = NULL;
+  //node_t *T = NULL;
+  bool *marks = (bool *)calloc(s->g->nv, sizeof(bool));
 
   while (stack != NULL) {
     v_t v = stack_pop(&stack);
 
-    if (!tree_contains(T, v)) { // if the vertex hasn't already been flipped
+//    if (!tree_contains(T, v)) { // if the vertex hasn't already been flipped
+    if (!marks[v]) {
       q_t s_old = s->spins[v];
       q_t s_new = (s->spins[v] + step) % s->q;
 
       s->spins[v] = s_new;   // flip the vertex
-      tree_insert(&T, v);
+      //tree_insert(&T, v);
+      marks[v] = true;
 
       v_t nn = s->g->v_i[v + 1] - s->g->v_i[v];
 
@@ -63,7 +66,8 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
     }
   }
 
-  tree_freeNode(T);
+  //tree_freeNode(T);
+  free(marks);
 
   return nv;
 }
