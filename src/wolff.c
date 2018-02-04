@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   double diff = 1e31;
   count_t n_runs = 0;
 
-  meas_t *E, *clust, **M;
+  meas_t *E, *clust, **M, **sE, ***sM;
 
   M = (meas_t **)malloc(q * sizeof(meas_t *));
   for (q_t i = 0; i < q; i++) {
@@ -123,6 +123,17 @@ int main(int argc, char *argv[]) {
 
   E = calloc(1, sizeof(meas_t));
   clust = calloc(1, sizeof(meas_t));
+
+  sE = (meas_t **)malloc(q * sizeof(meas_t *));
+  sM = (meas_t ***)malloc(q * sizeof(meas_t **));
+
+  for (q_t i = 0; i < q; i++) {
+    sE[i] = (meas_t *)calloc(1, sizeof(meas_t));
+    sM[i] = (meas_t **)malloc(q * sizeof(meas_t *));
+    for (q_t j = 0; j < q; j++) {
+      sM[i][j] = (meas_t *)calloc(1, sizeof(meas_t));
+    }
+  }
 
   printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
@@ -145,8 +156,22 @@ int main(int argc, char *argv[]) {
     for (q_t i = 0; i < q; i++) {
       update_meas(M[i], s->M[i]);
     }
-
     update_meas(E, s->E);
+
+    q_t max_M_i = 0;
+    double max_M = 0;
+
+    for (q_t i = 0; i < q; i++) {
+      if (s->M[i] > max_M) {
+        max_M = s->M[i];
+        max_M_i = i;
+      }
+    }
+
+    for (q_t i = 0; i < q; i++) {
+      update_meas(sM[max_M_i][i], s->M[i]);
+    }
+    update_meas(sE[max_M_i], s->E);
 
     diff = fabs(M[0]->dc / M[0]->c);
 
@@ -180,11 +205,27 @@ int main(int argc, char *argv[]) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},\"X\"->{");
+  fprintf(outfile, "},\"\\[Chi]\"->{");
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "{%.15f,%.15f}", M[i]->c / h->nv, M[i]->dc / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
+    }
+  }
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, "},\"sE%" PRIq "\"->{%.15f,%.15f},\"C%" PRIq "\"->{%.15f,%.15f},\"M%" PRIq "\"->{", i, sE[i]->x / h->nv, sE[i]->dx / h->nv, i, sE[i]->c / h->nv, sE[i]->dc / h->nv, i);
+    for (q_t j = 0; j < q; j++) {
+      fprintf(outfile, "{%.15f,%.15f}", sM[i][j]->x / h->nv, sM[i][j]->dx / h->nv);
+      if (j != q-1) {
+        fprintf(outfile, ",");
+      }
+    }
+    fprintf(outfile, "},\"\\[Chi]%" PRIq "\"->{", i);
+    for (q_t j = 0; j < q; j++) {
+      fprintf(outfile, "{%.15f,%.15f}", sM[i][j]->c / h->nv, sM[i][j]->dc / h->nv);
+      if (j != q-1) {
+        fprintf(outfile, ",");
+      }
     }
   }
   fprintf(outfile, "},\"n\"->{%.15f,%.15f}}\n", clust->c / h->nv, clust->dc / h->nv);
@@ -195,8 +236,17 @@ int main(int argc, char *argv[]) {
   free(clust);
   for (q_t i = 0; i < q; i++) {
     free(M[i]);
+    for (q_t j = 0; j < q; j++) {
+      free(sM[i][j]);
+    }
+    free(sM[i]);
   }
   free(M);
+  free(sM);
+  for (q_t i = 0; i < q; i++) {
+    free(sE[i]);
+  }
+  free(sE);
   free(s->H_probs);
   free(s->J_probs);
   free(s->M);
