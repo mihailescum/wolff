@@ -1,10 +1,6 @@
 
 #include "wolff.h"
 
-q_t delta(q_t s0, q_t s1) {
-  return s0 == s1 ? 1 : 0;
-}
-
 v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
   q_t s0 = s->spins[v0];
   v_t nv = 0;
@@ -36,12 +32,13 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
 
         bool is_ext = (v == s->g->nv - 1 || vn == s->g->nv - 1);
 
+        q_t M_ind_0;
+        q_t M_ind_1;
+
         if (is_ext) {
-            q_t M_ind_0;
-            q_t M_ind_1;
           if (vn == s->g->nv - 1) {
-            M_ind_0 = (s_old + s->q - s->spins[s->g->nv - 1]) % s->q;
-            M_ind_1 = (s_new + s->q - s->spins[s->g->nv - 1]) % s->q;
+            M_ind_0 = (s_old + s->q - sn) % s->q;
+            M_ind_1 = (s_new + s->q - sn) % s->q;
           } else {
             M_ind_0 = (sn + s->q - s_old) % s->q;
             M_ind_1 = (sn + s->q - s_new) % s->q;
@@ -51,8 +48,10 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
           s->M[M_ind_1]++;
           s->E += - s->H[M_ind_1] + s->H[M_ind_0];
         } else {
-          prob = s->T_prob * delta(s0, sn);
-          s->E += - ((double)delta(s->spins[v], sn)) + ((double)delta(s0, sn));
+          M_ind_0 = (s_old + s->q - sn) % s->q;
+          M_ind_1 = (s_new + s->q - sn) % s->q;
+          prob = s->J_probs[M_ind_1 * s->q + M_ind_0];
+          s->E += - s->J[M_ind_1] + s->J[M_ind_0];
         }
 
         if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...

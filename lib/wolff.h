@@ -24,8 +24,9 @@ typedef struct {
   graph_t *g;
   q_t *spins;
   double T;
+  double *J;
   double *H;
-  double T_prob;
+  double *J_probs;
   double *H_probs;
   double E;
   v_t *M;
