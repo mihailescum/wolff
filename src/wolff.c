@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     }
     update_meas(sE[max_M_i], s->E);
 
-    diff = fabs(M[0]->dc / M[0]->c);
+    diff = fabs(sM[0][0]->dc / sM[0][0]->c);
 
     n_runs++;
   }
