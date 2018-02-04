@@ -19,6 +19,7 @@
 #include "convex.h"
 #include "graph.h"
 #include "tree.h"
+#include "measurement.h"
 
 typedef struct {
   graph_t *g;
@@ -33,33 +34,7 @@ typedef struct {
   q_t q;
 } ising_state_t;
 
-typedef struct {
-  uint64_t n;
-  double x;
-  double dx;
-  double x2;
-  double m2;
-  double m4;
-  double c;
-  double dc;
-} meas_t;
-
-typedef struct {
-  uint64_t n;
-  uint64_t W;
-  double *OO;
-  dll_t *Op;
-  double O;
-  double O2;
-} autocorr_t;
-
 v_t flip_cluster(ising_state_t *s, v_t v0, q_t s1, gsl_rng *r);
 
 graph_t *graph_add_ext(const graph_t *g);
-
-void update_meas(meas_t *m, double x);
-
-void update_autocorr(autocorr_t *OO, double O);
-
-double rho(autocorr_t *o, uint64_t i);
 
