@@ -184,51 +184,79 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.m", "a");
 
-  fprintf(outfile, "{\"D\"->%" PRID ",\"L\"->%" PRIL ",\"q\"->%" PRIq ",\"T\"->%.15f,\"J\"->{", D, L, q, T);
+  fprintf(outfile, "<|D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", D, L, q, T);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", J[i]);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},\"H\"->{");
+  fprintf(outfile, "},H->{");
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", H[i]);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},\"E\"->{%.15f,%.15f},\"C\"->{%.15f,%.15f},\"M\"->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
+  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "{%.15f,%.15f}", M[i]->x / h->nv, M[i]->dx / h->nv);
+    fprintf(outfile, "%.15f", M[i]->x / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},\"\\[Chi]\"->{");
+  fprintf(outfile, "},\\[Delta]M->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "{%.15f,%.15f}", M[i]->c / h->nv, M[i]->dc / h->nv);
+    fprintf(outfile, "%.15f", M[i]->dx / h->nv);
+    if (i != q-1) {
+      fprintf(outfile, ",");
+    }
+  }
+  fprintf(outfile, "},\\[Chi]->{");
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, "%.15f", M[i]->c / h->nv);
+    if (i != q-1) {
+      fprintf(outfile, ",");
+    }
+  }
+  fprintf(outfile, "},\\[Delta]\\[Chi]->{");
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, "%.15f", M[i]->dc / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "},\"sE%" PRIq "\"->{%.15f,%.15f},\"C%" PRIq "\"->{%.15f,%.15f},\"M%" PRIq "\"->{", i, sE[i]->x / h->nv, sE[i]->dx / h->nv, i, sE[i]->c / h->nv, sE[i]->dc / h->nv, i);
+    fprintf(outfile, "},Subscript[E,%" PRIq "]->%.15f,Subscript[\\[Delta]E,%" PRIq "]->%.15f,Subscript[C,%" PRIq "]->%.15f,Subscript[\\[Delta]C,%" PRIq "]->%.15f,Subscript[M,%" PRIq "]->{", i, sE[i]->x / h->nv, i, sE[i]->dx / h->nv, i, sE[i]->c / h->nv, i, sE[i]->dc / h->nv, i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "{%.15f,%.15f}", sM[i][j]->x / h->nv, sM[i][j]->dx / h->nv);
+      fprintf(outfile, "%.15f", sM[i][j]->x / h->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
     }
-    fprintf(outfile, "},\"\\[Chi]%" PRIq "\"->{", i);
+    fprintf(outfile, "},Subscript[\\[Delta]M,%" PRIq "]->{", i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "{%.15f,%.15f}", sM[i][j]->c / h->nv, sM[i][j]->dc / h->nv);
+      fprintf(outfile, "%.15f", sM[i][j]->dx / h->nv);
+      if (j != q-1) {
+        fprintf(outfile, ",");
+      }
+    }
+    fprintf(outfile, "},Subscript[\\[Chi],%" PRIq "]->{", i);
+    for (q_t j = 0; j < q; j++) {
+      fprintf(outfile, "%.15f", sM[i][j]->c / h->nv);
+      if (j != q-1) {
+        fprintf(outfile, ",");
+      }
+    }
+    fprintf(outfile, "},Subscript[\\[Delta]\\[Chi],%" PRIq "]->{", i);
+    for (q_t j = 0; j < q; j++) {
+      fprintf(outfile, "%.15f", sM[i][j]->dc / h->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
     }
   }
-  fprintf(outfile, "},\"n\"->{%.15f,%.15f}}\n", clust->c / h->nv, clust->dc / h->nv);
+  fprintf(outfile, "},n->%.15f,\\[Delta]n->%.15f|>\n", clust->c / h->nv, clust->dc / h->nv);
 
   fclose(outfile);
 
