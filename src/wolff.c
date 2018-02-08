@@ -16,12 +16,13 @@ int main(int argc, char *argv[]) {
   double eps = 0;
   bool pretend_ising = false;
   bool planar_potts = false;
+  bool silent = false;
 
   int opt;
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:Ip")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:Ips")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -60,6 +61,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'p':
       planar_potts = true;
+      break;
+    case 's':
+      silent = true;
       break;
     default:
       exit(EXIT_FAILURE);
@@ -135,9 +139,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("\n");
+  if (!silent) printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
-    printf("\033[F\033[JWOLFF: sweep %" PRIu64
+    if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
            n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
 
@@ -184,7 +188,7 @@ int main(int argc, char *argv[]) {
     n_runs++;
   }
 
-  printf("\033[F\033[JWOLFF: sweep %" PRIu64
+  if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
          n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
 
