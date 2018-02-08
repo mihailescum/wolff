@@ -158,17 +158,21 @@ int main(int argc, char *argv[]) {
     }
     update_meas(E, s->E);
 
-    int max_M_i = -1;
-    double max_M = 0;
+    q_t max_M_i = 0;
+    v_t max_M = 0;
+    q_t n_at_max = 0;
 
     for (q_t i = 0; i < q; i++) {
       if (s->M[i] > max_M) {
         max_M = s->M[i];
         max_M_i = i;
+        n_at_max = 1;
+      } else if (s->M[i] == max_M) {
+        n_at_max++;
       }
     }
 
-    if (max_M_i != -1) {
+    if (n_at_max == 1) {
       for (q_t i = 0; i < q; i++) {
         update_meas(sM[max_M_i][i], s->M[i]);
       }
