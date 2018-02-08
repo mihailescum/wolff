@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
     update_meas(E, s->E);
 
-    q_t max_M_i = 0;
+    int max_M_i = -1;
     double max_M = 0;
 
     for (q_t i = 0; i < q; i++) {
@@ -168,10 +168,12 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    for (q_t i = 0; i < q; i++) {
-      update_meas(sM[max_M_i][i], s->M[i]);
+    if (max_M_i != -1) {
+      for (q_t i = 0; i < q; i++) {
+        update_meas(sM[max_M_i][i], s->M[i]);
+      }
+      update_meas(sE[max_M_i], s->E);
     }
-    update_meas(sE[max_M_i], s->E);
 
     diff = fabs(sM[0][0]->dc / sM[0][0]->c);
 
