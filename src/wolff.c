@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     n_runs++;
   }
 
-  printf("\033[F\033[JWOLFF: sweep %" PRIu64
+  printf("WOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
          n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
 
