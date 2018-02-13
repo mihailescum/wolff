@@ -118,11 +118,13 @@ int main(int argc, char *argv[]) {
   double diff = 1e31;
   count_t n_runs = 0;
 
-  meas_t *E, *clust, **M, **sE, ***sM;
+  meas_t *E, *clust, **M, **sE, ***sM, **lifetimes;
 
   M = (meas_t **)malloc(q * sizeof(meas_t *));
+  lifetimes = (meas_t **)malloc(q * sizeof(meas_t *));
   for (q_t i = 0; i < q; i++) {
     M[i] = (meas_t *)calloc(1, sizeof(meas_t));
+    lifetimes[i] = (meas_t *)calloc(1, sizeof(meas_t));
   }
 
   E = calloc(1, sizeof(meas_t));
@@ -139,6 +141,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  count_t *freqs = (count_t *)calloc(q, sizeof(count_t));
+  count_t lifetime_n = 0;
+  q_t cur_M = 0;
+
   if (!silent) printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
@@ -147,12 +153,47 @@ int main(int argc, char *argv[]) {
 
     count_t n_flips = 0;
 
+    q_t max_M_i;
+    v_t max_M;
+    q_t n_at_max;
+
     while (n_flips / h->nv < n) {
       v_t v0 = gsl_rng_uniform_int(r, h->nv);
       q_t step = 1 + gsl_rng_uniform_int(r, q - 1);
 
       v_t tmp_flips = flip_cluster(s, v0, step, r);
       n_flips += tmp_flips;
+
+      max_M_i = 0;
+      max_M = 0;
+      n_at_max = 0;
+
+      for (q_t i = 0; i < q; i++) {
+        if (s->M[i] > max_M) {
+          max_M = s->M[i];
+          max_M_i = i;
+          n_at_max = 1;
+        } else if (s->M[i] == max_M) {
+          n_at_max++;
+        }
+      }
+
+      if (n_at_max == 1) {
+        if (max_M_i == cur_M) {
+          lifetime_n++;
+        } else {
+          if (cur_M != MAX_Q) {
+            update_meas(lifetimes[cur_M], lifetime_n);
+          }
+          lifetime_n = 0;
+          cur_M = max_M_i;
+        }
+      } else {
+        if (cur_M != MAX_Q) {
+          update_meas(lifetimes[cur_M], lifetime_n);
+          cur_M = MAX_Q;
+        }
+      }
 
       update_meas(clust, tmp_flips);
     }
@@ -162,32 +203,21 @@ int main(int argc, char *argv[]) {
     }
     update_meas(E, s->E);
 
-    q_t max_M_i = 0;
-    v_t max_M = 0;
-    q_t n_at_max = 0;
-
-    for (q_t i = 0; i < q; i++) {
-      if (s->M[i] > max_M) {
-        max_M = s->M[i];
-        max_M_i = i;
-        n_at_max = 1;
-      } else if (s->M[i] == max_M) {
-        n_at_max++;
-      }
-    }
-
     if (n_at_max == 1) {
       for (q_t i = 0; i < q; i++) {
         update_meas(sM[max_M_i][i], s->M[i]);
       }
       update_meas(sE[max_M_i], s->E);
+      freqs[max_M_i]++;
     }
 
     diff = fabs(sM[0][0]->dc / sM[0][0]->c);
 
     n_runs++;
   }
-
+  if (!silent) {
+    printf("\033[F\033[J");
+  }
   printf("WOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
          n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
@@ -266,7 +296,14 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  fprintf(outfile, "},n->%.15f,\\[Delta]n->%.15f|>\n", clust->c / h->nv, clust->dc / h->nv);
+  fprintf(outfile,"}");
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, ",Subscript[f,%" PRIq "]->%.15f,Subscript[\\[Delta]f,%" PRIq "]->%.15f", i, (double)freqs[i] / (double)n_runs, i, sqrt(freqs[i]) / (double)n_runs);
+  }
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, ",Subscript[t,%" PRIq "]->%.15f,Subscript[\\[Delta]t,%" PRIq "]->%.15f", i, lifetimes[i]->x, i, lifetimes[i]->dx);
+  }
+  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f|>\n", clust->x / h->nv, clust->dx / h->nv);
 
   fclose(outfile);
 
@@ -283,7 +320,9 @@ int main(int argc, char *argv[]) {
   free(sM);
   for (q_t i = 0; i < q; i++) {
     free(sE[i]);
+    free(lifetimes[i]);
   }
+  free(freqs);
   free(sE);
   free(s->H_probs);
   free(s->J_probs);
