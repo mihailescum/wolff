@@ -14,7 +14,7 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-target_link_libraries(wolff gsl m jst cblas fftw3 tcmalloc profiler)
+target_link_libraries(wolff gsl m cblas fftw3 tcmalloc profiler)
 #target_link_libraries(pt_wolff gsl m jst cblas tcmalloc profiler)
 
 install(TARGETS wolff DESTINATION bin)
