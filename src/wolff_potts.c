@@ -92,11 +92,12 @@ int main(int argc, char *argv[]) {
 
   s->q = q;
 
-  s->spins = (q_t *)calloc(h->nv + 1, sizeof(q_t));
+  s->spins = (q_t *)calloc(h->nv, sizeof(q_t));
 
   s->T = T;
   s->H = H;
   s->J = J;
+  s->R = (dihedral_t *)calloc(1, sizeof(dihedral_t));
 
   s->J_probs = (double *)calloc(pow(q, 2), sizeof(double));
   for (q_t i = 0; i < q; i++) {
@@ -159,7 +160,13 @@ int main(int argc, char *argv[]) {
 
     while (n_flips / h->nv < n) {
       v_t v0 = gsl_rng_uniform_int(r, h->nv);
-      q_t step = 1 + gsl_rng_uniform_int(r, q - 1);
+      q_t step;
+     
+      if (q == 2) {
+        step = 1;
+      } else {
+        step = gsl_rng_uniform_int(r, q);
+      }
 
       v_t tmp_flips = flip_cluster(s, v0, step, r);
       n_flips += tmp_flips;
@@ -322,12 +329,14 @@ int main(int argc, char *argv[]) {
     free(sE[i]);
     free(lifetimes[i]);
   }
+  free(lifetimes);
   free(freqs);
   free(sE);
   free(s->H_probs);
   free(s->J_probs);
   free(s->M);
   free(s->spins);
+  free(s->R);
   graph_free(s->g);
   free(s);
   free(H);
