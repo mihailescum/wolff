@@ -1,5 +1,7 @@
 
-#include <wolff.h>
+#include <getopt.h>
+
+#include <cluster.h>
 
 int main(int argc, char *argv[]) {
 

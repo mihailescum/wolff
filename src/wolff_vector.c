@@ -1,5 +1,7 @@
 
-#include <wolff.h>
+#include <getopt.h>
+
+#include <cluster.h>
 
 double identity(double x) {
   return x;

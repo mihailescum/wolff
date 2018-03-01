@@ -1,63 +1,72 @@
 
-#include "wolff.h"
+#include "cluster.h"
 
-v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
+v_t flip_cluster(ising_state_t *s, v_t v0, q_t rot, gsl_rng *r) {
   v_t nv = 0;
 
   ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
 
-  //node_t *T = NULL;
   bool *marks = (bool *)calloc(s->g->nv, sizeof(bool));
 
   while (stack != NULL) {
     v_t v = stack_pop(&stack);
 
-//    if (!tree_contains(T, v)) { // if the vertex hasn't already been flipped
     if (!marks[v]) {
       q_t s_old, s_new;
-      dihedral_t *R_tmp; 
+      dihedral_t *R_new; 
+      bool external_flipped;
 
-      //tree_insert(&T, v);
       marks[v] = true;
 
       if (v == s->g->nv - 1) {
-        R_tmp = dihedral_compose(s->q, step, s->R);
+        R_new = dihedral_compose(s->q, rot, s->R);
+        external_flipped = true;
       } else {
         s_old = s->spins[v];
-        s_new = dihedral_act(s->q, step, s_old); // free me! I'm a new vector
+        s_new = dihedral_act(s->q, rot, s_old);
+        external_flipped = false;
       }
 
       v_t nn = s->g->v_i[v + 1] - s->g->v_i[v];
 
       for (v_t i = 0; i < nn; i++) {
-        v_t vn = s->g->v_adj[s->g->v_i[v] + i];
         q_t sn;
-        if (vn != s->g->nv - 1) {
+        double prob;
+        bool external_neighbor = false;
+
+        v_t vn = s->g->v_adj[s->g->v_i[v] + i];
+
+        if (vn == s->g->nv - 1) {
+          external_neighbor = true;
+        } else {
           sn = s->spins[vn];
         }
-        double prob;
 
-        bool is_ext = (v == s->g->nv - 1 || vn == s->g->nv - 1);
+        if (external_flipped || external_neighbor) {
+          q_t rot_s_old, rot_s_new;
 
-        if (is_ext) {
-          q_t rs_old, rs_new;
-          if (vn == s->g->nv - 1) {
-            rs_old = dihedral_inverse_act(s->q, s->R, s_old);
-            rs_new = dihedral_inverse_act(s->q, s->R, s_new);
+          if (external_neighbor) {
+            rot_s_old = dihedral_inverse_act(s->q, s->R, s_old);
+            rot_s_new = dihedral_inverse_act(s->q, s->R, s_new);
           } else {
-            rs_old = dihedral_inverse_act(s->q, s->R, sn);
-            rs_new = dihedral_inverse_act(s->q, R_tmp, sn);
+            rot_s_old = dihedral_inverse_act(s->q, s->R, sn);
+            rot_s_new = dihedral_inverse_act(s->q, R_new, sn);
           }
-          prob = s->H_probs[rs_new * s->q + rs_old];
-          s->M[rs_old]--;
-          s->M[rs_new]++;
-          s->E += - s->H[rs_new] + s->H[rs_old];
+
+          prob = s->H_probs[rot_s_new * s->q + rot_s_old];
+
+          s->M[rot_s_old]--;
+          s->M[rot_s_new]++;
+
+          s->E += - s->H[rot_s_new] + s->H[rot_s_old];
         } else {
-          q_t M_ind_0 = (s_old + s->q - sn) % s->q;
-          q_t M_ind_1 = (s_new + s->q - sn) % s->q;
-          prob = s->J_probs[M_ind_1 * s->q + M_ind_0];
-          s->E += - s->J[M_ind_1] + s->J[M_ind_0];
+          q_t diff_old = (s_old + s->q - sn) % s->q;
+          q_t diff_new = (s_new + s->q - sn) % s->q;
+
+          prob = s->J_probs[diff_new * s->q + diff_old];
+
+          s->E += - s->J[diff_new] + s->J[diff_old];
         }
 
         if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
@@ -65,9 +74,9 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
         }
       }
 
-      if (v == s->g->nv - 1) {
+      if (external_flipped) {
         free(s->R);
-        s->R = R_tmp;
+        s->R = R_new;
       } else {
         s->spins[v] = s_new;
       }
@@ -78,7 +87,6 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t step, gsl_rng *r) {
     }
   }
 
-  //tree_freeNode(T);
   free(marks);
 
   return nv;

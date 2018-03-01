@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <fftw3.h>
 #include <float.h>
-#include <getopt.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 #include <inttypes.h>
