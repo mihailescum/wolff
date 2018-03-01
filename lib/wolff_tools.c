@@ -131,7 +131,7 @@ v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
             rs_old = vector_rotate_inverse(s->n, s->R, sn);
             rs_new = vector_rotate_inverse(s->n, R_tmp, sn);
           }
-          double dE = s->H(rs_old) - s->H(rs_new);
+          double dE = s->H(s->n, s->H_info, rs_old) - s->H(s->n, s->H_info, rs_new);
           prob = 1.0 - exp(-dE / s->T);
           vector_subtract(s->n, s->M, rs_old);
           vector_add(s->n, s->M, rs_new);

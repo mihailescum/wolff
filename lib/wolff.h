@@ -42,7 +42,8 @@ typedef struct {
   double *spins;
   double T;
   double (*J)(double);
-  double (*H)(double *);
+  double (*H)(q_t, double *, double *);
+  double *H_info;
   double *R;
   double E;
   double *M;

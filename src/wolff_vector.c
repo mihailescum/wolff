@@ -5,12 +5,32 @@ double identity(double x) {
   return x;
 }
 
-double zero(double *x) {
+double zero(q_t n, double *H, double *x) {
   return 0.0;
 }
 
-double test(double *x) {
-  return -x[1];
+double dot(q_t n, double *H, double *x) {
+  double total = 0;
+  for (q_t i = 0; i < n; i++) {
+    total += H[i] * x[i];
+  }
+  return total;
+}
+
+double theta(double x, double y) {
+  double val = atan(y / x);
+
+  if (x < 0.0 && y > 0.0) {
+    return M_PI + val;
+  } else if ( x < 0.0 && y < 0.0 ) {
+    return - M_PI + val;
+  } else {
+    return val;
+  }
+}
+
+double modulated(q_t n, double *H_info, double *x) {
+  return H_info[0] * cos(H_info[1] * theta(x[0], x[1]));
 }
 
 int main(int argc, char *argv[]) {
@@ -83,8 +103,9 @@ int main(int argc, char *argv[]) {
     s->spins[q * i] = 1.0;
   }
 
+  s->H_info = H;
   s->T = T;
-  s->H = test;
+  s->H = dot;
   s->J = identity;
 
   s->R = (double *)calloc(q * q, sizeof(double));
@@ -95,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   s->M = (double *)calloc(q, sizeof(double));
   s->M[0] = 1.0 * (double)h->nv;
-  s->E = - ((double)h->ne) * s->J(1.0) - s->H(s->M);
+  s->E = - ((double)h->ne) * s->J(1.0) - s->H(s->n, s->H_info, s->M);
 
   printf("%g %g\n", s->E, s->M[0]);
 
