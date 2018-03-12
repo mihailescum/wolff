@@ -19,12 +19,14 @@ int main(int argc, char *argv[]) {
   bool pretend_ising = false;
   bool planar_potts = false;
   bool silent = false;
+  bool snapshots = false;
+  bool snapshot = false;
 
   int opt;
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:Ips")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSP")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -66,6 +68,12 @@ int main(int argc, char *argv[]) {
       break;
     case 's':
       silent = true;
+      break;
+    case 'S':
+      snapshots = true;
+      break;
+    case 'P':
+      snapshot = true;
       break;
     default:
       exit(EXIT_FAILURE);
@@ -205,6 +213,26 @@ int main(int argc, char *argv[]) {
       }
 
       update_meas(clust, tmp_flips);
+
+      if (snapshots) {
+        FILE *snapfile = fopen("snapshots.m", "a");
+        fprintf(snapfile, "{{");
+        for (L_t i = 0; i < L; i++) {
+          fprintf(snapfile, "{");
+          for (L_t j = 0; j < L; j++) {
+            fprintf(snapfile, "%" PRIq, dihedral_inverse_act(q, s->R, s->spins[L * i + j]));
+            if (j != L - 1) {
+              fprintf(snapfile, ",");
+            }
+          }
+          fprintf(snapfile, "}");
+          if (i != L - 1) {
+            fprintf(snapfile, ",");
+          }
+        }
+        fprintf(snapfile, "},{%" PRIq ",%d}} ", s->R->i, s->R->r);
+        fclose(snapfile);
+      }
     }
 
     for (q_t i = 0; i < q; i++) {
@@ -230,6 +258,31 @@ int main(int argc, char *argv[]) {
   printf("WOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
          n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
+
+  if (snapshots) {
+    FILE *snapfile = fopen("snapshots.m", "a");
+    fprintf(snapfile, "\n");
+  }
+
+  if (snapshot) {
+    FILE *snapfile = fopen("snapshot.m", "a");
+    fprintf(snapfile, "{{");
+    for (L_t i = 0; i < L; i++) {
+      fprintf(snapfile, "{");
+      for (L_t j = 0; j < L; j++) {
+        fprintf(snapfile, "%" PRIq, dihedral_inverse_act(q, s->R, s->spins[L * i + j]));
+        if (j != L - 1) {
+          fprintf(snapfile, ",");
+        }
+      }
+      fprintf(snapfile, "}");
+      if (i != L - 1) {
+        fprintf(snapfile, ",");
+      }
+    }
+    fprintf(snapfile, "},{%" PRIq ",%d}}\n", s->R->i, s->R->r);
+    fclose(snapfile);
+  }
 
   FILE *outfile = fopen("out.m", "a");
 
