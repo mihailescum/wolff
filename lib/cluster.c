@@ -180,3 +180,92 @@ v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
   return nv;
 }
 
+/*G
+template <class R_t, class X_t>
+v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t *r, gsl_rng *rand) {
+  v_t nv = 0;
+
+  ll_t *stack = NULL;     // create a new stack
+  stack_push(&stack, v0); // push the initial vertex to the stack
+
+  bool *marks = (bool *)calloc(state->g->nv, sizeof(bool));
+
+  while (stack != NULL) {
+    v_t v = stack_pop(&stack);
+
+    if (!marks[v]) {
+      X_t *si_old, *si_new;
+      R_t *s0_old, *s0_new;
+
+      si_old = state->s[v];
+      s0_old = state->s0;
+
+      marks[v] = true;
+
+      if (v == state->g->nv - 1) {
+        s0_new = act <R_t, R_t> (r, s0_old);
+      } else {
+        si_new = act <R_t, X_t> (r, si_old);
+      }
+
+      v_t nn = state->g->v_i[v + 1] - state->g->v_i[v];
+
+      for (v_t i = 0; i < nn; i++) {
+        v_t vn = state->g->v_adj[state->g->v_i[v] + i];
+
+        X_t *sj;
+
+        if (vn != state->g->nv - 1) {
+          sj = state->s[vn];
+        }
+
+        double prob;
+
+        bool is_ext = (v == state->g->nv - 1 || vn == state->g->nv - 1);
+
+        if (is_ext) {
+          X_t *rs_old, *rs_new;
+          if (vn == state->g->nv - 1) {
+            rs_old = inverse_act <class R_t, class X_t> (s0_old, si_old);
+            rs_new = inverse_act <class R_t, class X_t> (s0_old, si_new);
+          } else {
+            rs_old = inverse_act <class R_t, class X_t> (s0_old, sj);
+            rs_new = inverse_act <class R_t, class X_t> (s0_new, sj);
+          }
+          double dE = state->B(rs_old) - state->B(rs_new);
+          prob = 1.0 - exp(-dE / state->T);
+          update_magnetization <X_t> (state->M, rs_old, rs_new);
+          state->E += dE;
+
+          free_X <X_t> (rs_old);
+          free_X <X_t> (rs_new);
+        } else {
+          double dE = state->Z(si_old, sj) - state->Z(si_new, sj);
+          prob = 1.0 - exp(-dE / state->T);
+          state->E += dE;
+        }
+
+        if (gsl_rng_uniform(rand) < prob) { // and with probability...
+          stack_push(&stack, vn); // push the neighboring vertex to the stack
+        }
+      }
+
+      if (v == state->g->nv - 1) {
+        free_R <R_t> (state->s0);
+        state->s0 = s0_new;
+      } else {
+        free_X <X_t> (state->s[v]);
+        state->s[v] = si_new;
+      }
+
+      if (v != state->g->nv - 1) { // count the number of non-external sites that flip
+        nv++;
+      }
+    }
+  }
+
+  free(marks);
+
+  return nv;
+}
+*/
