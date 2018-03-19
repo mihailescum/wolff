@@ -21,12 +21,15 @@ int main(int argc, char *argv[]) {
   bool silent = false;
   bool snapshots = false;
   bool snapshot = false;
+  bool record_autocorrelation = false;
+  count_t W = 10;
+  count_t ac_skip = 1;
 
   int opt;
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSP")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -74,6 +77,15 @@ int main(int argc, char *argv[]) {
       break;
     case 'P':
       snapshot = true;
+      break;
+    case 'a':
+      record_autocorrelation = true;
+      break;
+    case 'k':
+      ac_skip = (count_t)atof(optarg);
+      break;
+    case 'W':
+      W = (count_t)atof(optarg);
       break;
     default:
       exit(EXIT_FAILURE);
@@ -128,6 +140,7 @@ int main(int argc, char *argv[]) {
 
   double diff = 1e31;
   count_t n_runs = 0;
+  count_t n_steps = 0;
 
   meas_t *E, *clust, **M, **sE, ***sM, **lifetimes;
 
@@ -155,6 +168,13 @@ int main(int argc, char *argv[]) {
   count_t *freqs = (count_t *)calloc(q, sizeof(count_t));
   count_t lifetime_n = 0;
   q_t cur_M = 0;
+
+  autocorr_t *autocorr;
+  if (record_autocorrelation) {
+    autocorr = (autocorr_t *)calloc(1, sizeof(autocorr_t));
+    autocorr->W = 2 * W + 1;
+    autocorr->OO = (double *)calloc(2 * W + 1, sizeof(double));
+  }
 
   if (!silent) printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
@@ -212,26 +232,15 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      update_meas(clust, tmp_flips);
+      if (n_runs > 0) {
+        n_steps++;
+        update_meas(clust, (double)tmp_flips);
+      }
 
-      if (snapshots) {
-        FILE *snapfile = fopen("snapshots.m", "a");
-        fprintf(snapfile, "{{");
-        for (L_t i = 0; i < L; i++) {
-          fprintf(snapfile, "{");
-          for (L_t j = 0; j < L; j++) {
-            fprintf(snapfile, "%" PRIq, dihedral_inverse_act(q, s->R, s->spins[L * i + j]));
-            if (j != L - 1) {
-              fprintf(snapfile, ",");
-            }
-          }
-          fprintf(snapfile, "}");
-          if (i != L - 1) {
-            fprintf(snapfile, ",");
-          }
+      if (record_autocorrelation && n_runs > 0) {
+        if (n_steps % ac_skip == 0) {
+          update_autocorr(autocorr, s->E);
         }
-        fprintf(snapfile, "},{%" PRIq ",%d}} ", s->R->i, s->R->r);
-        fclose(snapfile);
       }
     }
 
@@ -282,6 +291,56 @@ int main(int argc, char *argv[]) {
     }
     fprintf(snapfile, "},{%" PRIq ",%d}}\n", s->R->i, s->R->r);
     fclose(snapfile);
+  }
+
+  double tau = 0;
+  bool tau_failed = false;
+
+  if (record_autocorrelation) {
+    double *Gammas = (double *)malloc((W + 1) * sizeof(double));
+
+    Gammas[0] = 1 + rho(autocorr, 0);
+    for (uint64_t i = 0; i < W; i++) {
+      Gammas[1 + i] = rho(autocorr, 2 * i + 1) + rho(autocorr, 2 * i + 2);
+    } 
+
+    uint64_t n;
+    for (n = 0; n < W + 1; n++) {
+      if (Gammas[n] <= 0) {
+        break;
+      }
+    }
+
+    if (n == W + 1) {
+      printf("WARNING: correlation function never hit the noise floor.\n");
+      tau_failed = true;
+    }
+
+    if (n < 2) {
+      printf("WARNING: correlation function only has one nonnegative term.\n");
+      tau_failed = true;
+    }
+
+    double *conv_Gamma = get_convex_minorant(n, Gammas);
+
+    double ttau = - 0.5;
+
+    for (uint64_t i = 0; i < n + 1; i++) {
+      ttau += conv_Gamma[i];
+    }
+    
+    free(Gammas);
+    free(autocorr->OO);
+    while (autocorr->Op != NULL) {
+      stack_pop_d(&(autocorr->Op));
+    }
+    free(autocorr);
+    
+    tau = ttau * ac_skip * clust->x / h->nv;
+  }
+
+  if (tau_failed) {
+    tau = 0;
   }
 
   FILE *outfile = fopen("out.m", "a");
@@ -365,7 +424,7 @@ int main(int argc, char *argv[]) {
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, ",Subscript[t,%" PRIq "]->%.15f,Subscript[\\[Delta]t,%" PRIq "]->%.15f", i, lifetimes[i]->x, i, lifetimes[i]->dx);
   }
-  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f|>\n", clust->x / h->nv, clust->dx / h->nv);
+  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[tau]->%.15f|>\n", clust->x / h->nv, clust->dx / h->nv, clust->c / h->nv, clust->dc / h->nv,tau);
 
   fclose(outfile);
 
