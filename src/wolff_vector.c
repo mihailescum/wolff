@@ -136,9 +136,10 @@ int main(int argc, char *argv[]) {
   count_t n_runs = 0;
   count_t n_steps = 0;
 
-  meas_t *E, *clust, **M;
+  meas_t *E, *clust, **M, *aM;
 
   M = (meas_t **)malloc(q * sizeof(meas_t *));
+  aM = (meas_t *)calloc(q, sizeof(meas_t ));
   for (q_t i = 0; i < q; i++) {
     M[i] = (meas_t *)calloc(1, sizeof(meas_t));
   }
@@ -157,7 +158,7 @@ int main(int argc, char *argv[]) {
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-           n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
+           n_runs, fabs(E->dx / E->x), aM->dx / aM->x, E->dc / E->c, aM->dc / aM->c, h->nv / clust->x);
 
     count_t n_flips = 0;
 
@@ -181,12 +182,15 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    double aM_val = 0;
     for (q_t i = 0; i < q; i++) {
       update_meas(M[i], s->M[i]);
+      aM_val += s->M[i] * s->M[i];
     }
+    update_meas(aM, sqrt(aM_val));
     update_meas(E, s->E);
 
-    diff = fabs(E->dc / E->c);
+    diff = fabs(aM->dc / aM->c);
 
     n_runs++;
   }
@@ -250,7 +254,7 @@ int main(int argc, char *argv[]) {
   FILE *outfile = fopen("out.m", "a");
 
   fprintf(outfile, "<|D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f", D, L, q, T);
-  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
+  fprintf(outfile, ",E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", M[i]->x / h->nv);
     if (i != q-1) {
@@ -278,7 +282,7 @@ int main(int argc, char *argv[]) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[tau]->%.15f|>\n", clust->x / h->nv, clust->dx / h->nv, clust->c / h->nv, clust->dc / h->nv,tau);
+  fprintf(outfile, "},aM->%.15f,\\[Delta]aM->%.15f,a\\[Chi]->%.15f,\\[Delta]a\\[Chi]->%.15f,Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f|>\n", aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, clust->x / h->nv, clust->dx / h->nv, clust->c / h->nv, clust->dc / h->nv,tau);
 
   fclose(outfile);
 
