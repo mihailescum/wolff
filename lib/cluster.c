@@ -92,6 +92,93 @@ v_t flip_cluster(ising_state_t *s, v_t v0, q_t rot, gsl_rng *r) {
   return nv;
 }
 
+v_t flip_cluster_dgm(dgm_state_t *s, v_t v0, h_t rot, gsl_rng *r) {
+  v_t nv = 0;
+
+  ll_t *stack = NULL;     // create a new stack
+  stack_push(&stack, v0); // push the initial vertex to the stack
+
+  bool *marks = (bool *)calloc(s->g->nv, sizeof(bool));
+
+  while (stack != NULL) {
+    v_t v = stack_pop(&stack);
+
+    if (!marks[v]) {
+      h_t s_old, s_new;
+      dihinf_t *R_new; 
+      bool external_flipped;
+
+      marks[v] = true;
+
+      if (v == s->g->nv - 1) {
+        R_new = dihinf_compose(rot, s->R);
+        external_flipped = true;
+      } else {
+        s_old = s->spins[v];
+        s_new = dihinf_act(rot, s_old);
+        external_flipped = false;
+      }
+
+      v_t nn = s->g->v_i[v + 1] - s->g->v_i[v];
+
+      for (v_t i = 0; i < nn; i++) {
+        h_t sn;
+        double prob;
+        bool external_neighbor = false;
+
+        v_t vn = s->g->v_adj[s->g->v_i[v] + i];
+
+        if (vn == s->g->nv - 1) {
+          external_neighbor = true;
+        } else {
+          sn = s->spins[vn];
+        }
+
+        if (external_flipped || external_neighbor) {
+          h_t rot_s_old, rot_s_new;
+
+          if (external_neighbor) {
+            rot_s_old = dihinf_inverse_act(s->R, s_old);
+            rot_s_new = dihinf_inverse_act(s->R, s_new);
+          } else {
+            rot_s_old = dihinf_inverse_act(s->R, sn);
+            rot_s_new = dihinf_inverse_act(R_new, sn);
+          }
+
+          double dE = s->H(s->H_info, rot_s_old) - s->H(s->H_info, rot_s_new);
+          prob = 1.0 - exp(-dE / s->T);
+
+          s->M += rot_s_new - rot_s_old;
+          s->E += dE;
+        } else {
+          double dE = (s->J)(s_old - sn) - (s->J)(s_new - sn);
+          prob = 1.0 - exp(-dE / s->T);
+          s->E += dE;
+        }
+
+        if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
+          stack_push(&stack, vn); // push the neighboring vertex to the stack
+        }
+      }
+
+      if (external_flipped) {
+        free(s->R);
+        s->R = R_new;
+      } else {
+        s->spins[v] = s_new;
+      }
+
+      if (v != s->g->nv - 1) { // count the number of non-external sites that flip
+        nv++;
+      }
+    }
+  }
+
+  free(marks);
+
+  return nv;
+}
+
 v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
   v_t nv = 0;
 

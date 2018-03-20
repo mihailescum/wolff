@@ -21,6 +21,7 @@
 #include "measurement.h"
 #include "orthogonal.h"
 #include "dihedral.h"
+#include "dihinf.h"
 
 typedef struct {
   graph_t *g;
@@ -38,6 +39,18 @@ typedef struct {
 
 typedef struct {
   graph_t *g;
+  h_t *spins;
+  double T;
+  double (*J)(h_t);
+  double (*H)(double *, h_t);
+  double *H_info;
+  dihinf_t *R;
+  double E;
+  h_t M;
+} dgm_state_t;
+
+typedef struct {
+  graph_t *g;
   double *spins;
   double T;
   double (*J)(double);
@@ -52,6 +65,8 @@ typedef struct {
 v_t flip_cluster(ising_state_t *s, v_t v0, q_t s1, gsl_rng *r);
 
 v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r);
+
+v_t flip_cluster_dgm(dgm_state_t *s, v_t v0, h_t rot, gsl_rng *r);
 
 graph_t *graph_add_ext(const graph_t *g);
 

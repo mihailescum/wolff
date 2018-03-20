@@ -10,6 +10,7 @@ link_directories(~/.local/lib)
 file(GLOB SOURCES lib/*.c)
 add_executable(wolff_potts src/wolff_potts.c ${SOURCES})
 add_executable(wolff_vector src/wolff_vector.c ${SOURCES})
+add_executable(wolff_dgm src/wolff_dgm.c ${SOURCES})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -19,6 +20,7 @@ endif()
 
 target_link_libraries(wolff_potts gsl m cblas fftw3)
 target_link_libraries(wolff_vector gsl m cblas fftw3)
+target_link_libraries(wolff_dgm gsl m cblas fftw3)
 
-install(TARGETS wolff_potts wolff_vector DESTINATION bin)
+install(TARGETS wolff_potts wolff_vector wolff_dgm DESTINATION bin)
 

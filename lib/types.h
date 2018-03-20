@@ -8,16 +8,18 @@ typedef uint_fast16_t L_t;
 typedef uint_fast64_t count_t;
 typedef int_fast64_t h_t;
 
-#define MAX_v INT_FAST32_MAX
-#define MAX_Q INT_FAST8_MAX
-#define MAX_D INT_FAST8_MAX
-#define MAX_L INT_FAST16_MAX
-#define MAX_COUNT INT_FAST64_MAX
+#define MAX_v UINT_FAST32_MAX
+#define MAX_Q UINT_FAST8_MAX
+#define MAX_D UINT_FAST8_MAX
+#define MAX_L UINT_FAST16_MAX
+#define MAX_COUNT UINT_FAST64_MAX
+#define MAX_H INT_FAST64_MAX
+#define MIN_H INT_FAST64_MIN
 
 #define PRIv PRIuFAST32
 #define PRIq PRIuFAST8
 #define PRID PRIuFAST8
 #define PRIL PRIuFAST16
 #define PRIcount PRIuFAST64
-#define PRIh PRIFAST64
+#define PRIh PRIdFAST64
 
