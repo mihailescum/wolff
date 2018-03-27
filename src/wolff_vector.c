@@ -253,8 +253,14 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.m", "a");
 
-  fprintf(outfile, "<|D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f", D, L, q, T);
-  fprintf(outfile, ",E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
+  fprintf(outfile, "<|D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,H->{", D, L, q, T);
+  for (q_t i = 0; i < q; i++) {
+    fprintf(outfile, "%.15f", H[i]);
+    if (i != q-1) {
+      fprintf(outfile, ",");
+    }
+  }
+  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", M[i]->x / h->nv);
     if (i != q-1) {
