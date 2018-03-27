@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.m", "a");
 
-  fprintf(outfile, "<|D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", D, L, q, T);
+  fprintf(outfile, "<|N->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", N, D, L, q, T);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", J[i]);
     if (i != q-1) {
