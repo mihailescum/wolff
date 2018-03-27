@@ -2,24 +2,28 @@
 #include "orthogonal.h"
 
 void vector_replace(q_t n, double *v1, const double *v2) {
+  // writes vector v2 of length n to memory located at v1
   for (q_t i = 0; i < n; i++) {
     v1[i] = v2[i];
   }
 }
 
 void vector_add(q_t n, double *v1, const double *v2) {
+  // adds vector v2 of length n to vector v1
   for (q_t i = 0; i < n; i++) {
     v1[i] += v2[i];
   }
 }
 
 void vector_subtract(q_t n, double *v1, const double *v2) {
+  // subtracts vector v2 of length n from vector v1
   for (q_t i = 0; i < n; i++) {
     v1[i] -= v2[i];
   }
 }
 
-double *vector_rotate(q_t n, double *rot, double *vec) {
+double *vector_rotate(q_t n, const double *rot, const double *vec) {
+  // multiplies n by n rotation matrix rot to vector vec
   double *rot_vec = (double *)malloc(n * sizeof(double));
 
   double prod = 0.0;
@@ -46,7 +50,7 @@ double *vector_rotate_inverse(q_t n, const double *rot, const double *vec) {
   return rot_vec;
 }
 
-double vector_dot(q_t n, double *v1, double *v2) {
+double vector_dot(q_t n, const double *v1, const double *v2) {
   double dot = 0;
 
   for (q_t i = 0; i < n; i++) {
@@ -56,7 +60,7 @@ double vector_dot(q_t n, double *v1, double *v2) {
   return dot;
 }
 
-double *orthogonal_rotate(q_t n, double *r, double *m) {
+double *orthogonal_rotate(q_t n, const double *r, const double *m) {
   double *mul = (double *)calloc(n * n, sizeof(double));
 
   for (q_t i = 0; i < n; i++) {

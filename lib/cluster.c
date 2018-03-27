@@ -193,7 +193,12 @@ v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
 
 //    if (!tree_contains(T, v)) { // if the vertex hasn't already been flipped
     if (!marks[v]) {
+      bool v_is_external = false;
       double *s_old, *s_new, *R_tmp; 
+
+      if (v == s->g->nv - 1) {
+        v_is_external = true;
+      }
 
       //tree_insert(&T, v);
       marks[v] = true;
@@ -209,17 +214,24 @@ v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
 
       for (v_t i = 0; i < nn; i++) {
         v_t vn = s->g->v_adj[s->g->v_i[v] + i];
+
+        bool vn_is_external = false;
+
+        if (vn == s->g->nv - 1) {
+          vn_is_external = true;
+        }
+
         double *sn;
-        if (vn != s->g->nv - 1) {
+
+        if (!vn_is_external) {
           sn = &(s->spins[s->n * vn]);
         }
+
         double prob;
 
-        bool is_ext = (v == s->g->nv - 1 || vn == s->g->nv - 1);
-
-        if (is_ext) {
+        if (v_is_external || vn_is_external) {
           double *rs_old, *rs_new;
-          if (vn == s->g->nv - 1) {
+          if (vn_is_external) {
             rs_old = vector_rotate_inverse(s->n, s->R, s_old);
             rs_new = vector_rotate_inverse(s->n, s->R, s_new);
           } else {
@@ -237,8 +249,6 @@ v_t flip_cluster_vector(vector_state_t *s, v_t v0, double *rot, gsl_rng *r) {
         } else {
           double dE = (s->J)(vector_dot(s->n, sn, s_old)) - (s->J)(vector_dot(s->n, sn, s_new));
           prob = 1.0 - exp(-dE / s->T);
-          //printf("(%g %g) (%g %g) (%g %g) %g\n", s_old[0], s_old[1], s_new[0], s_new[1], sn[0], sn[1], dE);
-          //getchar();
           s->E += dE;
         }
 

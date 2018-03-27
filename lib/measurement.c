@@ -2,10 +2,10 @@
 #include "measurement.h"
 
 double add_to_avg(double mx, double x, count_t n) {
-  return mx * (n / (n + 1.0)) + x * 1.0 / (n + 1.0);
+  return mx * (n / (n + 1.0)) + x / (n + 1.0);
 }
 
-void update_meas(meas_t *m, double x) {
+void meas_update(meas_t *m, double x) {
   count_t n = m->n;
 
   m->x = add_to_avg(m->x, x, n);
@@ -14,14 +14,28 @@ void update_meas(meas_t *m, double x) {
   m->m2 = add_to_avg(m->m2, pow(x - m->x, 2), n);
   m->m4 = add_to_avg(m->m4, pow(x - m->x, 4), n);
 
+  /*
   if (n > 1) {
     double s2 = n / (n - 1.) * (m->x2 - pow(m->x, 2));
     m->dx = sqrt(s2 / n);
     m->c = s2;
     m->dc = sqrt((m->m4 - (n - 3.)/(n - 1.) * pow(m->m2, 2)) / n);
   }
+  */
 
   (m->n)++;
+}
+
+double meas_dx(const meas_t *m) {
+  return sqrt(1. / (m->n - 1.) * (m->x2 - pow(m->x, 2)));
+}
+
+double meas_c(const meas_t *m) {
+  return m->n / (m->n - 1.) * (m->x2 - pow(m->x, 2));
+}
+
+double meas_dc(const meas_t *m) {
+  return sqrt((m->m4 - (m->n - 3.)/(m->n - 1.) * pow(m->m2, 2)) / m->n);
 }
 
 void update_autocorr(autocorr_t *OO, double O) {
@@ -56,7 +70,7 @@ void update_autocorr(autocorr_t *OO, double O) {
   OO->n++;
 }
 
-double rho(autocorr_t *o, count_t i) {
+double rho(const autocorr_t *o, count_t i) {
   return (o->OO[i] - pow(o->O, 2)) / (o->O2 - pow(o->O, 2));
 }
 

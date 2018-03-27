@@ -8,12 +8,9 @@
 typedef struct {
   uint64_t n;
   double x;
-  double dx;
   double x2;
   double m2;
   double m4;
-  double c;
-  double dc;
 } meas_t;
 
 typedef struct {
@@ -25,9 +22,15 @@ typedef struct {
   double O2;
 } autocorr_t;
 
-void update_meas(meas_t *m, double x);
+void meas_update(meas_t *m, double x);
+
+double meas_dx(const meas_t *m);
+
+double meas_c(const meas_t *m);
+
+double meas_dc(const meas_t *m);
 
 void update_autocorr(autocorr_t *OO, double O);
 
-double rho(autocorr_t *o, uint64_t i);
+double rho(const autocorr_t *o, uint64_t i);
 

@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-           n_runs, fabs(E->dx / E->x), aM->dx / aM->x, E->dc / E->c, aM->dc / aM->c, h->nv / clust->x);
+           n_runs, fabs(meas_dx(E) / E->x), meas_dx(aM) / aM->x, meas_dc(E) / meas_c(E), meas_dc(aM) / meas_c(aM), h->nv / clust->x);
 
     count_t n_flips = 0;
 
@@ -172,34 +172,35 @@ int main(int argc, char *argv[]) {
 
       if (n_runs > 0) {
         n_steps++;
-        update_meas(clust, tmp_flips);
-      }
+        meas_update(clust, tmp_flips);
 
-      if (record_autocorrelation && n_runs > 0) {
-        if (n_steps % ac_skip == 0) {
+        if (record_autocorrelation && n_steps % ac_skip == 0) {
           update_autocorr(autocorr, s->E);
         }
       }
     }
 
     double aM_val = 0;
+
     for (q_t i = 0; i < q; i++) {
-      update_meas(M[i], s->M[i]);
+      meas_update(M[i], s->M[i]);
       aM_val += s->M[i] * s->M[i];
     }
-    update_meas(aM, sqrt(aM_val));
-    update_meas(E, s->E);
 
-    diff = fabs(aM->dc / aM->c);
+    meas_update(aM, sqrt(aM_val));
+    meas_update(E, s->E);
+
+    diff = fabs(meas_dc(aM) / meas_c(aM));
 
     n_runs++;
   }
+
   if (!silent) {
     printf("\033[F\033[J");
   }
   printf("WOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-         n_runs, fabs(E->dx / E->x), M[0]->dx / M[0]->x, E->dc / E->c, M[0]->dc / M[0]->c, h->nv / clust->x);
+         n_runs, fabs(meas_dx(E) / E->x), meas_dx(M[0]) / M[0]->x, meas_dc(E) / meas_c(E), meas_dc(M[0]) / meas_c(M[0]), h->nv / clust->x);
 
   double tau = 0;
   bool tau_failed = false;
@@ -260,7 +261,7 @@ int main(int argc, char *argv[]) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, E->dx / h->nv, E->c / h->nv, E->dc / h->nv);
+  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, meas_dx(E) / h->nv, meas_c(E) / h->nv, meas_dc(E) / h->nv);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", M[i]->x / h->nv);
     if (i != q-1) {
@@ -269,26 +270,26 @@ int main(int argc, char *argv[]) {
   }
   fprintf(outfile, "},\\[Delta]M->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", M[i]->dx / h->nv);
+    fprintf(outfile, "%.15f", meas_dx(M[i]) / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},\\[Chi]->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", M[i]->c / h->nv);
+    fprintf(outfile, "%.15f", meas_c(M[i]) / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},\\[Delta]\\[Chi]->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", M[i]->dc / h->nv);
+    fprintf(outfile, "%.15f", meas_dc(M[i]) / h->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},aM->%.15f,\\[Delta]aM->%.15f,a\\[Chi]->%.15f,\\[Delta]a\\[Chi]->%.15f,Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f|>\n", aM->x / h->nv, aM->dx / h->nv, aM->c / h->nv, aM->dc / h->nv, clust->x / h->nv, clust->dx / h->nv, clust->c / h->nv, clust->dc / h->nv,tau);
+  fprintf(outfile, "},aM->%.15f,\\[Delta]aM->%.15f,a\\[Chi]->%.15f,\\[Delta]a\\[Chi]->%.15f,Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f|>\n", aM->x / h->nv, meas_dx(aM) / h->nv, meas_c(aM) / h->nv, meas_dc(aM) / h->nv, clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau);
 
   fclose(outfile);
 
