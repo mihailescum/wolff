@@ -142,13 +142,11 @@ int main(int argc, char *argv[]) {
   count_t n_runs = 0;
   count_t n_steps = 0;
 
-  meas_t *E, *clust, **M, **sE, ***sM, **lifetimes;
+  meas_t *E, *clust, **M, **sE, ***sM;
 
   M = (meas_t **)malloc(q * sizeof(meas_t *));
-  lifetimes = (meas_t **)malloc(q * sizeof(meas_t *));
   for (q_t i = 0; i < q; i++) {
     M[i] = (meas_t *)calloc(1, sizeof(meas_t));
-    lifetimes[i] = (meas_t *)calloc(1, sizeof(meas_t));
   }
 
   E = calloc(1, sizeof(meas_t));
@@ -166,7 +164,6 @@ int main(int argc, char *argv[]) {
   }
 
   count_t *freqs = (count_t *)calloc(q, sizeof(count_t));
-  count_t lifetime_n = 0;
   q_t cur_M = 0;
 
   autocorr_t *autocorr;
@@ -184,10 +181,6 @@ int main(int argc, char *argv[]) {
 
     count_t n_flips = 0;
 
-    q_t max_M_i;
-    v_t max_M;
-    q_t n_at_max;
-
     while (n_flips / h->nv < n) {
       v_t v0 = gsl_rng_uniform_int(r, h->nv);
       q_t step;
@@ -201,53 +194,35 @@ int main(int argc, char *argv[]) {
       v_t tmp_flips = flip_cluster(s, v0, step, r);
       n_flips += tmp_flips;
 
-      max_M_i = 0;
-      max_M = 0;
-      n_at_max = 0;
-
-      for (q_t i = 0; i < q; i++) {
-        if (s->M[i] > max_M) {
-          max_M = s->M[i];
-          max_M_i = i;
-          n_at_max = 1;
-        } else if (s->M[i] == max_M) {
-          n_at_max++;
-        }
-      }
-
-      if (n_at_max == 1) {
-        if (max_M_i == cur_M) {
-          lifetime_n++;
-        } else {
-          if (cur_M != MAX_Q) {
-            meas_update(lifetimes[cur_M], lifetime_n);
-          }
-          lifetime_n = 0;
-          cur_M = max_M_i;
-        }
-      } else {
-        if (cur_M != MAX_Q) {
-          meas_update(lifetimes[cur_M], lifetime_n);
-          cur_M = MAX_Q;
-        }
-      }
-
       if (n_runs > 0) {
         n_steps++;
-        meas_update(clust, (double)tmp_flips);
-      }
+        meas_update(clust, tmp_flips);
 
-      if (record_autocorrelation && n_runs > 0) {
-        if (n_steps % ac_skip == 0) {
+        if (record_autocorrelation && n_steps % ac_skip == 0) {
           update_autocorr(autocorr, s->E);
         }
       }
+
     }
 
     for (q_t i = 0; i < q; i++) {
       meas_update(M[i], s->M[i]);
     }
     meas_update(E, s->E);
+
+    q_t n_at_max = 0;
+    q_t max_M_i = 0;
+    v_t max_M = 0;
+
+    for (q_t i = 0; i < q; i++) {
+      if (s->M[i] > max_M) {
+        n_at_max = 1;
+        max_M_i = i;
+        max_M = s->M[i];
+      } else if (s->M[i] == max_M) {
+        n_at_max++;
+      }
+    }
 
     if (n_at_max == 1) {
       for (q_t i = 0; i < q; i++) {
@@ -421,9 +396,6 @@ int main(int argc, char *argv[]) {
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, ",Subscript[f,%" PRIq "]->%.15f,Subscript[\\[Delta]f,%" PRIq "]->%.15f", i, (double)freqs[i] / (double)n_runs, i, sqrt(freqs[i]) / (double)n_runs);
   }
-  for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, ",Subscript[t,%" PRIq "]->%.15f,Subscript[\\[Delta]t,%" PRIq "]->%.15f", i, lifetimes[i]->x, i, meas_dx(lifetimes[i]));
-  }
   fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f|>\n", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau);
 
   fclose(outfile);
@@ -441,9 +413,7 @@ int main(int argc, char *argv[]) {
   free(sM);
   for (q_t i = 0; i < q; i++) {
     free(sE[i]);
-    free(lifetimes[i]);
   }
-  free(lifetimes);
   free(freqs);
   free(sE);
   free(s->H_probs);
