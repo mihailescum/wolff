@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
   bool snapshots = false;
   bool snapshot = false;
   bool record_autocorrelation = false;
+  bool record_distribution = false;
   count_t W = 10;
   count_t ac_skip = 1;
 
@@ -29,7 +30,7 @@ int main(int argc, char *argv[]) {
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:d")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -86,6 +87,9 @@ int main(int argc, char *argv[]) {
       break;
     case 'W':
       W = (count_t)atof(optarg);
+      break;
+    case 'd':
+      record_distribution = true;
       break;
     default:
       exit(EXIT_FAILURE);
@@ -173,6 +177,11 @@ int main(int argc, char *argv[]) {
     autocorr->OO = (double *)calloc(2 * W + 1, sizeof(double));
   }
 
+  count_t *cluster_dist;
+  if (record_distribution) {
+    cluster_dist = (count_t *)calloc(h->nv, sizeof(count_t));
+  }
+
   if (!silent) printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
@@ -200,6 +209,10 @@ int main(int argc, char *argv[]) {
 
         if (record_autocorrelation && n_steps % ac_skip == 0) {
           update_autocorr(autocorr, s->E);
+        }
+
+        if (record_distribution) {
+          cluster_dist[tmp_flips - 1]++;
         }
       }
 
@@ -269,6 +282,7 @@ int main(int argc, char *argv[]) {
   }
 
   double tau = 0;
+  double tauyw;
   bool tau_failed = false;
 
   if (record_autocorrelation) {
@@ -304,14 +318,15 @@ int main(int argc, char *argv[]) {
       ttau += conv_Gamma[i];
     }
     
+    tau = ttau * ac_skip * clust->x / h->nv;
+    tauyw = yule_walker(autocorr) * ac_skip * clust->x / h->nv;
+    
     free(Gammas);
     free(autocorr->OO);
     while (autocorr->Op != NULL) {
       stack_pop_d(&(autocorr->Op));
     }
     free(autocorr);
-    
-    tau = ttau * ac_skip * clust->x / h->nv;
   }
 
   if (tau_failed) {
@@ -320,7 +335,7 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.m", "a");
 
-  fprintf(outfile, "<|N->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", N, D, L, q, T);
+  fprintf(outfile, "<|N->%" PRIcount ",n->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", N, n, D, L, q, T);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", J[i]);
     if (i != q-1) {
@@ -396,7 +411,19 @@ int main(int argc, char *argv[]) {
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, ",Subscript[f,%" PRIq "]->%.15f,Subscript[\\[Delta]f,%" PRIq "]->%.15f", i, (double)freqs[i] / (double)n_runs, i, sqrt(freqs[i]) / (double)n_runs);
   }
-  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f|>\n", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau);
+  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]yw->%.15f", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau, tauyw);
+  if (record_distribution) {
+    fprintf(outfile, ",S->{");
+    for (v_t i = 0; i < h->nv; i++) {
+      fprintf(outfile, "%" PRIcount, cluster_dist[i]);
+      if (i != h->nv - 1) {
+        fprintf(outfile, ",");
+      }
+    }
+    fprintf(outfile, "}");
+    free(cluster_dist);
+  }
+  fprintf(outfile, "|>\n");
 
   fclose(outfile);
 

@@ -35,6 +35,28 @@ double modulated(q_t n, double *H_info, double *x) {
   return H_info[0] * cos(H_info[1] * theta(x[0], x[1]));
 }
 
+double cubic(q_t n, double *H_info, double *x) {
+  double tmp = 0;
+
+  for (q_t i = 0; i < n; i++) {
+    tmp += pow(x[i], 4);
+  }
+
+  return - H_info[0] * tmp;
+}
+
+double quadratic(q_t n, double *H_info, double *x) {
+  double tmp = 0;
+
+  tmp += pow(x[0], 2);
+
+  for (q_t i = 1; i < n; i++) {
+    tmp += - 1.0 / (n - 1.0) * pow(x[i], 2);
+  }
+
+  return - 0.5 *  H_info[0] * tmp;
+}
+
 int main(int argc, char *argv[]) {
 
   L_t L = 128;
@@ -48,13 +70,14 @@ int main(int argc, char *argv[]) {
   double eps = 0;
   bool silent = false;
   bool record_autocorrelation = false;
+  vector_field_t H_type = VECTOR;
   count_t ac_skip = 1;
   count_t W = 10;
 
   int opt;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:H:m:e:saS:W:")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:H:m:e:saS:W:f:")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -96,6 +119,22 @@ int main(int argc, char *argv[]) {
     case 'W':
       W = (count_t)atof(optarg);
       break;
+    case 'f':
+      switch (atoi(optarg)) {
+        case 0:
+          H_type = VECTOR;
+          break;
+        case 1:
+          H_type = MODULATED;
+          break;
+        case 2:
+          H_type = CUBIC;
+          break;
+        case 3:
+          H_type = QUADRATIC;
+          break;
+      }
+      break;
     default:
       exit(EXIT_FAILURE);
     }
@@ -119,7 +158,20 @@ int main(int argc, char *argv[]) {
 
   s->H_info = H;
   s->T = T;
-  s->H = dot;
+  switch (H_type) {
+    case VECTOR:
+      s->H = dot;
+      break;
+    case MODULATED:
+      s->H = modulated;
+      break;
+    case CUBIC:
+      s->H = cubic;
+      break;
+    case QUADRATIC:
+      s->H = quadratic;
+      break;
+  }
   s->J = identity;
 
   s->R = (double *)calloc(q * q, sizeof(double));
@@ -190,7 +242,7 @@ int main(int argc, char *argv[]) {
     meas_update(aM, sqrt(aM_val));
     meas_update(E, s->E);
 
-    diff = fabs(meas_dc(aM) / meas_c(aM));
+    diff = fabs(meas_dx(clust) / clust->x);
 
     n_runs++;
   }
@@ -237,6 +289,17 @@ int main(int argc, char *argv[]) {
     for (uint64_t i = 0; i < n + 1; i++) {
       ttau += conv_Gamma[i];
     }
+
+    FILE *autocorr_file = fopen("autocorr.dat", "a");
+
+    printf("%g %g\n", Gammas[0], conv_Gamma[0]);
+
+    for (count_t i = 0; i < n+1; i++) {
+      fprintf(autocorr_file, "%g ", conv_Gamma[i]);
+    }
+    fprintf(autocorr_file, "\n");
+
+    fclose(autocorr_file);
     
     free(Gammas);
     free(autocorr->OO);
@@ -254,7 +317,7 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile = fopen("out.m", "a");
 
-  fprintf(outfile, "<|N->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,H->{", N, D, L, q, T);
+  fprintf(outfile, "<|N->%" PRIcount ",n->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,H->{", N, n, D, L, q, T);
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, "%.15f", H[i]);
     if (i != q-1) {

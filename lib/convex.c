@@ -93,7 +93,6 @@ double *get_convex_minorant(count_t n, double *Gammas) {
 
   while (L != NULL) {
     free(L->p);
-    list_t *L_save = L;
     L = L->next;
     free(L);
   }

@@ -22,6 +22,7 @@
 #include "orthogonal.h"
 #include "dihedral.h"
 #include "dihinf.h"
+#include "yule_walker.h"
 
 typedef struct {
   graph_t *g;
@@ -61,6 +62,13 @@ typedef struct {
   double *M;
   q_t n;
 } vector_state_t;
+
+typedef enum {
+  VECTOR,
+  MODULATED,
+  CUBIC,
+  QUADRATIC
+} vector_field_t;
 
 v_t flip_cluster(ising_state_t *s, v_t v0, q_t s1, gsl_rng *r);
 
