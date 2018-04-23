@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
       freqs[max_M_i]++;
     }
 
-    diff = fabs(meas_dc(sM[0][0]) / meas_c(sM[0][0]));
+    diff = fabs(meas_dx(clust) / clust->x);
 
     n_runs++;
   }
