@@ -282,8 +282,7 @@ int main(int argc, char *argv[]) {
   }
 
   double tau = 0;
-  double tauyw;
-  bool tau_failed = false;
+  int tau_failed = 0;
 
   if (record_autocorrelation) {
     double *Gammas = (double *)malloc((W + 1) * sizeof(double));
@@ -302,12 +301,12 @@ int main(int argc, char *argv[]) {
 
     if (n == W + 1) {
       printf("WARNING: correlation function never hit the noise floor.\n");
-      tau_failed = true;
+      tau_failed = 1;
     }
 
     if (n < 2) {
       printf("WARNING: correlation function only has one nonnegative term.\n");
-      tau_failed = true;
+      tau_failed = 2;
     }
 
     double *conv_Gamma = get_convex_minorant(n, Gammas);
@@ -319,7 +318,6 @@ int main(int argc, char *argv[]) {
     }
     
     tau = ttau * ac_skip * clust->x / h->nv;
-    tauyw = yule_walker(autocorr) * ac_skip * clust->x / h->nv;
     
     free(Gammas);
     free(autocorr->OO);
@@ -330,7 +328,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (tau_failed) {
-    tau = 0;
+    //tau = 0;
   }
 
   FILE *outfile = fopen("out.m", "a");
@@ -411,7 +409,7 @@ int main(int argc, char *argv[]) {
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, ",Subscript[f,%" PRIq "]->%.15f,Subscript[\\[Delta]f,%" PRIq "]->%.15f", i, (double)freqs[i] / (double)n_runs, i, sqrt(freqs[i]) / (double)n_runs);
   }
-  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]yw->%.15f", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau, tauyw);
+  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]s->%d", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau,tau_failed);
   if (record_distribution) {
     fprintf(outfile, ",S->{");
     for (v_t i = 0; i < h->nv; i++) {
