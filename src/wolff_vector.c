@@ -36,13 +36,13 @@ double modulated(q_t n, double *H_info, double *x) {
 }
 
 double cubic(q_t n, double *H_info, double *x) {
-  double tmp = 0;
+  double v_sum = 0;
 
   for (q_t i = 0; i < n; i++) {
-    tmp += pow(x[i], 4);
+    v_sum += pow(x[i], 4);
   }
 
-  return - H_info[0] * tmp;
+  return - H_info[0] * v_sum;
 }
 
 double quadratic(q_t n, double *H_info, double *x) {
@@ -181,8 +181,9 @@ int main(int argc, char *argv[]) {
   }
 
   s->M = (double *)calloc(q, sizeof(double));
-  s->M[0] = 1.0 * (double)h->nv;
-  s->E = - ((double)h->ne) * s->J(1.0) - s->H(s->n, s->H_info, s->M);
+  s->M[0] = 1.0;
+  s->E = - ((double)h->ne) * s->J(1.0) - (double)h->nv * s->H(s->n, s->H_info, s->M);
+  s->M[0] *= (double)h->nv;
 
   double diff = 1e31;
   count_t n_runs = 0;
