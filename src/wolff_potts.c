@@ -177,9 +177,9 @@ int main(int argc, char *argv[]) {
     autocorr->OO = (double *)calloc(2 * W + 1, sizeof(double));
   }
 
-  count_t *cluster_dist;
+  count_t *mag_dist;
   if (record_distribution) {
-    cluster_dist = (count_t *)calloc(h->nv, sizeof(count_t));
+    mag_dist = (count_t *)calloc(h->nv + 1, sizeof(count_t));
   }
 
   if (!silent) printf("\n");
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (record_distribution) {
-          cluster_dist[tmp_flips - 1]++;
+          mag_dist[s->M[0]]++;
         }
       }
 
@@ -412,14 +412,14 @@ int main(int argc, char *argv[]) {
   fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]s->%d", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau,tau_failed);
   if (record_distribution) {
     fprintf(outfile, ",S->{");
-    for (v_t i = 0; i < h->nv; i++) {
-      fprintf(outfile, "%" PRIcount, cluster_dist[i]);
-      if (i != h->nv - 1) {
+    for (v_t i = 0; i < h->nv + 1; i++) {
+      fprintf(outfile, "%" PRIcount, mag_dist[i]);
+      if (i != h->nv) {
         fprintf(outfile, ",");
       }
     }
     fprintf(outfile, "}");
-    free(cluster_dist);
+    free(mag_dist);
   }
   fprintf(outfile, "|>\n");
 
