@@ -15,3 +15,5 @@ q_t dihedral_act(q_t q, q_t gi, q_t s);
 
 q_t dihedral_inverse_act(q_t q, const dihedral_t *g, q_t s);
 
+q_t *dihedral_gen_transformations(q_t q);
+

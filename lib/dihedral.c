@@ -25,4 +25,16 @@ q_t dihedral_inverse_act(q_t q, const dihedral_t *g, q_t s) {
   }
 }
 
+q_t *dihedral_gen_transformations(q_t q) {
+  q_t *transformations = (q_t *)malloc(q * q * sizeof(q_t));
+
+  for (q_t i = 0; i < q; i++) {
+    for (q_t j = 0; j < q; j++) {
+      transformations[q * i + j] = dihedral_act(q, i, j);
+    }
+  }
+
+  return transformations;
+}
+
 

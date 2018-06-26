@@ -1,7 +1,8 @@
 
 #include <getopt.h>
 
-#include <cluster.h>
+#include <dihedral.h>
+#include <cluster_finite.h>
 
 int main(int argc, char *argv[]) {
 
@@ -18,6 +19,7 @@ int main(int argc, char *argv[]) {
   double eps = 0;
   bool pretend_ising = false;
   bool planar_potts = false;
+  bool sim_dgm = false;
   bool silent = false;
   bool snapshots = false;
   bool snapshot = false;
@@ -30,7 +32,7 @@ int main(int argc, char *argv[]) {
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:d")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:dr")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -91,6 +93,9 @@ int main(int argc, char *argv[]) {
     case 'd':
       record_distribution = true;
       break;
+    case 'r':
+      sim_dgm = true;
+      break;
     default:
       exit(EXIT_FAILURE);
     }
@@ -111,19 +116,27 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  ising_state_t *s = (ising_state_t *)calloc(1, sizeof(ising_state_t));
+  if (sim_dgm) {
+    for (q_t i = 0; i < q / 2 + 1; i++) {
+      J[i] = -pow(i, 2);
+    }
+    for (q_t i = 1; i < (q + 1) / 2; i++) {
+      J[q - i] = -pow(i, 2);
+    }
+  }
+
+  state_finite_t *s = (state_finite_t *)calloc(1, sizeof(state_finite_t));
 
   graph_t *h = graph_create_square(D, L);
   s->g = graph_add_ext(h);
 
   s->q = q;
-
-  s->spins = (q_t *)calloc(h->nv, sizeof(q_t));
+  s->n_transformations = q;
+  s->transformations = dihedral_gen_transformations(q);
 
   s->T = T;
-  s->H = H;
   s->J = J;
-  s->R = (dihedral_t *)calloc(1, sizeof(dihedral_t));
+  s->H = H;
 
   s->J_probs = (double *)calloc(pow(q, 2), sizeof(double));
   for (q_t i = 0; i < q; i++) {
@@ -138,9 +151,18 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  s->M = (v_t *)calloc(q, sizeof(v_t));
-  s->M[0] = h->nv;
+  s->spins = (q_t *)calloc(h->nv, sizeof(q_t)); // everyone starts in state 0
+  s->R = (q_t *)malloc(q * sizeof(q_t)); // transformation is the identity, (1 ... q)
+
+  for (q_t i = 0; i < q; i++) {
+    s->R[i] = i;
+  }
+
+  // energy is the number of edges times the energy of an aligned edge minus
+  // the number of vertices times the energy of a 0-aligned vertex 
   s->E = - ((double)h->ne) * s->J[0] - ((double)h->nv) * s->H[0];
+  s->M = (v_t *)calloc(q, sizeof(v_t));
+  s->M[0] = h->nv; // everyone starts in state 0, remember?
 
   double diff = 1e31;
   count_t n_runs = 0;
@@ -192,15 +214,17 @@ int main(int argc, char *argv[]) {
 
     while (n_flips / h->nv < n) {
       v_t v0 = gsl_rng_uniform_int(r, h->nv);
-      q_t step;
+      R_t step;
      
-      if (q == 2) {
-        step = 1;
-      } else {
-        step = gsl_rng_uniform_int(r, q);
+      bool changed = false;
+      while (!changed) {
+        step = gsl_rng_uniform_int(r, s->n_transformations);
+        if (symmetric_act(s->transformations + q * step, s->spins[v0]) != s->spins[v0]) {
+          changed = true;
+        }
       }
 
-      v_t tmp_flips = flip_cluster(s, v0, step, r);
+      v_t tmp_flips = flip_cluster_finite(s, v0, step, r);
       n_flips += tmp_flips;
 
       if (n_runs > 0) {
@@ -211,9 +235,6 @@ int main(int argc, char *argv[]) {
           update_autocorr(autocorr, s->E);
         }
 
-        if (record_distribution) {
-          mag_dist[s->M[0]]++;
-        }
       }
 
     }
@@ -235,6 +256,10 @@ int main(int argc, char *argv[]) {
       } else if (s->M[i] == max_M) {
         n_at_max++;
       }
+    }
+
+    if (record_distribution) {
+      mag_dist[s->M[0]]++;
     }
 
     if (n_at_max == 1) {
@@ -262,12 +287,13 @@ int main(int argc, char *argv[]) {
   }
 
   if (snapshot) {
+    q_t *R_inv = symmetric_invert(q, s->R);
     FILE *snapfile = fopen("snapshot.m", "a");
     fprintf(snapfile, "{{");
     for (L_t i = 0; i < L; i++) {
       fprintf(snapfile, "{");
       for (L_t j = 0; j < L; j++) {
-        fprintf(snapfile, "%" PRIq, dihedral_inverse_act(q, s->R, s->spins[L * i + j]));
+        fprintf(snapfile, "%" PRIq, symmetric_act(R_inv, s->spins[L * i + j]));
         if (j != L - 1) {
           fprintf(snapfile, ",");
         }
@@ -277,7 +303,7 @@ int main(int argc, char *argv[]) {
         fprintf(snapfile, ",");
       }
     }
-    fprintf(snapfile, "},{%" PRIq ",%d}}\n", s->R->i, s->R->r);
+    fprintf(snapfile, "}}\n");
     fclose(snapfile);
   }
 
@@ -446,6 +472,7 @@ int main(int argc, char *argv[]) {
   free(s->M);
   free(s->spins);
   free(s->R);
+  free(s->transformations);
   graph_free(s->g);
   free(s);
   free(H);
