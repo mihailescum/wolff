@@ -1,8 +1,7 @@
 
 #include <getopt.h>
 
-#include <dihedral.h>
-#include <cluster_finite.h>
+#include <initial_finite.h>
 
 int main(int argc, char *argv[]) {
 
@@ -17,9 +16,6 @@ int main(int argc, char *argv[]) {
   J[0] = 1.0;
   double *H = (double *)calloc(MAX_Q, sizeof(double));
   double eps = 0;
-  bool pretend_ising = false;
-  bool planar_potts = false;
-  bool sim_dgm = false;
   bool silent = false;
   bool snapshots = false;
   bool snapshot = false;
@@ -28,11 +24,13 @@ int main(int argc, char *argv[]) {
   count_t W = 10;
   count_t ac_skip = 1;
 
+  finite_model_t model = ISING;
+
   int opt;
   q_t J_ind = 0;
   q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:dr")) != -1) {
+  while ((opt = getopt(argc, argv, "N:n:D:L:q:T:J:H:m:e:IpsSPak:W:drt:")) != -1) {
     switch (opt) {
     case 'N':
       N = (count_t)atof(optarg);
@@ -66,12 +64,6 @@ int main(int argc, char *argv[]) {
     case 'e':
       eps = atof(optarg);
       break;
-    case 'I':
-      pretend_ising = true;
-      break;
-    case 'p':
-      planar_potts = true;
-      break;
     case 's':
       silent = true;
       break;
@@ -93,76 +85,40 @@ int main(int argc, char *argv[]) {
     case 'd':
       record_distribution = true;
       break;
-    case 'r':
-      sim_dgm = true;
+    case 't':
+      model = (finite_model_t)atoi(optarg);
       break;
     default:
       exit(EXIT_FAILURE);
     }
   }
 
+  state_finite_t *s;
+
   gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(r, rand_seed());
 
-  if (pretend_ising) {
-    q = 2;
-    H[1] = -H[0];
-    J[1] = -J[0];
+  switch (model) {
+    case ISING:
+      s = initial_finite_prepare_ising(D, L, T, H); 
+      break;
+    case POTTS:
+      s = initial_finite_prepare_potts(D, L, q, T, H);
+      break;
+    case CLOCK:
+      s = initial_finite_prepare_clock(D, L, q, T, H);
+      break;
+    case DGM:
+      s = initial_finite_prepare_dgm(D, L, q, T, H);
+      break;
+    default:
+      printf("Not a valid model!\n");
+      return 1;
   }
 
-  if (planar_potts) {
-    for (q_t i = 0; i < q; i++) {
-      J[i] = cos(2 * M_PI * i / ((double)q));
-    }
-  }
+  free(J);
+  free(H);
 
-  if (sim_dgm) {
-    for (q_t i = 0; i < q / 2 + 1; i++) {
-      J[i] = -pow(i, 2);
-    }
-    for (q_t i = 1; i < (q + 1) / 2; i++) {
-      J[q - i] = -pow(i, 2);
-    }
-  }
-
-  state_finite_t *s = (state_finite_t *)calloc(1, sizeof(state_finite_t));
-
-  graph_t *h = graph_create_square(D, L);
-  s->g = graph_add_ext(h);
-
-  s->q = q;
-  s->n_transformations = q;
-  s->transformations = dihedral_gen_transformations(q);
-
-  s->T = T;
-  s->J = J;
-  s->H = H;
-
-  s->J_probs = (double *)calloc(pow(q, 2), sizeof(double));
-  for (q_t i = 0; i < q; i++) {
-    for (q_t j = 0; j < q; j++) {
-      s->J_probs[q * i + j] = 1.0 - exp((s->J[i] - s->J[j]) / T);
-    }
-  }
-  s->H_probs = (double *)calloc(pow(q, 2), sizeof(double));
-  for (q_t i = 0; i < q; i++) {
-    for (q_t j = 0; j < q; j++) {
-      s->H_probs[q * i + j] = 1.0 - exp((s->H[i] - s->H[j]) / T);
-    }
-  }
-
-  s->spins = (q_t *)calloc(h->nv, sizeof(q_t)); // everyone starts in state 0
-  s->R = (q_t *)malloc(q * sizeof(q_t)); // transformation is the identity, (1 ... q)
-
-  for (q_t i = 0; i < q; i++) {
-    s->R[i] = i;
-  }
-
-  // energy is the number of edges times the energy of an aligned edge minus
-  // the number of vertices times the energy of a 0-aligned vertex 
-  s->E = - ((double)h->ne) * s->J[0] - ((double)h->nv) * s->H[0];
-  s->M = (v_t *)calloc(q, sizeof(v_t));
-  s->M[0] = h->nv; // everyone starts in state 0, remember?
 
   double diff = 1e31;
   count_t n_runs = 0;
@@ -201,19 +157,19 @@ int main(int argc, char *argv[]) {
 
   count_t *mag_dist;
   if (record_distribution) {
-    mag_dist = (count_t *)calloc(h->nv + 1, sizeof(count_t));
+    mag_dist = (count_t *)calloc(s->nv + 1, sizeof(count_t));
   }
 
   if (!silent) printf("\n");
   while (((diff > eps || diff != diff) && n_runs < N) || n_runs < min_runs) {
     if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64
            ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-           n_runs, fabs(meas_dx(E) / E->x), meas_dx(M[0]) / M[0]->x, meas_dc(E) / meas_c(E), meas_dc(M[0]) / meas_c(M[0]), h->nv / clust->x);
+           n_runs, fabs(meas_dx(E) / E->x), meas_dx(M[0]) / M[0]->x, meas_dc(E) / meas_c(E), meas_dc(M[0]) / meas_c(M[0]), s->nv / clust->x);
 
     count_t n_flips = 0;
 
-    while (n_flips / h->nv < n) {
-      v_t v0 = gsl_rng_uniform_int(r, h->nv);
+    while (n_flips / s->nv < n) {
+      v_t v0 = gsl_rng_uniform_int(r, s->nv);
       R_t step;
      
       bool changed = false;
@@ -279,7 +235,7 @@ int main(int argc, char *argv[]) {
   }
   printf("WOLFF: sweep %" PRIu64
          ", dH/H = %.4f, dM/M = %.4f, dC/C = %.4f, dX/X = %.4f, cps: %.1f\n",
-         n_runs, fabs(meas_dx(E) / E->x), meas_dx(M[0]) / M[0]->x, meas_dc(E) / meas_c(E), meas_dc(M[0]) / meas_c(M[0]), h->nv / clust->x);
+         n_runs, fabs(meas_dx(E) / E->x), meas_dx(M[0]) / M[0]->x, meas_dc(E) / meas_c(E), meas_dc(M[0]) / meas_c(M[0]), s->nv / clust->x);
 
   if (snapshots) {
     FILE *snapfile = fopen("snapshots.m", "a");
@@ -343,7 +299,7 @@ int main(int argc, char *argv[]) {
       ttau += conv_Gamma[i];
     }
     
-    tau = ttau * ac_skip * clust->x / h->nv;
+    tau = ttau * ac_skip * clust->x / s->nv;
     
     free(Gammas);
     free(autocorr->OO);
@@ -357,75 +313,76 @@ int main(int argc, char *argv[]) {
     //tau = 0;
   }
 
+  {
   FILE *outfile = fopen("out.m", "a");
 
   fprintf(outfile, "<|N->%" PRIcount ",n->%" PRIcount ",D->%" PRID ",L->%" PRIL ",q->%" PRIq ",T->%.15f,J->{", N, n, D, L, q, T);
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", J[i]);
+    fprintf(outfile, "%.15f", s->J[i]);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},H->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", H[i]);
+    fprintf(outfile, "%.15f", s->H[i]);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
-  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / h->nv, meas_dx(E) / h->nv, meas_c(E) / h->nv, meas_dc(E) / h->nv);
+  fprintf(outfile, "},E->%.15f,\\[Delta]E->%.15f,C->%.15f,\\[Delta]C->%.15f,M->{", E->x / s->nv, meas_dx(E) / s->nv, meas_c(E) / s->nv, meas_dc(E) / s->nv);
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", M[i]->x / h->nv);
+    fprintf(outfile, "%.15f", M[i]->x / s->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},\\[Delta]M->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", meas_dx(M[i]) / h->nv);
+    fprintf(outfile, "%.15f", meas_dx(M[i]) / s->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},\\[Chi]->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", meas_c(M[i]) / h->nv);
+    fprintf(outfile, "%.15f", meas_c(M[i]) / s->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   fprintf(outfile, "},\\[Delta]\\[Chi]->{");
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "%.15f", meas_dc(M[i]) / h->nv);
+    fprintf(outfile, "%.15f", meas_dc(M[i]) / s->nv);
     if (i != q-1) {
       fprintf(outfile, ",");
     }
   }
   for (q_t i = 0; i < q; i++) {
-    fprintf(outfile, "},Subscript[E,%" PRIq "]->%.15f,Subscript[\\[Delta]E,%" PRIq "]->%.15f,Subscript[C,%" PRIq "]->%.15f,Subscript[\\[Delta]C,%" PRIq "]->%.15f,Subscript[M,%" PRIq "]->{", i, sE[i]->x / h->nv, i, meas_dx(sE[i]) / h->nv, i, meas_c(sE[i]) / h->nv, i, meas_dc(sE[i]) / h->nv, i);
+    fprintf(outfile, "},Subscript[E,%" PRIq "]->%.15f,Subscript[\\[Delta]E,%" PRIq "]->%.15f,Subscript[C,%" PRIq "]->%.15f,Subscript[\\[Delta]C,%" PRIq "]->%.15f,Subscript[M,%" PRIq "]->{", i, sE[i]->x / s->nv, i, meas_dx(sE[i]) / s->nv, i, meas_c(sE[i]) / s->nv, i, meas_dc(sE[i]) / s->nv, i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "%.15f", sM[i][j]->x / h->nv);
+      fprintf(outfile, "%.15f", sM[i][j]->x / s->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
     }
     fprintf(outfile, "},Subscript[\\[Delta]M,%" PRIq "]->{", i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "%.15f", meas_dx(sM[i][j]) / h->nv);
+      fprintf(outfile, "%.15f", meas_dx(sM[i][j]) / s->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
     }
     fprintf(outfile, "},Subscript[\\[Chi],%" PRIq "]->{", i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "%.15f", meas_c(sM[i][j]) / h->nv);
+      fprintf(outfile, "%.15f", meas_c(sM[i][j]) / s->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
     }
     fprintf(outfile, "},Subscript[\\[Delta]\\[Chi],%" PRIq "]->{", i);
     for (q_t j = 0; j < q; j++) {
-      fprintf(outfile, "%.15f", meas_dc(sM[i][j]) / h->nv);
+      fprintf(outfile, "%.15f", meas_dc(sM[i][j]) / s->nv);
       if (j != q-1) {
         fprintf(outfile, ",");
       }
@@ -435,12 +392,12 @@ int main(int argc, char *argv[]) {
   for (q_t i = 0; i < q; i++) {
     fprintf(outfile, ",Subscript[f,%" PRIq "]->%.15f,Subscript[\\[Delta]f,%" PRIq "]->%.15f", i, (double)freqs[i] / (double)n_runs, i, sqrt(freqs[i]) / (double)n_runs);
   }
-  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]s->%d", clust->x / h->nv, meas_dx(clust) / h->nv, meas_c(clust) / h->nv, meas_dc(clust) / h->nv,tau,tau_failed);
+  fprintf(outfile, ",Subscript[n,\"clust\"]->%.15f,Subscript[\\[Delta]n,\"clust\"]->%.15f,Subscript[m,\"clust\"]->%.15f,Subscript[\\[Delta]m,\"clust\"]->%.15f,\\[Tau]->%.15f,\\[Tau]s->%d", clust->x / s->nv, meas_dx(clust) / s->nv, meas_c(clust) / s->nv, meas_dc(clust) / s->nv,tau,tau_failed);
   if (record_distribution) {
     fprintf(outfile, ",S->{");
-    for (v_t i = 0; i < h->nv + 1; i++) {
+    for (v_t i = 0; i < s->nv + 1; i++) {
       fprintf(outfile, "%" PRIcount, mag_dist[i]);
-      if (i != h->nv) {
+      if (i != s->nv) {
         fprintf(outfile, ",");
       }
     }
@@ -450,6 +407,7 @@ int main(int argc, char *argv[]) {
   fprintf(outfile, "|>\n");
 
   fclose(outfile);
+  }
 
   free(E);
   free(clust);
@@ -467,17 +425,7 @@ int main(int argc, char *argv[]) {
   }
   free(freqs);
   free(sE);
-  free(s->H_probs);
-  free(s->J_probs);
-  free(s->M);
-  free(s->spins);
-  free(s->R);
-  free(s->transformations);
-  graph_free(s->g);
-  free(s);
-  free(H);
-  free(J);
-  graph_free(h);
+  state_finite_free(s);
   gsl_rng_free(r);
 
   return 0;

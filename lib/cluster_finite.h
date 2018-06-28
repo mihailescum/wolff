@@ -23,6 +23,10 @@
 #include "yule_walker.h"
 
 typedef struct {
+  D_t D;
+  L_t L;
+  v_t nv;
+  v_t ne;
   graph_t *g;
   q_t q;
   R_t n_transformations;

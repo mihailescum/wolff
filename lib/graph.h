@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdlib.h>

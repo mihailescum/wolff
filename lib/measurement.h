@@ -24,11 +24,6 @@ typedef struct {
   double O2;
 } autocorr_t;
 
-typedef struct {
-  void (*f)(state_finite_t *, void *);
-  void *data;
-} measurement_t;
-
 void meas_update(meas_t *m, double x);
 
 double meas_dx(const meas_t *m);

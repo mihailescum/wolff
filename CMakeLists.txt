@@ -10,7 +10,7 @@ include_directories(lib ~/.local/include)
 link_directories(~/.local/lib)
 
 file(GLOB SOURCES lib/*.c)
-add_executable(wolff_potts src/wolff_potts.c ${SOURCES})
+add_executable(wolff_finite src/wolff_finite.c ${SOURCES})
 add_executable(wolff_vector src/wolff_vector.c ${SOURCES})
 add_executable(wolff_dgm src/wolff_dgm.c ${SOURCES})
 
@@ -20,9 +20,9 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-target_link_libraries(wolff_potts gsl m cblas fftw3)
+target_link_libraries(wolff_finite gsl m cblas fftw3)
 target_link_libraries(wolff_vector gsl m cblas fftw3)
 target_link_libraries(wolff_dgm gsl m cblas fftw3)
 
-install(TARGETS wolff_potts wolff_vector wolff_dgm DESTINATION bin)
+install(TARGETS wolff_finite wolff_vector wolff_dgm DESTINATION bin)
 
