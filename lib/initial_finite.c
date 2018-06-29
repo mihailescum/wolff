@@ -58,9 +58,10 @@ state_finite_t *initial_finite_prepare_ising(D_t D, L_t L, double T, double *H) 
   s->spins = (q_t *)calloc(s->nv, sizeof(q_t));
   s->R = initialize_R(2);
 
-  s->E = - ((double)s->ne) * s->J[0] - ((double)s->nv) * s->H[0];
   s->M = (v_t *)calloc(2, sizeof(v_t));
   s->M[0] = s->nv; // everyone starts in state 0, remember?
+  s->B = (v_t *)calloc(2, sizeof(v_t));
+  s->B[0] = s->ne;
 
   return s;
 }
@@ -98,9 +99,10 @@ state_finite_t *initial_finite_prepare_potts(D_t D, L_t L, q_t q, double T, doub
   s->spins = (q_t *)calloc(s->nv, sizeof(q_t));
   s->R = initialize_R(q);
 
-  s->E = - ((double)s->ne) * s->J[0] - ((double)s->nv) * s->H[0];
   s->M = (v_t *)calloc(q, sizeof(v_t));
   s->M[0] = s->nv; // everyone starts in state 0, remember?
+  s->B = (v_t *)calloc(q, sizeof(v_t));
+  s->B[0] = s->ne; // everyone starts in state 0, remember?
 
   return s;
 }
@@ -142,9 +144,10 @@ state_finite_t *initial_finite_prepare_clock(D_t D, L_t L, q_t q, double T, doub
   s->spins = (q_t *)calloc(s->nv, sizeof(q_t));
   s->R = initialize_R(q);
 
-  s->E = - ((double)s->ne) * s->J[0] - ((double)s->nv) * s->H[0];
   s->M = (v_t *)calloc(q, sizeof(v_t));
   s->M[0] = s->nv; // everyone starts in state 0, remember?
+  s->B = (v_t *)calloc(q, sizeof(v_t));
+  s->B[0] = s->ne; // everyone starts in state 0, remember?
 
   return s;
 }
@@ -189,11 +192,21 @@ state_finite_t *initial_finite_prepare_dgm(D_t D, L_t L, q_t q, double T, double
   s->spins = (q_t *)calloc(s->nv, sizeof(q_t));
   s->R = initialize_R(q);
 
-  s->E = - ((double)s->ne) * s->J[0] - ((double)s->nv) * s->H[0];
   s->M = (v_t *)calloc(q, sizeof(v_t));
   s->M[0] = s->nv; // everyone starts in state 0, remember?
 
   return s;
+}
+
+double state_finite_energy(state_finite_t *s) {
+  double E = 0;
+
+  for (q_t i = 0; i < s->q; i++) {
+    E += s->J[i] * s->B[i];
+    E += s->H[i] * s->M[i];
+  }
+
+  return -E;
 }
 
 void state_finite_free(state_finite_t *s) {
@@ -205,6 +218,7 @@ void state_finite_free(state_finite_t *s) {
   free(s->spins);
   free(s->R);
   free(s->M);
+  free(s->B);
   free(s->transformations);
   free(s);
 }

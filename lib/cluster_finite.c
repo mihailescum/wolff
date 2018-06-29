@@ -62,14 +62,14 @@ v_t flip_cluster_finite(state_finite_t *s, v_t v0, q_t rot_ind, gsl_rng *r) {
           s->M[rot_s_old]--;
           s->M[rot_s_new]++;
 
-          s->E += - s->H[rot_s_new] + s->H[rot_s_old];
         } else {
           q_t diff_old = (s_old + s->q - sn) % s->q;
           q_t diff_new = (s_new + s->q - sn) % s->q;
 
           prob = s->J_probs[diff_new * s->q + diff_old];
 
-          s->E += - s->J[diff_new] + s->J[diff_old];
+          s->B[diff_old]--;
+          s->B[diff_new]++;
         }
 
         if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...

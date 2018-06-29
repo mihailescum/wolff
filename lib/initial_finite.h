@@ -7,6 +7,8 @@
 #include "dihedral.h"
 #include "cluster_finite.h"
 
+static char *finite_model_t_strings[] = {"ISING", "POTTS", "CLOCK", "DGM"};
+
 typedef enum {
   ISING,
   POTTS,
@@ -21,4 +23,5 @@ state_finite_t *initial_finite_prepare_dgm(D_t D, L_t L, q_t q, double T, double
 
 void state_finite_free(state_finite_t *s);
 
+double state_finite_energy(state_finite_t *s);
 

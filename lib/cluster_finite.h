@@ -38,7 +38,7 @@ typedef struct {
   double *H_probs;
   q_t *spins;
   q_t *R;
-  double E;
+  v_t *B;
   v_t *M;
 } state_finite_t;
 
