@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
   char *filename_S = (char *)malloc(256 * sizeof(char));
 
   sprintf(filename_M, "wolff_%s_%" PRIq "_%" PRID "_%" PRIL "_%.8f", finite_model_t_strings[model], q, D, L, T);
-  for (q_t i = 0; i < q; i++) {
+  for (q_t i = 0; i < s->q; i++) {
     sprintf(filename_M + strlen(filename_M), "_%.8f", s->H[i]);
   }
 
@@ -126,8 +126,8 @@ int main(int argc, char *argv[]) {
      
     bool changed = false;
     while (!changed) {
-      step = gsl_rng_uniform_int(r, s->n_transformations);
-      if (symmetric_act(s->transformations + q * step, s->spins[v0]) != s->spins[v0]) {
+      step = gsl_rng_uniform_int(r, s->n_involutions);
+      if (symmetric_act(s->transformations + s->q * s->involutions[step], s->spins[v0]) != s->spins[v0]) {
         changed = true;
       }
     }
@@ -138,9 +138,9 @@ int main(int argc, char *argv[]) {
     // as a fast time many machines will actually have it be 64 bits. we cast
     // it down here to halve space.
 
-    for (q_t i = 0; i < q - 1; i++) {
-      fwrite(&(s->M[i]), sizeof(uint32_t), 1, outfile_M); // if we know the occupation of the first q - 1 states, we know the occupation of the last
-      fwrite(&(s->B[i]), sizeof(uint32_t), 1, outfile_B); // if we know the occupation of the first q - 1 states, we know the occupation of the last
+    for (q_t i = 0; i < s->q - 1; i++) { // if we know the occupation of the first q - 1 states, we know the occupation of the last
+      fwrite(&(s->M[i]), sizeof(uint32_t), 1, outfile_M); 
+      fwrite(&(s->B[i]), sizeof(uint32_t), 1, outfile_B);
     }
 
     fwrite(&cluster_size, sizeof(uint32_t), 1, outfile_S);

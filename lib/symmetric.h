@@ -11,3 +11,5 @@ q_t symmetric_act(const q_t *g, q_t s);
 
 q_t *symmetric_invert(q_t q, const q_t *g);
 
+q_t *symmetric_gen_transformations(q_t q);
+

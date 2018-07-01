@@ -31,6 +31,11 @@ typedef struct {
   q_t q;
   R_t n_transformations;
   q_t *transformations;
+  R_t n_involutions;
+  R_t *involutions;
+  R_t *transform_site_to_zero;
+  q_t n_bond_types;
+  q_t *bond_with_zero_type;
   double T;
   double *J;
   double *H;
@@ -42,5 +47,5 @@ typedef struct {
   v_t *M;
 } state_finite_t;
 
-v_t flip_cluster_finite(state_finite_t *s, v_t v0, q_t rot, gsl_rng *r);
+v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot, gsl_rng *r);
 
