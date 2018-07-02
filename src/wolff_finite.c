@@ -138,9 +138,12 @@ int main(int argc, char *argv[]) {
     // as a fast time many machines will actually have it be 64 bits. we cast
     // it down here to halve space.
 
-    for (q_t i = 0; i < s->q - 1; i++) { // if we know the occupation of the first q - 1 states, we know the occupation of the last
-      fwrite(&(s->M[i]), sizeof(uint32_t), 1, outfile_M); 
+    for (q_t i = 0; i < s->n_bond_types - 1; i++) { // if we know the occupation of all but one state we know the occupation of the last
       fwrite(&(s->B[i]), sizeof(uint32_t), 1, outfile_B);
+    }
+
+    for (q_t i = 0; i < s->q - 1; i++) { // if we know the occupation of all but one state we know the occupation of the last
+      fwrite(&(s->M[i]), sizeof(uint32_t), 1, outfile_M); 
     }
 
     fwrite(&cluster_size, sizeof(uint32_t), 1, outfile_S);
