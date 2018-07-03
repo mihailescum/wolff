@@ -89,7 +89,13 @@ int main(int argc, char *argv[]) {
   gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(r, rand_seed());
 
-  unsigned long timestamp = (unsigned long)time(NULL);
+  unsigned long timestamp;
+
+  {
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    timestamp = spec.tv_sec*1000000000LL + spec.tv_nsec;
+  }
 
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
