@@ -91,21 +91,37 @@ int main(int argc, char *argv[]) {
 
   unsigned long timestamp = (unsigned long)time(NULL);
 
-  char *filename_M = (char *)malloc(256 * sizeof(char));
-  char *filename_B = (char *)malloc(256 * sizeof(char));
-  char *filename_S = (char *)malloc(256 * sizeof(char));
+  FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
-  sprintf(filename_M, "wolff_%s_%" PRIq "_%" PRID "_%" PRIL "_%.8f", finite_model_t_strings[model], q, D, L, T);
+  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %" PRIq ", \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"NB\" -> %" PRIq ", \"T\" -> %.15f, \"J\" -> {", timestamp, finite_model_t_strings[model], s->q, D, L, s->nv, s->ne, s->n_bond_types, T);
+
+  for (q_t i = 0; i < s->n_bond_types; i++) {
+    fprintf(outfile_info, "%.15f", s->J[i]);
+    if (i < s->n_bond_types - 1) {
+      fprintf(outfile_info, ", ");
+    }
+  }
+  
+  fprintf(outfile_info, "}, \"H\" -> {");
+
   for (q_t i = 0; i < s->q; i++) {
-    sprintf(filename_M + strlen(filename_M), "_%.8f", s->H[i]);
+    fprintf(outfile_info, "%.15f", s->H[i]);
+    if (i < s->q - 1) {
+      fprintf(outfile_info, ", ");
+    }
   }
 
-  strcpy(filename_B, filename_M);
-  strcpy(filename_S, filename_M);
+  fprintf(outfile_info, "} |>\n");
 
-  sprintf(filename_M + strlen(filename_M), "_%lu_M.dat", timestamp);
-  sprintf(filename_B + strlen(filename_B), "_%lu_B.dat", timestamp);
-  sprintf(filename_S + strlen(filename_S), "_%lu_S.dat", timestamp);
+  fclose(outfile_info);
+
+  char *filename_M = (char *)malloc(255 * sizeof(char));
+  char *filename_B = (char *)malloc(255 * sizeof(char));
+  char *filename_S = (char *)malloc(255 * sizeof(char));
+
+  sprintf(filename_M, "wolff_%lu_M.dat", timestamp);
+  sprintf(filename_B, "wolff_%lu_B.dat", timestamp);
+  sprintf(filename_S, "wolff_%lu_S.dat", timestamp);
 
   FILE *outfile_M = fopen(filename_M, "wb");
   FILE *outfile_B = fopen(filename_B, "wb");
