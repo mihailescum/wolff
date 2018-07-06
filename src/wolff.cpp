@@ -107,9 +107,6 @@ int main(int argc, char *argv[]) {
     orthogonal_t <2, double> step;
     generate_rotation<2>(r, &step);
 
-    printf("(%g %g) . (%g %g) = %g or %g, H = %g\n\n", s.spins[0].x[0], s.spins[0].x[1], s.spins[1].x[0], s.spins[1].x[1], dot(s.spins[0], s.spins[1]), s.J(s.spins[0],s.spins[1]), s.H(s.spins[0]));
-
-    getchar();
     cluster_size = flip_cluster <orthogonal_t <2, double>, vector_t <2, double>> (&s, v0, step, r);
 
     free_spin(step);
