@@ -8,6 +8,11 @@
 
 #include "types.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct ll_tag {
   v_t x;
   struct ll_tag *next;
@@ -23,4 +28,8 @@ void stack_push_d(dll_t **q, double x);
 
 v_t stack_pop(ll_t **q);
 double stack_pop_d(dll_t **q);
+
+#ifdef __cplusplus
+}
+#endif
 

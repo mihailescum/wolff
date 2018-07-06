@@ -4,15 +4,15 @@ project(wolff)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 include_directories(lib ~/.local/include)
 link_directories(~/.local/lib)
 
-file(GLOB SOURCES lib/*.c)
-add_executable(wolff_finite src/wolff_finite.c ${SOURCES})
-add_executable(wolff_vector src/wolff_vector.c ${SOURCES})
-add_executable(wolff_dgm src/wolff_dgm.c ${SOURCES})
+file(GLOB CSOURCES lib/*.c)
+file(GLOB CPPSOURCES lib/*.cpp)
+add_executable(wolff_finite src/wolff_finite.c ${CSOURCES})
+add_executable(wolff src/wolff.cpp ${CPPSOURCES} ${CSOURCES})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -21,8 +21,7 @@ if (OPENMP_FOUND)
 endif()
 
 target_link_libraries(wolff_finite gsl m cblas fftw3)
-target_link_libraries(wolff_vector gsl m cblas fftw3)
-target_link_libraries(wolff_dgm gsl m cblas fftw3)
+target_link_libraries(wolff gsl m cblas fftw3)
 
-install(TARGETS wolff_finite wolff_vector wolff_dgm DESTINATION bin)
+install(TARGETS wolff_finite wolff DESTINATION bin)
 
