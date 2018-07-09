@@ -40,7 +40,7 @@ void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J
 
   if (!silent) printf("\n");
   for (count_t steps = 0; steps < N; steps++) {
-    if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, M_0 = %.2f, S = %" PRIv "\n", steps, N, s.E, s.M.x[0], cluster_size);
+    if (!silent) printf("\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", steps, N, s.E, cluster_size);
 
     v_t v0 = gsl_rng_uniform_int(r, s.nv);
      
@@ -51,15 +51,18 @@ void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J
 
     free_spin(step);
 
-    fwrite(&(s.E), sizeof(double), 1, outfile_E);
-    fwrite(s.M.x, sizeof(double), 2, outfile_M);
+    {
+      float smaller_E = (float)s.E;
+      fwrite(&smaller_E, sizeof(float), 1, outfile_E);
+    }
+    write_magnetization(s.M, outfile_M);
     fwrite(&cluster_size, sizeof(uint32_t), 1, outfile_S);
 
   }
   if (!silent) {
     printf("\033[F\033[J");
   }
-  printf("WOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, M_0 = %.2f, S = %" PRIv "\n", N, N, s.E, s.M.x[0], cluster_size);
+  printf("WOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", N, N, s.E, cluster_size);
 
   fclose(outfile_M);
   fclose(outfile_E);
