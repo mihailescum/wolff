@@ -12,7 +12,8 @@ link_directories(~/.local/lib)
 file(GLOB CSOURCES lib/*.c)
 file(GLOB CPPSOURCES lib/*.cpp)
 add_executable(wolff_finite src/wolff_finite.c ${CSOURCES})
-add_executable(wolff src/wolff.cpp ${CPPSOURCES} ${CSOURCES})
+add_executable(wolff_heisenberg src/wolff_heisenberg.cpp ${CPPSOURCES} ${CSOURCES})
+add_executable(wolff_planar src/wolff_planar.cpp ${CPPSOURCES} ${CSOURCES})
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -21,7 +22,8 @@ if (OPENMP_FOUND)
 endif()
 
 target_link_libraries(wolff_finite gsl m cblas fftw3)
-target_link_libraries(wolff gsl m cblas fftw3)
+target_link_libraries(wolff_heisenberg gsl m cblas fftw3)
+target_link_libraries(wolff_planar gsl m cblas fftw3)
 
-install(TARGETS wolff_finite wolff DESTINATION bin)
+install(TARGETS wolff_finite wolff_heisenberg wolff_planar DESTINATION bin)
 
