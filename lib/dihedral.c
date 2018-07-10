@@ -11,10 +11,14 @@ dihedral_t *dihedral_compose(q_t q, q_t g1i, const dihedral_t *g2) {
   return g3;
 }
 
-q_t dihedral_act(q_t q, q_t gi, q_t s) {
+q_t dihedral_act(q_t q, q_t gi, bool r, q_t s) {
   // we only need to consider the action of reflections
 
-  return (gi + q - s) % q;
+  if (r) {
+    return (gi + q - s) % q;
+  } else {
+    return (gi + s) % q;
+  }
 }
 
 q_t dihedral_inverse_act(q_t q, const dihedral_t *g, q_t s) {
@@ -26,12 +30,23 @@ q_t dihedral_inverse_act(q_t q, const dihedral_t *g, q_t s) {
 }
 
 q_t *dihedral_gen_transformations(q_t q) {
-  q_t *transformations = (q_t *)malloc(q * q * sizeof(q_t));
+  q_t *transformations = (q_t *)malloc(2 * q * q * sizeof(q_t));
 
   for (q_t i = 0; i < q; i++) {
     for (q_t j = 0; j < q; j++) {
-      transformations[q * i + j] = dihedral_act(q, i, j);
+      transformations[q * i + j] = dihedral_act(q, i, false, j);
+      transformations[q * q + q * i + j] = dihedral_act(q, i, true, j);
     }
+  }
+
+  return transformations;
+}
+
+R_t *dihedral_gen_involutions(q_t q) {
+  R_t *transformations = (R_t *)malloc(q * sizeof(R_t));
+
+  for (q_t i = 0; i < q; i++) {
+    transformations[i] = q + i;
   }
 
   return transformations;

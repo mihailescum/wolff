@@ -1,8 +1,8 @@
 
 #include "cluster_finite.h"
 
-v_t flip_cluster_finite(state_finite_t *s, v_t v0, q_t rot_ind, gsl_rng *r) {
-  q_t *rot = s->transformations + s->q * rot_ind;
+v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot_ind, gsl_rng *r) {
+  q_t *rot = s->transformations + s->q * s->involutions[rot_ind];
   q_t *R_inv = symmetric_invert(s->q, s->R);
   v_t nv = 0;
 
@@ -62,14 +62,14 @@ v_t flip_cluster_finite(state_finite_t *s, v_t v0, q_t rot_ind, gsl_rng *r) {
           s->M[rot_s_old]--;
           s->M[rot_s_new]++;
 
-          s->E += - s->H[rot_s_new] + s->H[rot_s_old];
         } else {
-          q_t diff_old = (s_old + s->q - sn) % s->q;
-          q_t diff_new = (s_new + s->q - sn) % s->q;
+          q_t diff_old = s->bond_with_zero_type[s->transformations[s->q * s->transform_site_to_zero[sn] + s_old]];
+          q_t diff_new = s->bond_with_zero_type[s->transformations[s->q * s->transform_site_to_zero[sn] + s_new]];
 
-          prob = s->J_probs[diff_new * s->q + diff_old];
+          prob = s->J_probs[diff_new * s->n_bond_types + diff_old];
 
-          s->E += - s->J[diff_new] + s->J[diff_old];
+          s->B[diff_old]--;
+          s->B[diff_new]++;
         }
 
         if (gsl_rng_uniform(r) < prob) { // and with probability ps[e]...
