@@ -1,1 +1,4 @@
 build/*
+wolfram_link/*.o
+wolfram_link/*.c
+wolfram_link/convexminorant
