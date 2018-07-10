@@ -70,3 +70,16 @@ void free_spin (vector_t <q, T> v) {
   free(v.x);
 }
 
+template <q_t q, class T>
+void write_magnetization(vector_t <q, T> M, FILE *outfile) {
+  fwrite(M.x, sizeof(double), q, outfile);
+}
+
+template <q_t q> // save some space and don't write whole doubles
+void write_magnetization(vector_t <q, double> M, FILE *outfile) {
+  for (q_t i = 0; i < q; i++) {
+    float M_tmp = (float)M.x[i];
+    fwrite(&M_tmp, sizeof(float), 1, outfile);
+  }
+}
+
