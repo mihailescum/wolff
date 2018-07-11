@@ -13,7 +13,7 @@ double *compute_OO(count_t length, T *data, count_t N) {
   for (count_t i = 0; i < N; i++) {
     OO[1] += data[i];
     for (count_t j = 0; j < length; j++) {
-      if ((long int)N - (long int)i - (long int)j > 0) {
+      if (i + j < N) {
         OO[2 + j] += data[i] * data[i + j]; 
       }
     }
