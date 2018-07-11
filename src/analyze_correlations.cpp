@@ -14,7 +14,8 @@ double *compute_OO(count_t length, double *tmp_data, count_t N) {
     exit(EXIT_FAILURE);
   }
 
-  int better_N = pow(2, floor(log(N) / log(2)));
+//  int better_N = pow(2, floor(log(N) / log(2)));
+  int better_N = N;
   double *data = tmp_data + (N - better_N);
 
   OO[0] = (double)better_N;
