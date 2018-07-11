@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 
   fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"HEISENBERG\", q -> \"3\", \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, D, L, L * L, D * L * L, T);
 
-  for (q_t i = 0; i < 2; i++) {
+  for (q_t i = 0; i < 3; i++) {
     fprintf(outfile_info, "%.15f", H[i]);
-    if (i < 2 - 1) {
+    if (i < 3 - 1) {
       fprintf(outfile_info, ", ");
     }
   }

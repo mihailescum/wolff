@@ -26,3 +26,11 @@ typedef int_fast64_t h_t;
 #define PRIcount PRIuFAST64
 #define PRIh PRIdFAST64
 
+#define SCNv SCNuFAST32
+#define SCNq SCNuFAST8
+#define SCNR SCNuFAST16
+#define SCND SCNuFAST8
+#define SCNL SCNuFAST16
+#define SCNcount SCNuFAST64
+#define SCNh SCNdFAST64
+
