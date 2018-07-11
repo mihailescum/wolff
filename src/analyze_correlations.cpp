@@ -4,32 +4,57 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <fftw3.h>
 
-template <class T>
-double *compute_OO(count_t length, T *data, count_t N) {
+double *compute_OO(count_t length, double *tmp_data, count_t N) {
   double *OO = (double *)calloc(2 + length, sizeof(double));
-  OO[0] = (double)N;
 
-  for (count_t i = 0; i < N; i++) {
-    OO[1] += data[i];
-    for (count_t j = 0; j < length; j++) {
-      if (i + j < N) {
-        OO[2 + j] += data[i] * data[i + j]; 
-      }
-    }
+  if (OO == NULL) {
+    printf("calloc failure\n");
+    exit(EXIT_FAILURE);
   }
 
-  OO[1] /= N;
+  int better_N = pow(2, floor(log(N) / log(2)));
+  double *data = tmp_data + (N - better_N);
+
+  OO[0] = (double)better_N;
+
+  for (count_t i = 0; i < better_N; i++) {
+    OO[1] += data[i];
+  }
+
+  OO[1] /= better_N;
+
+  fftw_plan plan = fftw_plan_r2r_1d(better_N, data, data, FFTW_R2HC, FFTW_ESTIMATE);
+  fftw_execute(plan);
+
+  double *tmp = (double *)malloc(better_N * sizeof(double));
+
+  tmp[0] = data[0] * data[0];
+  tmp[better_N / 2] = data[better_N/2] * data[better_N/2];
+
+  for (count_t i = 1; i < better_N / 2 - 1; i++) {
+    tmp[i] = data[i] * data[i] + data[better_N - i] * data[better_N - i];
+    tmp[better_N - i] = 0;
+  }
+
+  fftw_destroy_plan(plan);
+
+  fftw_plan plan2 = fftw_plan_r2r_1d(better_N, tmp, tmp, FFTW_HC2R, FFTW_ESTIMATE);
+  fftw_execute(plan2);
 
   for (count_t j = 0; j < length; j++) {
-    OO[2 + j] /= N - j;
+    OO[2 + j] = tmp[j] / pow(better_N, 2);
   }
+
+  free(tmp);
+  fftw_destroy_plan(plan2);
 
   return OO;
 }
 
-float finite_energy(q_t nb, double *J, q_t q, double *H, v_t nv, v_t ne, uint32_t *bo, uint32_t *so) {
-  float energy = 0;
+double finite_energy(q_t nb, double *J, q_t q, double *H, v_t nv, v_t ne, uint32_t *bo, uint32_t *so) {
+  double energy = 0;
 
   v_t tot = 0;
   for (q_t i = 0; i < nb - 1; i++) {
@@ -120,11 +145,16 @@ int main (int argc, char *argv[]) {
         printf("Number of steps %lu is less than %" PRIcount ", nothing done.\n", N, drop);
       } else {
 
-        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
+        double *data_S = (double *)malloc(N * sizeof(double));
         uint32_t *data_B = (uint32_t *)malloc((nb - 1) * N * sizeof(uint32_t));
         uint32_t *data_M = (uint32_t *)malloc((q - 1) * N * sizeof(uint32_t));
 
-        fread(data_S, N, sizeof(uint32_t), file_S);
+        uint32_t tmp;
+        for (count_t i = 0; i < N; i++) {
+          fread(&tmp, 1, sizeof(uint32_t), file_S);
+          data_S[i] = (double)tmp;
+        }
+
         fread(data_B, N * (nb - 1), sizeof(uint32_t), file_B);
         fread(data_M, N * (q - 1), sizeof(uint32_t), file_M);
 
@@ -133,11 +163,11 @@ int main (int argc, char *argv[]) {
         sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
 
         FILE *file_S_new = fopen(filename_S, "wb");
-        fwrite(OO_S, 2 + length, sizeof(double), file_S_new);
+        fwrite(OO_S, sizeof(double), 2 + length, file_S_new);
         fclose(file_S_new);
         free(data_S);
 
-        float *data_E = (float *)malloc(N * sizeof(float));
+        double *data_E = (double *)malloc(N * sizeof(double));
 
         for (count_t i = 0; i < N; i++) {
           data_E[i] = finite_energy(nb, J, q, H, nv, ne, data_B + (nb - 1) * i, data_M + (q - 1) * i);
@@ -152,13 +182,18 @@ int main (int argc, char *argv[]) {
         sprintf(filename_B, "wolff_%lu_E_OO.dat", id);
 
         FILE *file_E = fopen(filename_B, "wb");
-        fwrite(OO_E, 2 + length, sizeof(double), file_E);
+        if (file_E == NULL) {
+          printf("failed to open file\n");
+          exit(EXIT_FAILURE);
+        }
+        fwrite(OO_E, sizeof(double), 2 + length, file_E);
         fclose(file_E);
+
+        printf("Correlation functions for %g steps written.\n", OO_S[0]);
 
         free(OO_S);
         free(OO_E);
 
-        printf("Correlation functions for %lu steps written.\n", N - drop);
       }
 
       fclose(file_M);
@@ -200,11 +235,17 @@ int main (int argc, char *argv[]) {
         printf("Number of steps %lu is less than %" PRIcount ", nothing done.\n", N, drop);
       } else {
 
-        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
-        float *data_E = (float *)malloc(N * sizeof(float));
+        double *data_S = (double *)malloc(N * sizeof(double));
+        double *data_E = (double *)malloc(N * sizeof(double));
 
-        fread(data_S, N, sizeof(uint32_t), file_S);
-        fread(data_E, N, sizeof(float), file_E);
+        uint32_t tmp;
+        float tmp2;
+        for (count_t i = 0; i < N; i++) {
+          fread(&tmp, 1, sizeof(uint32_t), file_S);
+          data_S[i] = (double)tmp;
+          fread(&tmp2, 1, sizeof(float), file_E);
+          data_E[i] = (double)tmp2;
+        }
 
         double *OO_S = compute_OO(length, data_S + drop, N - drop);
         double *OO_E = compute_OO(length, data_E + drop, N - drop);
@@ -213,17 +254,19 @@ int main (int argc, char *argv[]) {
         sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
 
         FILE *file_S_new = fopen(filename_S, "wb");
-        FILE *file_E_new = fopen(filename_E, "wb");
-        fwrite(OO_S, 1 + length, sizeof(double), file_S_new);
-        fwrite(OO_E, 1 + length, sizeof(double), file_E_new);
+        fwrite(OO_S, sizeof(double), 2 + length, file_S_new);
         fclose(file_S_new);
+
+        FILE *file_E_new = fopen(filename_E, "wb");
+        fwrite(OO_E, sizeof(double), 2 + length, file_E_new);
         fclose(file_E_new);
+
         free(data_S);
         free(data_E);
+        printf("Correlation functions for %g steps written.\n", OO_S[0]);
         free(OO_S);
         free(OO_E);
 
-        printf("Correlation functions for %lu steps written.\n", N - drop);
       }
       free(filename_E);
       free(filename_S);
@@ -233,8 +276,10 @@ int main (int argc, char *argv[]) {
 
     }
   }
+
   free(model);
   fclose(metadata);
+  fftw_cleanup();
 
   return 0;
 }

@@ -26,7 +26,7 @@ endif()
 target_link_libraries(wolff_finite gsl m cblas fftw3 tcmalloc profiler)
 target_link_libraries(wolff_heisenberg gsl m cblas fftw3 tcmalloc profiler)
 target_link_libraries(wolff_planar gsl m cblas fftw3 tcmalloc profiler)
-target_link_libraries(analyze_correlations gsl m cblas fftw3 tcmalloc profiler)
+target_link_libraries(analyze_correlations gsl m cblas fftw3 profiler)
 
 install(TARGETS wolff_finite wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
 
