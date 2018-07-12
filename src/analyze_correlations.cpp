@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <fftw3.h>
 
-double *compute_OO(count_t length, double *data, count_t N) {
+double *compute_OO(count_t length, double *data, int N) {
   double *OO = (double *)calloc(2 + length, sizeof(double));
 
   if (OO == NULL) {
@@ -21,10 +21,18 @@ double *compute_OO(count_t length, double *data, count_t N) {
 
   OO[1] /= N;
 
-  fftw_plan plan = fftw_plan_r2r_1d(N, data, data, FFTW_R2HC, FFTW_ESTIMATE);
+  double *tmp1 = (double *)malloc(N * sizeof(double));
+
+  fftw_plan plan = fftw_plan_r2r_1d(N, tmp1, tmp1, FFTW_R2HC, 0);
+  for (int i = 0; i < N; i++) {
+    tmp1[i] = data[i];
+  }
   fftw_execute(plan);
+  fftw_destroy_plan(plan);
 
   double *tmp = (double *)malloc(N * sizeof(double));
+
+  fftw_plan plan2 = fftw_plan_r2r_1d(N, tmp, tmp, FFTW_HC2R, 0);
 
   if (tmp == NULL) {
     free(OO);
@@ -32,25 +40,23 @@ double *compute_OO(count_t length, double *data, count_t N) {
     return NULL;
   }
 
-  tmp[0] = data[0] * data[0];
-  tmp[N / 2] = data[N/2] * data[N/2];
+  tmp[0] = tmp1[0] * tmp1[0];
+  tmp[N / 2] = tmp1[N/2] * tmp1[N/2];
 
   for (count_t i = 1; i < N / 2 - 1; i++) {
-    tmp[i] = data[i] * data[i] + data[N - i] * data[N - i];
+    tmp[i] = tmp1[i] * tmp1[i] + tmp1[N - i] * tmp1[N - i];
     tmp[N - i] = 0;
   }
 
-  fftw_destroy_plan(plan);
-
-  plan = fftw_plan_r2r_1d(N, tmp, tmp, FFTW_HC2R, FFTW_ESTIMATE);
-  fftw_execute(plan);
+  fftw_execute(plan2);
 
   for (count_t j = 0; j < length; j++) {
     OO[2 + j] = tmp[j] / pow(N, 2);
   }
 
+  free(tmp1);
   free(tmp);
-  fftw_destroy_plan(plan);
+  fftw_destroy_plan(plan2);
 
   return OO;
 }
@@ -286,32 +292,37 @@ int main (int argc, char *argv[]) {
       } else {
 
         double *data_S = (double *)malloc(N * sizeof(double));
-        double *data_E = (double *)malloc(N * sizeof(double));
 
         uint32_t tmp;
-        float tmp2;
         for (count_t i = 0; i < N; i++) {
           fread(&tmp, 1, sizeof(uint32_t), file_S);
           data_S[i] = (double)tmp;
-          fread(&tmp2, 1, sizeof(float), file_E);
-          data_E[i] = (double)tmp2;
         }
 
         double *OO_S = compute_OO(length, data_S + drop, N - drop);
-        double *OO_E = compute_OO(length, data_E + drop, N - drop);
 
         sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
-        sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
 
         FILE *file_S_new = fopen(filename_S, "wb");
         fwrite(OO_S, sizeof(double), 2 + length, file_S_new);
         fclose(file_S_new);
 
+        free(data_S);
+
+        double *data_E = (double *)malloc(N * sizeof(double));
+        float tmp2;
+
+        for (count_t i = 0; i < N; i++) {
+          fread(&tmp2, 1, sizeof(float), file_E);
+          data_E[i] = (double)tmp2;
+        }
+
+        double *OO_E = compute_OO(length, data_E + drop, N - drop);
+        sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
         FILE *file_E_new = fopen(filename_E, "wb");
         fwrite(OO_E, sizeof(double), 2 + length, file_E_new);
         fclose(file_E_new);
 
-        free(data_S);
         free(data_E);
         printf("\033[F%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
         free(OO_S);
