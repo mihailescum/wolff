@@ -201,6 +201,10 @@ int main (int argc, char *argv[]) {
 
         sprintf(filename_B, "wolff_%lu_E_OO.dat", id);
 
+        if (length > M) {
+          length = M;
+        }
+
         FILE *file_E = fopen(filename_B, "wb");
         fwrite(&M_f, sizeof(double), 1, file_E);
         fwrite(&mean_E, sizeof(double), 1, file_E);
@@ -285,6 +289,10 @@ int main (int argc, char *argv[]) {
         fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
         compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+        if (length > M) {
+          length = M;
+        }
 
         sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
         FILE *file_E_new = fopen(filename_E, "wb");
