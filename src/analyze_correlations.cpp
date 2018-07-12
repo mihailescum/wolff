@@ -81,6 +81,8 @@ int main (int argc, char *argv[]) {
   }
   FILE *metadata;
 
+  fftw_set_timelimit(10);
+
   if (from_stdin) {
     metadata = stdin;
   } else {
