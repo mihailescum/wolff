@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
-  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"HEISENBERG\", q -> \"3\", \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, D, L, L * L, D * L * L, T);
+  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"HEISENBERG\", \"q\" -> 3, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, D, L, L * L, D * L * L, T);
 
   for (q_t i = 0; i < 3; i++) {
     fprintf(outfile_info, "%.15f", H[i]);
