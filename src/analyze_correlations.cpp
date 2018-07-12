@@ -168,24 +168,22 @@ int main (int argc, char *argv[]) {
         printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
         break;
       } else {
+        int M = N - drop;
 
         uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
-        uint32_t *data_B = (uint32_t *)malloc((nb - 1) * N * sizeof(uint32_t));
-        uint32_t *data_M = (uint32_t *)malloc((q - 1) * N * sizeof(uint32_t));
-
         fread(data_S, N, sizeof(uint32_t), file_S);
-        fread(data_B, N * (nb - 1), sizeof(uint32_t), file_B);
-        fread(data_M, N * (q - 1), sizeof(uint32_t), file_M);
-
-        int M = N - drop;
+        double mean_S = mean(M, data_S + drop);
+        free(data_S);
 
         double *forward_data = (double *)fftw_malloc(M * sizeof(double));
         fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
-        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
-        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
-        double mean_S = mean(M, data_S);
         double M_f = (double)M;
+
+        uint32_t *data_B = (uint32_t *)malloc((nb - 1) * N * sizeof(uint32_t));
+        uint32_t *data_M = (uint32_t *)malloc((q - 1) * N * sizeof(uint32_t));
+        fread(data_B, N * (nb - 1), sizeof(uint32_t), file_B);
+        fread(data_M, N * (q - 1), sizeof(uint32_t), file_M);
 
         for (count_t i = 0; i < M; i++) {
           forward_data[i] = finite_energy(nb, J, q, H, nv, ne, data_B + (nb - 1) * (drop + i), data_M + (q - 1) * (drop + i));
@@ -195,7 +193,9 @@ int main (int argc, char *argv[]) {
 
         free(data_B);
         free(data_M);
-        free(data_S);
+
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
         compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -265,24 +265,24 @@ int main (int argc, char *argv[]) {
         uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
 
         fread(data_S, sizeof(uint32_t), N, file_S);
+        double mean_S = mean(M, data_S + drop);
+        free(data_S);
 
         double *forward_data = (double *)fftw_malloc(M * sizeof(double));
-        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
-
         fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
-        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
-        double mean_S = mean(M, data_S);
-
-        free(data_S);
 
         float *data_E = (float *)malloc(N * sizeof(float));
         fread(data_E, sizeof(float), N, file_E);
         for (int i = 0; i < M; i++) {
           forward_data[i] = (double)data_E[drop + i];
         }
+        free(data_E);
 
         double mean_E = mean(M, forward_data);
+
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
         compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -294,7 +294,6 @@ int main (int argc, char *argv[]) {
         fwrite(reverse_data, sizeof(double), length, file_E_new);
         fclose(file_E_new);
 
-        free(data_E);
         printf("\033[F%lu: Correlation functions for %d steps written.\n", id, M);
         fftw_destroy_plan(forward_plan);
         fftw_destroy_plan(reverse_plan);
