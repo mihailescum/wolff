@@ -23,10 +23,10 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-target_link_libraries(wolff_finite gsl m cblas fftw3 tcmalloc profiler)
-target_link_libraries(wolff_heisenberg gsl m cblas fftw3 tcmalloc profiler)
-target_link_libraries(wolff_planar gsl m cblas fftw3 tcmalloc profiler)
-target_link_libraries(analyze_correlations gsl cblas tcmalloc profiler fftw3 m)
+target_link_libraries(wolff_finite gsl cblas fftw3 m)
+target_link_libraries(wolff_heisenberg gsl cblas fftw3 m)
+target_link_libraries(wolff_planar gsl cblas fftw3 m)
+target_link_libraries(analyze_correlations gsl cblas fftw3 m)
 
 install(TARGETS wolff_finite wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
 

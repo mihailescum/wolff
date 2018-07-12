@@ -6,59 +6,29 @@
 #include <getopt.h>
 #include <fftw3.h>
 
-double *compute_OO(count_t length, double *data, int N) {
-  double *OO = (double *)calloc(2 + length, sizeof(double));
-
-  if (OO == NULL) {
-    return NULL;
-  }
-
-  OO[0] = (double)N;
-
-  for (count_t i = 0; i < N; i++) {
-    OO[1] += data[i];
-  }
-
-  OO[1] /= N;
-
-  double *tmp1 = (double *)malloc(N * sizeof(double));
-
-  fftw_plan plan = fftw_plan_r2r_1d(N, tmp1, tmp1, FFTW_R2HC, 0);
+template <class T>
+double mean(int N, T *data) {
+  double total = 0;
   for (int i = 0; i < N; i++) {
-    tmp1[i] = data[i];
-  }
-  fftw_execute(plan);
-  fftw_destroy_plan(plan);
-
-  double *tmp = (double *)malloc(N * sizeof(double));
-
-  fftw_plan plan2 = fftw_plan_r2r_1d(N, tmp, tmp, FFTW_HC2R, 0);
-
-  if (tmp == NULL) {
-    free(OO);
-    fftw_destroy_plan(plan);
-    return NULL;
+    total += (double)data[i];
   }
 
-  tmp[0] = tmp1[0] * tmp1[0];
-  tmp[N / 2] = tmp1[N/2] * tmp1[N/2];
+  return total / N;
+}
+
+void compute_OO(int N, fftw_plan forward_plan, double *forward_data, fftw_plan reverse_plan, double *reverse_data) {
+
+  fftw_execute(forward_plan);
+
+  reverse_data[0] = forward_data[0] * forward_data[0];
+  reverse_data[N / 2] = forward_data[N/2] * forward_data[N/2];
 
   for (count_t i = 1; i < N / 2 - 1; i++) {
-    tmp[i] = tmp1[i] * tmp1[i] + tmp1[N - i] * tmp1[N - i];
-    tmp[N - i] = 0;
+    reverse_data[i] = forward_data[i] * forward_data[i] + forward_data[N - i] * forward_data[N - i];
+    reverse_data[N - i] = 0;
   }
 
-  fftw_execute(plan2);
-
-  for (count_t j = 0; j < length; j++) {
-    OO[2 + j] = tmp[j] / pow(N, 2);
-  }
-
-  free(tmp1);
-  free(tmp);
-  fftw_destroy_plan(plan2);
-
-  return OO;
+  fftw_execute(reverse_plan);
 }
 
 double finite_energy(q_t nb, double *J, q_t q, double *H, v_t nv, v_t ne, uint32_t *bo, uint32_t *so) {
@@ -197,54 +167,51 @@ int main (int argc, char *argv[]) {
         break;
       } else {
 
-        double *data_S = (double *)malloc(N * sizeof(double));
+        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
         uint32_t *data_B = (uint32_t *)malloc((nb - 1) * N * sizeof(uint32_t));
         uint32_t *data_M = (uint32_t *)malloc((q - 1) * N * sizeof(uint32_t));
 
-        uint32_t tmp;
-        for (count_t i = 0; i < N; i++) {
-          fread(&tmp, 1, sizeof(uint32_t), file_S);
-          data_S[i] = (double)tmp;
-        }
-
+        fread(data_S, N, sizeof(uint32_t), file_S);
         fread(data_B, N * (nb - 1), sizeof(uint32_t), file_B);
         fread(data_M, N * (q - 1), sizeof(uint32_t), file_M);
 
-        double *OO_S = compute_OO(length, data_S + drop, N - drop);
+        int M = N - drop;
 
-        sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
+        double *forward_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
-        FILE *file_S_new = fopen(filename_S, "wb");
-        fwrite(OO_S, sizeof(double), 2 + length, file_S_new);
-        fclose(file_S_new);
-        free(data_S);
+        double mean_S = mean(M, data_S);
+        double M_f = (double)M;
 
-        double *data_E = (double *)malloc(N * sizeof(double));
-
-        for (count_t i = 0; i < N; i++) {
-          data_E[i] = finite_energy(nb, J, q, H, nv, ne, data_B + (nb - 1) * i, data_M + (q - 1) * i);
+        for (count_t i = 0; i < M; i++) {
+          forward_data[i] = finite_energy(nb, J, q, H, nv, ne, data_B + (nb - 1) * (drop + i), data_M + (q - 1) * (drop + i));
         }
+
+        double mean_E = mean(M, forward_data);
 
         free(data_B);
         free(data_M);
+        free(data_S);
 
-        double *OO_E = compute_OO(length, data_E + drop, N - drop);
+        compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
-        free(data_E);
         sprintf(filename_B, "wolff_%lu_E_OO.dat", id);
 
         FILE *file_E = fopen(filename_B, "wb");
-        if (file_E == NULL) {
-          printf("failed to open file\n");
-          exit(EXIT_FAILURE);
-        }
-        fwrite(OO_E, sizeof(double), 2 + length, file_E);
+        fwrite(&M_f, sizeof(double), 1, file_E);
+        fwrite(&mean_E, sizeof(double), 1, file_E);
+        fwrite(&mean_S, sizeof(double), 1, file_E);
+        fwrite(reverse_data, sizeof(double), length, file_E);
         fclose(file_E);
 
-        printf("\033[F%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
+        printf("\033[F%lu: Correlation functions for %d steps written.\n", id, M);
 
-        free(OO_S);
-        free(OO_E);
+        fftw_destroy_plan(forward_plan);
+        fftw_destroy_plan(reverse_plan);
+        fftw_free(forward_data);
+        fftw_free(reverse_data);
 
       }
 
@@ -290,43 +257,47 @@ int main (int argc, char *argv[]) {
       if (N < drop) {
         printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
       } else {
+        int M = N - drop;
+        double M_f = (double)M;
 
-        double *data_S = (double *)malloc(N * sizeof(double));
+        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
 
-        uint32_t tmp;
-        for (count_t i = 0; i < N; i++) {
-          fread(&tmp, 1, sizeof(uint32_t), file_S);
-          data_S[i] = (double)tmp;
-        }
+        fread(data_S, sizeof(uint32_t), N, file_S);
 
-        double *OO_S = compute_OO(length, data_S + drop, N - drop);
+        double *forward_data = (double *)fftw_malloc(M * sizeof(double));
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
 
-        sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
+        fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
-        FILE *file_S_new = fopen(filename_S, "wb");
-        fwrite(OO_S, sizeof(double), 2 + length, file_S_new);
-        fclose(file_S_new);
+        double mean_S = mean(M, data_S);
 
         free(data_S);
 
-        double *data_E = (double *)malloc(N * sizeof(double));
-        float tmp2;
-
-        for (count_t i = 0; i < N; i++) {
-          fread(&tmp2, 1, sizeof(float), file_E);
-          data_E[i] = (double)tmp2;
+        float *data_E = (float *)malloc(N * sizeof(float));
+        fread(data_E, sizeof(float), N, file_E);
+        for (int i = 0; i < M; i++) {
+          forward_data[i] = (double)data_E[drop + i];
         }
 
-        double *OO_E = compute_OO(length, data_E + drop, N - drop);
+        double mean_E = mean(M, forward_data);
+
+        compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
         sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
         FILE *file_E_new = fopen(filename_E, "wb");
-        fwrite(OO_E, sizeof(double), 2 + length, file_E_new);
+        fwrite(&M_f, sizeof(double), 1, file_E_new);
+        fwrite(&mean_E, sizeof(double), 1, file_E_new);
+        fwrite(&mean_S, sizeof(double), 1, file_E_new);
+        fwrite(reverse_data, sizeof(double), length, file_E_new);
         fclose(file_E_new);
 
         free(data_E);
-        printf("\033[F%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
-        free(OO_S);
-        free(OO_E);
+        printf("\033[F%lu: Correlation functions for %d steps written.\n", id, M);
+        fftw_destroy_plan(forward_plan);
+        fftw_destroy_plan(reverse_plan);
+        fftw_free(forward_data);
+        fftw_free(reverse_data);
 
       }
       free(filename_E);
