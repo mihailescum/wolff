@@ -131,6 +131,8 @@ int main (int argc, char *argv[]) {
 
  while (EOF != fscanf(metadata, "<| \"ID\" -> %lu, \"MODEL\" -> \"%[^\"]\", \"q\" -> %" SCNq ", \"D\" -> %" SCND ", \"L\" -> %" SCNL ", \"NV\" -> %" SCNv ", \"NE\" -> %" SCNv ", ", &id, model, &q, &D, &L, &nv, &ne)) {
 
+   printf("%lu: Processing...\n", id);
+
    bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK") || 0 == strcmp(model, "DGM");
 
     if (is_finite) {
@@ -233,7 +235,7 @@ int main (int argc, char *argv[]) {
         fwrite(OO_E, sizeof(double), 2 + length, file_E);
         fclose(file_E);
 
-        printf("%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
+        printf("\033[F\033[J%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
 
         free(OO_S);
         free(OO_E);
@@ -311,7 +313,7 @@ int main (int argc, char *argv[]) {
 
         free(data_S);
         free(data_E);
-        printf("%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
+        printf("\033[F\033[J%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
         free(OO_S);
         free(OO_E);
 
