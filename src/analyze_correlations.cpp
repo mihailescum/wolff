@@ -235,7 +235,7 @@ int main (int argc, char *argv[]) {
         fwrite(OO_E, sizeof(double), 2 + length, file_E);
         fclose(file_E);
 
-        printf("\033[F\033[J%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
+        printf("\033[F%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
 
         free(OO_S);
         free(OO_E);
@@ -313,7 +313,7 @@ int main (int argc, char *argv[]) {
 
         free(data_S);
         free(data_E);
-        printf("\033[F\033[J%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
+        printf("\033[F%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
         free(OO_S);
         free(OO_E);
 
