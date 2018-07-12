@@ -165,7 +165,7 @@ int main (int argc, char *argv[]) {
       }
 
       if (N < drop) {
-        printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
+        printf("\033[F%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
         break;
       } else {
         int M = N - drop;
@@ -257,7 +257,7 @@ int main (int argc, char *argv[]) {
       }
 
       if (N < drop) {
-        printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
+        printf("\033[F%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
       } else {
         int M = N - drop;
         double M_f = (double)M;
