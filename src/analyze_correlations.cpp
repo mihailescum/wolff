@@ -233,7 +233,7 @@ int main (int argc, char *argv[]) {
         fwrite(OO_E, sizeof(double), 2 + length, file_E);
         fclose(file_E);
 
-        printf("Correlation functions for %g steps written.\n", OO_S[0]);
+        printf("%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
 
         free(OO_S);
         free(OO_E);
@@ -280,7 +280,7 @@ int main (int argc, char *argv[]) {
       }
 
       if (N < drop) {
-        printf("Number of steps %lu is less than %" PRIcount ", nothing done.\n", N, drop);
+        printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
       } else {
 
         double *data_S = (double *)malloc(N * sizeof(double));
@@ -311,7 +311,7 @@ int main (int argc, char *argv[]) {
 
         free(data_S);
         free(data_E);
-        printf("Correlation functions for %g steps written.\n", OO_S[0]);
+        printf("%lu: Correlation functions for %g steps written.\n", id, OO_S[0]);
         free(OO_S);
         free(OO_E);
 
