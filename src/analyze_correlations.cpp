@@ -6,50 +6,51 @@
 #include <getopt.h>
 #include <fftw3.h>
 
-double *compute_OO(count_t length, double *tmp_data, count_t N) {
+double *compute_OO(count_t length, double *data, count_t N) {
   double *OO = (double *)calloc(2 + length, sizeof(double));
 
   if (OO == NULL) {
-    printf("calloc failure\n");
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
-//  int better_N = pow(2, floor(log(N) / log(2)));
-  int better_N = N;
-  double *data = tmp_data + (N - better_N);
+  OO[0] = (double)N;
 
-  OO[0] = (double)better_N;
-
-  for (count_t i = 0; i < better_N; i++) {
+  for (count_t i = 0; i < N; i++) {
     OO[1] += data[i];
   }
 
-  OO[1] /= better_N;
+  OO[1] /= N;
 
-  fftw_plan plan = fftw_plan_r2r_1d(better_N, data, data, FFTW_R2HC, FFTW_ESTIMATE);
+  fftw_plan plan = fftw_plan_r2r_1d(N, data, data, FFTW_R2HC, FFTW_ESTIMATE);
   fftw_execute(plan);
 
-  double *tmp = (double *)malloc(better_N * sizeof(double));
+  double *tmp = (double *)malloc(N * sizeof(double));
+
+  if (tmp == NULL) {
+    free(OO);
+    fftw_destroy_plan(plan);
+    return NULL;
+  }
 
   tmp[0] = data[0] * data[0];
-  tmp[better_N / 2] = data[better_N/2] * data[better_N/2];
+  tmp[N / 2] = data[N/2] * data[N/2];
 
-  for (count_t i = 1; i < better_N / 2 - 1; i++) {
-    tmp[i] = data[i] * data[i] + data[better_N - i] * data[better_N - i];
-    tmp[better_N - i] = 0;
+  for (count_t i = 1; i < N / 2 - 1; i++) {
+    tmp[i] = data[i] * data[i] + data[N - i] * data[N - i];
+    tmp[N - i] = 0;
   }
 
   fftw_destroy_plan(plan);
 
-  fftw_plan plan2 = fftw_plan_r2r_1d(better_N, tmp, tmp, FFTW_HC2R, FFTW_ESTIMATE);
-  fftw_execute(plan2);
+  plan = fftw_plan_r2r_1d(N, tmp, tmp, FFTW_HC2R, FFTW_ESTIMATE);
+  fftw_execute(plan);
 
   for (count_t j = 0; j < length; j++) {
-    OO[2 + j] = tmp[j] / pow(better_N, 2);
+    OO[2 + j] = tmp[j] / pow(N, 2);
   }
 
   free(tmp);
-  fftw_destroy_plan(plan2);
+  fftw_destroy_plan(plan);
 
   return OO;
 }
@@ -79,10 +80,12 @@ double finite_energy(q_t nb, double *J, q_t q, double *H, v_t nv, v_t ne, uint32
 int main (int argc, char *argv[]) {
   count_t drop = (count_t)1e4;
   count_t length = (count_t)1e4;
+  bool speedy_drop = false;
+  bool from_stdin = false;
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "d:l:")) != -1) {
+  while ((opt = getopt(argc, argv, "d:l:sp")) != -1) {
     switch (opt) {
       case 'd':
         drop = (count_t)atof(optarg);
@@ -90,19 +93,37 @@ int main (int argc, char *argv[]) {
       case 'l':
         length = (count_t)atof(optarg);
         break;
+      case 's':
+        speedy_drop = true;
+        break;
+      case 'p':
+        from_stdin = true;
+        break;
       default:
         exit(EXIT_FAILURE);
     }
   }
+  FILE *metadata;
 
-  FILE *metadata = fopen("wolff_metadata.txt", "r");
+  if (from_stdin) {
+    metadata = stdin;
+  } else {
+    metadata = fopen("wolff_metadata.txt", "r");
+  }
 
   if (metadata == NULL) {
+    printf("Metadata file not found. Make sure you are in the correct directory!\n");
     exit(EXIT_FAILURE);
   }
 
   unsigned long id;
   char *model = (char *)malloc(32 * sizeof(char));
+
+  if (model == NULL) {
+    printf("Malloc failed.\n");
+    exit(EXIT_FAILURE);
+  }
+
   q_t q;
   D_t D;
   L_t L;
@@ -110,12 +131,19 @@ int main (int argc, char *argv[]) {
 
  while (EOF != fscanf(metadata, "<| \"ID\" -> %lu, \"MODEL\" -> \"%[^\"]\", \"q\" -> %" SCNq ", \"D\" -> %" SCND ", \"L\" -> %" SCNL ", \"NV\" -> %" SCNv ", \"NE\" -> %" SCNv ", ", &id, model, &q, &D, &L, &nv, &ne)) {
 
-    if (0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK") || 0 == strcmp(model, "DGM")) {
+   bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK") || 0 == strcmp(model, "DGM");
+
+    if (is_finite) {
       q_t nb;
       double T;
       fscanf(metadata, "\"NB\" -> %" SCNq ", \"T\" -> %lf, \"J\" -> {", &nb, &T);
       double *J = (double *)malloc(nb * sizeof(double));
       double *H = (double *)malloc(q * sizeof(double));
+
+      if (J == NULL || H == NULL) {
+        printf("%lu: Malloc failed.\n", id);
+        break;
+      }
 
       for (q_t i = 0; i < nb - 1; i++) {
         fscanf(metadata, "%lf, ", &(J[i]));
@@ -130,6 +158,11 @@ int main (int argc, char *argv[]) {
       char *filename_B = (char *)malloc(128 * sizeof(char));
       char *filename_S = (char *)malloc(128 * sizeof(char));
 
+      if (filename_M == NULL || filename_B == NULL || filename_S == NULL) {
+        printf("%lu: Malloc failed.\n", id);
+        break;
+      }
+
       sprintf(filename_M, "wolff_%lu_M.dat", id);
       sprintf(filename_B, "wolff_%lu_B.dat", id);
       sprintf(filename_S, "wolff_%lu_S.dat", id);
@@ -138,12 +171,22 @@ int main (int argc, char *argv[]) {
       FILE *file_B = fopen(filename_B, "rb");
       FILE *file_S = fopen(filename_S, "rb");
 
+      if (file_M == NULL || file_B == NULL || file_S == NULL) {
+        printf("%lu: Opening data file failed.\n", id);
+        break;
+      }
+
       fseek(file_S, 0, SEEK_END);
       unsigned long N = ftell(file_S) / sizeof(uint32_t);
       fseek(file_S, 0, SEEK_SET);
 
+      if (speedy_drop) {
+        drop = N - pow(2, floor(log(N) / log(2)));
+      }
+
       if (N < drop) {
-        printf("Number of steps %lu is less than %" PRIcount ", nothing done.\n", N, drop);
+        printf("%lu: Number of steps %lu is less than %" PRIcount ", nothing done.\n", id, N, drop);
+        break;
       } else {
 
         double *data_S = (double *)malloc(N * sizeof(double));
@@ -231,6 +274,10 @@ int main (int argc, char *argv[]) {
       fseek(file_S, 0, SEEK_END);
       unsigned long N = ftell(file_S) / sizeof(uint32_t);
       fseek(file_S, 0, SEEK_SET);
+
+      if (speedy_drop) {
+        drop = N - pow(2, floor(log(N) / log(2)));
+      }
 
       if (N < drop) {
         printf("Number of steps %lu is less than %" PRIcount ", nothing done.\n", N, drop);
