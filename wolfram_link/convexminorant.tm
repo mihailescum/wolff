@@ -25,6 +25,7 @@ void convexminorant(double * Gammas, int len) {
   }
   double *m = get_convex_minorant(i, Gammas);
   WSPutReal64List(stdlink, m, i);
+  free(m);
 }
 
 int main(int argc, char **argv) {
