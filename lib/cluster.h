@@ -58,7 +58,7 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
 
-  bool *marks = (bool *)calloc(state->nv, sizeof(bool));
+  bool *marks = (bool *)calloc(state->nv + 1, sizeof(bool));
 
   while (stack != NULL) {
     v_t v = stack_pop(&stack);
@@ -67,10 +67,10 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       X_t si_old, si_new;
       R_t R_old, R_new;
 
+      R_old = state->R;
       marks[v] = true;
 
       if (v == state->nv) {
-        R_old = state->R;
         R_new = act (r, R_old);
       } else {
         si_old = state->spins[v];
@@ -94,7 +94,7 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
 
         if (is_ext) {
           X_t rs_old, rs_new;
-          if (vn == state->g->nv - 1) {
+          if (vn == state->nv) {
             rs_old = act_inverse (R_old, si_old);
             rs_new = act_inverse (R_old, si_new);
           } else {

@@ -167,9 +167,9 @@ orthogonal_t <q, double> generate_rotation_uniform (gsl_rng *r, const state_t <o
 
 template <q_t q>
 orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state_t <orthogonal_t <q, double>, vector_t <q, double>> *s, double epsilon) {
-  orthogonal_t <q, double> ptr;
+  orthogonal_t <q, double> m;
   vector_t <q, double> tmp_v;
-  ptr.is_reflection = true;
+  m.is_reflection = true;
 
   tmp_v.x = (double *)malloc(q * sizeof(double));
 
@@ -196,10 +196,22 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state
     tmp_v.x[i] /= mag_v;
   }
 
-  vector_t <q, double> v = act(s->R, tmp_v);
+  vector_t <q, double> v = act_inverse(s->R, tmp_v);
   free(tmp_v.x);
-  ptr.x = v.x;
+  m.x = v.x;
 
-  return ptr;
+  v2 = 0;
+
+  for (q_t i = 0; i < q; i++) {
+    v2 += m.x[i] * m.x[i];
+  }
+
+  mag_v = sqrt(v2);
+
+  for (q_t i = 0; i < q; i++) {
+    m.x[i] /= mag_v;
+  }
+
+  return m;
 }
 
