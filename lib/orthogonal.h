@@ -184,9 +184,10 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state
   }
 
   double v2 = 0;
+  double factor = gsl_ran_ugaussian(r);
 
   for (q_t i = 0; i < q; i++) {
-    tmp_v.x[i] = (tmp_v.x[i] - tmpM * s->M.x[i] / M2) + epsilon * gsl_ran_ugaussian(r);
+    tmp_v.x[i] = (tmp_v.x[i] - tmpM * s->M.x[i] / M2) + epsilon * factor * s->M.x[i] / sqrt(M2);
     v2 += tmp_v.x[i] * tmp_v.x[i];
   }
 

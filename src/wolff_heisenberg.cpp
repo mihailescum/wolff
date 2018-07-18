@@ -1,6 +1,7 @@
 
 #include <getopt.h>
 
+#include <correlation.h>
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
@@ -87,8 +88,51 @@ int main(int argc, char *argv[]) {
 
   fclose(outfile_info);
 
+  char *filename_M = (char *)malloc(255 * sizeof(char));
+  char *filename_E = (char *)malloc(255 * sizeof(char));
+  char *filename_S = (char *)malloc(255 * sizeof(char));
+  char *filename_X = (char *)malloc(255 * sizeof(char));
 
-  wolff <orthogonal_t <3, double>, vector_t <3, double>> (N, D, L, T, dot <3, double>, std::bind(H_vector <3, double>, std::placeholders::_1, H), gen_R, timestamp, silent);
+  sprintf(filename_M, "wolff_%lu_M.dat", timestamp);
+  sprintf(filename_E, "wolff_%lu_E.dat", timestamp);
+  sprintf(filename_S, "wolff_%lu_S.dat", timestamp);
+  sprintf(filename_X, "wolff_%lu_X.dat", timestamp);
+
+  FILE *outfile_M = fopen(filename_M, "wb");
+  FILE *outfile_E = fopen(filename_E, "wb");
+  FILE *outfile_S = fopen(filename_S, "wb");
+  FILE *outfile_X = fopen(filename_X, "wb");
+
+  free(filename_M);
+  free(filename_E);
+  free(filename_S);
+  free(filename_X);
+
+  std::function <void(const state_t <orthogonal_t <3, double>, vector_t <3, double>> *)> *measurements = (std::function <void(const state_t <orthogonal_t <3, double>, vector_t <3, double>> *)> *)malloc(4 * sizeof(std::function <void(const state_t <orthogonal_t <3, double>, vector_t <3, double>> *)>));
+
+  measurements[0] = [&](const state_t <orthogonal_t <3, double>, vector_t <3, double>> *s) {
+    float smaller_E = (float)s->E;
+    fwrite(&smaller_E, sizeof(float), 1, outfile_E);
+  };
+  measurements[1] = [&](const state_t <orthogonal_t <3, double>, vector_t <3, double>> *s) {
+    float smaller_X = (float)correlation_length(s);
+    fwrite(&smaller_X, sizeof(float), 1, outfile_X);
+  };
+  measurements[2] = [&](const state_t <orthogonal_t <3, double>, vector_t <3, double>> *s) {
+    write_magnetization(s->M, outfile_M);
+  };
+  measurements[3] = [&](const state_t <orthogonal_t <3, double>, vector_t <3, double>> *s) {
+    fwrite(&(s->last_cluster_size), sizeof(uint32_t), 1, outfile_S);
+  };
+
+  wolff <orthogonal_t <3, double>, vector_t <3, double>> (N, D, L, T, dot <3, double>, std::bind(H_vector <3, double>, std::placeholders::_1, H), gen_R, 4, measurements, silent);
+
+  free(measurements);
+
+  fclose(outfile_M);
+  fclose(outfile_E);
+  fclose(outfile_S);
+  fclose(outfile_X);
 
   free(H);
 

@@ -52,7 +52,7 @@ template <class T>
 T subtract(T, T);
 
 template <class R_t, class X_t>
-v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
+void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   v_t nv = 0;
 
   ll_t *stack = NULL;     // create a new stack
@@ -104,8 +104,8 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           double dE = state->H(rs_old) - state->H(rs_new);
           prob = 1.0 - exp(-dE / state->T);
 
-          subtract (state->M, rs_old);
-          add (state->M, rs_new);
+          subtract (&(state->M), rs_old);
+          add (&(state->M), rs_new);
           state->E += dE;
 
           free_spin (rs_old);
@@ -137,6 +137,6 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
 
   free(marks);
 
-  return nv;
+  state->last_cluster_size = nv;
 }
 

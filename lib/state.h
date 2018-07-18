@@ -19,6 +19,7 @@ class state_t {
     R_t R;
     double E;
     X_t M; // the "sum" of the spins, like the total magnetization
+    v_t last_cluster_size;
 
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
@@ -36,6 +37,7 @@ class state_t {
       init (&R);
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
       M = scalar_multiple (nv, spins[0]);
+      last_cluster_size = 0;
     }
 
     ~state_t() {

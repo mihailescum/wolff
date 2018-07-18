@@ -30,16 +30,16 @@ vector_t <q, T> copy (vector_t <q, T> v) {
 }
 
 template <q_t q, class T>
-void add (vector_t <q, T> v1, vector_t <q, T> v2) {
+void add (vector_t <q, T> *v1, vector_t <q, T> v2) {
   for (q_t i = 0; i < q; i++) {
-    v1.x[i] += v2.x[i];
+    v1->x[i] += v2.x[i];
   }
 }
 
 template <q_t q, class T>
-void subtract (vector_t <q, T> v1, vector_t <q, T> v2) {
+void subtract (vector_t <q, T> *v1, vector_t <q, T> v2) {
   for (q_t i = 0; i < q; i++) {
-    v1.x[i] -= v2.x[i];
+    v1->x[i] -= v2.x[i];
   }
 }
 
@@ -72,7 +72,7 @@ void free_spin (vector_t <q, T> v) {
 
 template <q_t q, class T>
 void write_magnetization(vector_t <q, T> M, FILE *outfile) {
-  fwrite(M.x, sizeof(double), q, outfile);
+  fwrite(M.x, sizeof(T), q, outfile);
 }
 
 template <q_t q> // save some space and don't write whole doubles
@@ -81,5 +81,10 @@ void write_magnetization(vector_t <q, double> M, FILE *outfile) {
     float M_tmp = (float)M.x[i];
     fwrite(&M_tmp, sizeof(float), 1, outfile);
   }
+}
+
+template <q_t q, class T>
+double correlation_component(vector_t <q, T> v) {
+  return (double)v.x[0];
 }
 
