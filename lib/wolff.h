@@ -2,13 +2,6 @@
 #include "cluster.h"
 #include "state.h"
 
-template <q_t q, class T>
-double H_vector(vector_t <q, T> v1, T *H) {
-  vector_t <q, T> H_vec;
-  H_vec.x = H;
-  return (double)(dot <q, T> (v1, H_vec));
-}
-
 template <class R_t, class X_t>
 void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H, std::function <R_t(gsl_rng *, const state_t <R_t, X_t> *)> gen_R, unsigned int n_measurements, std::function <void(const state_t <R_t, X_t> *)> *measurements, bool silent) {
 
@@ -30,14 +23,12 @@ void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J
     for (unsigned int i = 0; i < n_measurements; i++) {
       measurements[i](&s);
     }
-
   }
+
   if (!silent) {
     printf("\033[F\033[J");
   }
   printf("WOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", N, N, s.E, s.last_cluster_size);
-
-  fftw_cleanup();
 
   gsl_rng_free(r);
 }

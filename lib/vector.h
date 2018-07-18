@@ -88,3 +88,9 @@ double correlation_component(vector_t <q, T> v) {
   return (double)v.x[0];
 }
 
+template <q_t q, class T>
+double H_vector(vector_t <q, T> v1, T *H) {
+  vector_t <q, T> H_vec;
+  H_vec.x = H;
+  return (double)(dot <q, T> (v1, H_vec));
+}

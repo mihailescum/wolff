@@ -138,6 +138,8 @@ int main(int argc, char *argv[]) {
 
   free(H);
 
+  fftw_cleanup();
+
   return 0;
 }
 
