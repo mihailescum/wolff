@@ -239,7 +239,11 @@ int main (int argc, char *argv[]) {
       for (q_t i = 0; i < q - 1; i++) {
         fscanf(metadata, "%lf, ", &(H[i]));
       }
-      fscanf(metadata, "%lf} |>\n", &(H[q - 1]));
+      char *field = (char *)malloc(32 * sizeof(char));
+      double epsilon;
+      fscanf(metadata, "%lf}, \"GENERATOR\" -> \"%[^\"]\", \"EPS\" -> %lf |>\n", &(H[q - 1]), field, &epsilon);
+
+      free(field);
       free(H);
 
       char *filename_E = (char *)malloc(128 * sizeof(char));

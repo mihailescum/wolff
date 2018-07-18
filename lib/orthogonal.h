@@ -6,6 +6,7 @@
 #include <gsl/gsl_randist.h>
 #include <cmath>
 
+#include "state.h"
 #include "types.h"
 
 template <q_t q, class T>
@@ -143,21 +144,62 @@ orthogonal_t <q, T> act_inverse (orthogonal_t <q, T> m1, orthogonal_t <q, T> m2)
 }
 
 template <q_t q>
-void generate_rotation (gsl_rng *r, orthogonal_t <q, double> *ptr) {
-  ptr->is_reflection = true;
-  ptr->x = (double *)calloc(q, sizeof(double));
+orthogonal_t <q, double> generate_rotation_uniform (gsl_rng *r, const state_t <orthogonal_t <q, double>, vector_t <q, double>> *s) {
+  orthogonal_t <q, double> ptr;
+  ptr.is_reflection = true;
+  ptr.x = (double *)calloc(q, sizeof(double));
 
   double v2 = 0;
 
   for (q_t i = 0; i < q; i++) {
-    ptr->x[i] = gsl_ran_ugaussian(r);
-    v2 += ptr->x[i] * ptr->x[i];
+    ptr.x[i] = gsl_ran_ugaussian(r);
+    v2 += ptr.x[i] * ptr.x[i];
   }
 
   double mag_v = sqrt(v2);
 
   for (q_t i = 0; i < q; i++) {
-    ptr->x[i] /= mag_v;
+    ptr.x[i] /= mag_v;
   }
+
+  return ptr;
+}
+
+template <q_t q>
+orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state_t <orthogonal_t <q, double>, vector_t <q, double>> *s, double epsilon) {
+  orthogonal_t <q, double> ptr;
+  vector_t <q, double> tmp_v;
+  ptr.is_reflection = true;
+
+  tmp_v.x = (double *)malloc(q * sizeof(double));
+
+  double tmp2 = 0;
+  double M2 = 0;
+  double tmpM = 0;
+
+  for (q_t i = 0; i < q; i++) {
+    tmp_v.x[i] = gsl_ran_ugaussian(r);
+    M2 += pow(s->M.x[i], 2);
+    tmpM += tmp_v.x[i] * s->M.x[i];
+  }
+
+  double v2 = 0;
+
+  for (q_t i = 0; i < q; i++) {
+    tmp_v.x[i] = (tmp_v.x[i] - tmpM * s->M.x[i] / M2) + epsilon * gsl_ran_ugaussian(r);
+    v2 += tmp_v.x[i] * tmp_v.x[i];
+  }
+
+  double mag_v = sqrt(v2);
+
+  for (q_t i = 0; i < q; i++) {
+    tmp_v.x[i] /= mag_v;
+  }
+
+  vector_t <q, double> v = act(s->R, tmp_v);
+  free(tmp_v.x);
+  ptr.x = v.x;
+
+  return ptr;
 }
 

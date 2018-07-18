@@ -2,7 +2,8 @@
 #include <time.h>
 #include <getopt.h>
 
-#include <cluster.h>
+#include "cluster.h"
+#include "state.h"
 
 template <q_t q, class T>
 double H_vector(vector_t <q, T> v1, T *H) {
@@ -12,7 +13,7 @@ double H_vector(vector_t <q, T> v1, T *H) {
 }
 
 template <class R_t, class X_t>
-void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H, unsigned long timestamp, bool silent) {
+void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H, std::function <R_t(gsl_rng *, const state_t <R_t, X_t> *)> gen_R, unsigned long timestamp, bool silent) {
 
   state_t <R_t, X_t> s(D, L, T, J, H);
 
@@ -44,8 +45,7 @@ void wolff(count_t N, D_t D, L_t L, double T, std::function <double(X_t, X_t)> J
 
     v_t v0 = gsl_rng_uniform_int(r, s.nv);
      
-    R_t step;
-    generate_rotation(r, &step);
+    R_t step = gen_R(r, &s);
 
     cluster_size = flip_cluster <R_t, X_t> (&s, v0, step, r);
 

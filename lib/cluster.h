@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include "state.h"
 #include "types.h"
 #include "rand.h"
 #include "stack.h"
@@ -50,52 +51,6 @@ T add(T, T);
 template <class T>
 T subtract(T, T);
 
-template <class T>
-T gen_rot(gsl_rng *r);
-
-template <class R_t, class X_t>
-class state_t {
-  public:
-    D_t D;
-    L_t L;
-    v_t nv;
-    v_t ne;
-    graph_t *g;
-    double T;
-    X_t *spins;
-    R_t R;
-    double E;
-    X_t M; // the "sum" of the spins, like the total magnetization
-
-    std::function <double(X_t, X_t)> J;
-    std::function <double(X_t)> H;
-
-    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), T(T), J(J), H(H) {
-      graph_t *h = graph_create_square(D, L);
-      nv = h->nv;
-      ne = h->ne;
-      g = graph_add_ext(h);
-      graph_free(h);
-      spins = (X_t *)malloc(nv * sizeof(X_t));
-      for (v_t i = 0; i < nv; i++) {
-        init (&(spins[i]));
-      }
-      init (&R);
-      E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
-      M = scalar_multiple (nv, spins[0]);
-    }
-
-    ~state_t() {
-      graph_free(g);
-      for (v_t i = 0; i < nv; i++) {
-        free_spin(spins[i]);
-      }
-      free(spins);
-      free_spin(R);
-      free_spin(M);
-    }
-};
-
 template <class R_t, class X_t>
 v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   v_t nv = 0;
@@ -103,7 +58,7 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   ll_t *stack = NULL;     // create a new stack
   stack_push(&stack, v0); // push the initial vertex to the stack
 
-  bool *marks = (bool *)calloc(state->g->nv, sizeof(bool));
+  bool *marks = (bool *)calloc(state->nv, sizeof(bool));
 
   while (stack != NULL) {
     v_t v = stack_pop(&stack);
@@ -112,14 +67,13 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       X_t si_old, si_new;
       R_t R_old, R_new;
 
-      si_old = state->spins[v];
-      R_old = state->R;
-
       marks[v] = true;
 
-      if (v == state->g->nv - 1) {
+      if (v == state->nv) {
+        R_old = state->R;
         R_new = act (r, R_old);
       } else {
+        si_old = state->spins[v];
         si_new = act (r, si_old);
       }
 
@@ -130,13 +84,13 @@ v_t flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
 
         X_t sj;
 
-        if (vn != state->g->nv - 1) {
+        if (vn != state->nv) {
           sj = state->spins[vn];
         }
 
         double prob;
 
-        bool is_ext = (v == state->g->nv - 1 || vn == state->g->nv - 1);
+        bool is_ext = (v == state->nv || vn == state->nv);
 
         if (is_ext) {
           X_t rs_old, rs_new;
