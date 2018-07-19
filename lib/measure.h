@@ -36,9 +36,9 @@ std::function <void(const state_t <R_t, X_t> *)> measurement_magnetization_file(
 }
 
 template <class R_t, class X_t>
-std::function <void(const state_t <R_t, X_t> *)> measurement_fourier_file(FILE *file, fftw_plan plan, double *fftw_in, double *fftw_out) {
+std::function <void(const state_t <R_t, X_t> *)> measurement_fourier_file(FILE *file) {
   return [=](const state_t <R_t, X_t> *s) {
-    float smaller_X = (float)correlation_length(s, plan, fftw_in, fftw_out);
+    float smaller_X = (float)correlation_length(s);
     fwrite(&smaller_X, sizeof(float), 1, file);
   };
 }

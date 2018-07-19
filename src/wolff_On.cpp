@@ -115,24 +115,33 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
-  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, ON_strings[N_COMP], N_COMP, D, L, pow(L, D), D * pow(L, D), T);
-
-  for (q_t i = 0; i < N_COMP; i++) {
-    fprintf(outfile_info, "%.15f", H_vec[i]);
-    if (i < N_COMP - 1) {
-      fprintf(outfile_info, ", ");
+  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"FIELD_TYPE\" -> ", timestamp, ON_strings[N_COMP], N_COMP, D, L, (v_t)pow(L, D), D * (v_t)pow(L, D), T);
+  if (modulated_field) {
+    fprintf(outfile_info, "\"MODULATED\", \"ORDER\" -> %d, \"H\" -> %.15f, ", order, H_vec[0]);
+  } else {
+    fprintf(outfile_info, "\"VECTOR\", \"H\" -> {");
+    for (q_t i = 0; i < N_COMP; i++) {
+      fprintf(outfile_info, "%.15f", H_vec[i]);
+      if (i < N_COMP - 1) {
+        fprintf(outfile_info, ", ");
+      }
     }
+    fprintf(outfile_info, "}, ");
   }
 
-  fprintf(outfile_info, "}, \"GENERATOR\" -> \"%s\", \"EPS\" -> %g |>\n", pert_type, epsilon);
+  fprintf(outfile_info, "\"GENERATOR\" -> \"%s\"", pert_type);
+
+  if (use_pert) {
+    fprintf(outfile_info, ", \"EPS\" -> %g", epsilon);
+  }
+
+  fprintf(outfile_info, " |>\n");
 
   fclose(outfile_info);
 
   unsigned int n_measurements = 0;
   std::function <void(const On_t *)> *measurements = (std::function <void(const On_t *)> *)calloc(POSSIBLE_MEASUREMENTS, sizeof(std::function <void(const On_t *)>));
   FILE *outfile_M, *outfile_E, *outfile_S, *outfile_F;
-  double *fftw_in, *fftw_out;
-  fftw_plan plan;
 
   if (measurement_flags & measurement_energy) {
     char *filename_E = (char *)malloc(255 * sizeof(char));
@@ -166,22 +175,7 @@ int main(int argc, char *argv[]) {
     sprintf(filename_F, "wolff_%lu_F.dat", timestamp);
     outfile_F = fopen(filename_F, "wb");
     free(filename_F);
-
-    fftw_in = (double *)fftw_malloc(pow(L, D) * sizeof(double));
-    fftw_out = (double *)fftw_malloc(pow(L, D) * sizeof(double));
-    int rank = D;
-    int *n = (int *)malloc(rank * sizeof(int));
-    fftw_r2r_kind *kind = (fftw_r2r_kind *)malloc(rank * sizeof(fftw_r2r_kind));
-    for (D_t i = 0; i < rank; i++) {
-      n[i] = L;
-      kind[i] = FFTW_R2HC;
-    }
-    plan = fftw_plan_r2r(rank, n, fftw_in, fftw_out, kind, 0);
-
-    free(n);
-    free(kind);
-
-    measurements[n_measurements] = measurement_fourier_file<orthogonal_R_t, vector_R_t> (outfile_F, plan, fftw_in, fftw_out);
+    measurements[n_measurements] = measurement_fourier_file<orthogonal_R_t, vector_R_t> (outfile_F);
     n_measurements++;
   }
 
@@ -208,10 +202,6 @@ int main(int argc, char *argv[]) {
   }
   if (measurement_flags & measurement_fourierZero) {
     fclose(outfile_F);
-    fftw_destroy_plan(plan);
-    fftw_free(fftw_in);
-    fftw_free(fftw_out);
-    fftw_cleanup(); // fftw is only used if fourier modes are measured!
   }
 
   free(H_vec);

@@ -94,12 +94,15 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
 
         if (is_ext) {
           X_t rs_old, rs_new;
+          v_t non_ghost;
           if (vn == state->nv) {
             rs_old = act_inverse (R_old, si_old);
             rs_new = act_inverse (R_old, si_new);
+            non_ghost = v;
           } else {
             rs_old = act_inverse (R_old, sj);
             rs_new = act_inverse (R_new, sj);
+            non_ghost = vn;
           }
           double dE = state->H(rs_old) - state->H(rs_new);
           prob = 1.0 - exp(-dE / state->T);
@@ -107,6 +110,15 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           subtract (&(state->M), rs_old);
           add (&(state->M), rs_new);
           state->E += dE;
+
+          for (D_t i = 0; i < state->D; i++) {
+            double x = (double)((non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L) / (double)state->L; 
+            scalar_subtract(&(state->ReF[i]), cos(2 * M_PI * x), rs_old);
+            scalar_add(&(state->ReF[i]), cos(2 * M_PI * x), rs_new);
+
+            scalar_subtract(&(state->ImF[i]), sin(2 * M_PI * x), rs_old);
+            scalar_add(&(state->ImF[i]), sin(2 * M_PI * x), rs_new);
+          }
 
           free_spin (rs_old);
           free_spin (rs_new);

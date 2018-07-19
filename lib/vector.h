@@ -37,10 +37,34 @@ void add (vector_t <q, T> *v1, vector_t <q, T> v2) {
 }
 
 template <q_t q, class T>
+void scalar_add (vector_t <q, T> *v1, T a, vector_t <q, T> v2) {
+  for (q_t i = 0; i < q; i++) {
+    v1->x[i] += a * v2.x[i];
+  }
+}
+
+template <q_t q, class T>
+void scalar_subtract (vector_t <q, T> *v1, T a, vector_t <q, T> v2) {
+  for (q_t i = 0; i < q; i++) {
+    v1->x[i] -= a * v2.x[i];
+  }
+}
+
+template <q_t q, class T>
 void subtract (vector_t <q, T> *v1, vector_t <q, T> v2) {
   for (q_t i = 0; i < q; i++) {
     v1->x[i] -= v2.x[i];
   }
+}
+
+template <q_t q, class T>
+T norm_squared (vector_t <q, T> v) {
+  T tmp = 0;
+  for (q_t i = 0; i < q; i++) {
+    tmp += v.x[i] * v.x[i];
+  }
+
+  return tmp;
 }
 
 template <q_t q, class T>

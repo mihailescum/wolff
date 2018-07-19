@@ -20,6 +20,8 @@ class state_t {
     double E;
     X_t M; // the "sum" of the spins, like the total magnetization
     v_t last_cluster_size;
+    X_t *ReF;
+    X_t *ImF;
 
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
@@ -36,8 +38,14 @@ class state_t {
       }
       init (&R);
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
-      M = scalar_multiple (nv, spins[0]);
+      M = scalar_multiple(nv, spins[0]);
       last_cluster_size = 0;
+      ReF = (X_t *)malloc(D * sizeof(X_t));
+      ImF = (X_t *)malloc(D * sizeof(X_t));
+      for (D_t i = 0; i < D; i++) {
+        ReF[i] = scalar_multiple(0, spins[0]);
+        ImF[i] = scalar_multiple(0, spins[0]);
+      }
     }
 
     ~state_t() {
@@ -48,6 +56,12 @@ class state_t {
       free(spins);
       free_spin(R);
       free_spin(M);
+      for (D_t i = 0; i < D; i++) {
+        free_spin(ReF[i]);
+        free_spin(ImF[i]);
+      }
+      free(ReF);
+      free(ImF);
     }
 };
 
