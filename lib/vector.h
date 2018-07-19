@@ -94,3 +94,6 @@ double H_vector(vector_t <q, T> v1, T *H) {
   H_vec.x = H;
   return (double)(dot <q, T> (v1, H_vec));
 }
+
+char const *ON_strings[] = {"TRIVIAL", "ISING", "PLANAR", "HEISENBERG"};
+
