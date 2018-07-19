@@ -4,7 +4,7 @@
 #include <correlation.h>
 #include <wolff.h>
 
-typedef state_t <orthogonal_t <3, double>, vector_t <3, double>> sim_t;
+typedef state_t <orthogonal_t <3, double>, vector_t <3, double>> heisenberg_t;
 
 int main(int argc, char *argv[]) {
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     timestamp = spec.tv_sec*1000000000LL + spec.tv_nsec;
   }
 
-  std::function <orthogonal_t <3, double>(gsl_rng *, const sim_t *)> gen_R;
+  std::function <orthogonal_t <3, double>(gsl_rng *, const heisenberg_t *)> gen_R;
 
   const char *pert_type;
 
@@ -110,20 +110,20 @@ int main(int argc, char *argv[]) {
   free(filename_S);
   free(filename_X);
 
-  std::function <void(const sim_t *)> *measurements = (std::function <void(const sim_t *)> *)malloc(4 * sizeof(std::function <void(const sim_t *)>));
+  std::function <void(const heisenberg_t *)> *measurements = (std::function <void(const heisenberg_t *)> *)malloc(4 * sizeof(std::function <void(const heisenberg_t *)>));
 
-  measurements[0] = [&](const sim_t *s) {
+  measurements[0] = [&](const heisenberg_t *s) {
     float smaller_E = (float)s->E;
     fwrite(&smaller_E, sizeof(float), 1, outfile_E);
   };
-  measurements[1] = [&](const sim_t *s) {
+  measurements[1] = [&](const heisenberg_t *s) {
     float smaller_X = (float)correlation_length(s);
     fwrite(&smaller_X, sizeof(float), 1, outfile_X);
   };
-  measurements[2] = [&](const sim_t *s) {
+  measurements[2] = [&](const heisenberg_t *s) {
     write_magnetization(s->M, outfile_M);
   };
-  measurements[3] = [&](const sim_t *s) {
+  measurements[3] = [&](const heisenberg_t *s) {
     fwrite(&(s->last_cluster_size), sizeof(uint32_t), 1, outfile_S);
   };
 
