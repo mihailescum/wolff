@@ -5,10 +5,12 @@
 #include <correlation.h>
 #include <measure.h>
 
-typedef state_t <orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> planar_t;
+typedef orthogonal_t <N_COMP, double> orthogonal_R_t;
+typedef vector_t <N_COMP, double> vector_R_t;
+typedef state_t <orthogonal_R_t, vector_R_t> On_t;
 
 // angle from the x-axis of a two-vector
-double theta(vector_t <N_COMP, double> v) {
+double theta(vector_R_t v) {
   double x = v.x[0];
   double y = v.x[1];
 
@@ -23,7 +25,7 @@ double theta(vector_t <N_COMP, double> v) {
   }
 }
 
-double H_modulated(vector_t <N_COMP, double> v, int order, double mag) {
+double H_modulated(vector_R_t v, int order, double mag) {
   return mag * cos(order * theta(v));
 }
 
@@ -47,7 +49,7 @@ int main(int argc, char *argv[]) {
   q_t H_ind = 0;
   double epsilon = 1;
 
-  unsigned char measurement_flags = 0;
+  unsigned char measurement_flags = measurement_energy | measurement_clusterSize;
 
   while ((opt = getopt(argc, argv, "N:q:D:L:T:J:H:spe:mo:M:")) != -1) {
     switch (opt) {
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
 
   const char *pert_type;
 
-  std::function <orthogonal_t <N_COMP, double>(gsl_rng *, const planar_t *)> gen_R;
+  std::function <orthogonal_R_t(gsl_rng *, const On_t *)> gen_R;
 
   if (use_pert) {
     gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon);
@@ -113,7 +115,7 @@ int main(int argc, char *argv[]) {
 
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
-  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, ON_strings[N_COMP], N_COMP, D, L, L * L, D * L * L, T);
+  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> {", timestamp, ON_strings[N_COMP], N_COMP, D, L, pow(L, D), D * pow(L, D), T);
 
   for (q_t i = 0; i < N_COMP; i++) {
     fprintf(outfile_info, "%.15f", H_vec[i]);
@@ -127,7 +129,7 @@ int main(int argc, char *argv[]) {
   fclose(outfile_info);
 
   unsigned int n_measurements = 0;
-  std::function <void(const planar_t *)> *measurements = (std::function <void(const planar_t *)> *)calloc(POSSIBLE_MEASUREMENTS, sizeof(std::function <void(const planar_t *)>));
+  std::function <void(const On_t *)> *measurements = (std::function <void(const On_t *)> *)calloc(POSSIBLE_MEASUREMENTS, sizeof(std::function <void(const On_t *)>));
   FILE *outfile_M, *outfile_E, *outfile_S, *outfile_F;
   double *fftw_in, *fftw_out;
   fftw_plan plan;
@@ -137,7 +139,7 @@ int main(int argc, char *argv[]) {
     sprintf(filename_E, "wolff_%lu_E.dat", timestamp);
     outfile_E = fopen(filename_E, "wb");
     free(filename_E);
-    measurements[n_measurements] = measurement_energy_file<orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> (outfile_E);
+    measurements[n_measurements] = measurement_energy_file<orthogonal_R_t, vector_R_t> (outfile_E);
     n_measurements++;
   }
 
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
     sprintf(filename_S, "wolff_%lu_S.dat", timestamp);
     outfile_S = fopen(filename_S, "wb");
     free(filename_S);
-    measurements[n_measurements] = measurement_cluster_file<orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> (outfile_S);
+    measurements[n_measurements] = measurement_cluster_file<orthogonal_R_t, vector_R_t> (outfile_S);
     n_measurements++;
   }
 
@@ -155,7 +157,7 @@ int main(int argc, char *argv[]) {
     sprintf(filename_M, "wolff_%lu_M.dat", timestamp);
     outfile_M = fopen(filename_M, "wb");
     free(filename_M);
-    measurements[n_measurements] = measurement_magnetization_file<orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> (outfile_M);
+    measurements[n_measurements] = measurement_magnetization_file<orthogonal_R_t, vector_R_t> (outfile_M);
     n_measurements++;
   }
 
@@ -179,11 +181,11 @@ int main(int argc, char *argv[]) {
     free(n);
     free(kind);
 
-    measurements[n_measurements] = measurement_fourier_file<orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> (outfile_F, plan, fftw_in, fftw_out);
+    measurements[n_measurements] = measurement_fourier_file<orthogonal_R_t, vector_R_t> (outfile_F, plan, fftw_in, fftw_out);
     n_measurements++;
   }
 
-  std::function <double(vector_t <N_COMP, double>)> H;
+  std::function <double(vector_R_t)> H;
 
   if (modulated_field) {
     H = std::bind(H_modulated, std::placeholders::_1, order, H_vec[0]);
@@ -191,7 +193,7 @@ int main(int argc, char *argv[]) {
     H = std::bind(H_vector <N_COMP, double>, std::placeholders::_1, H_vec);
   }
 
-  wolff <orthogonal_t <N_COMP, double>, vector_t <N_COMP, double>> (N, D, L, T, dot <N_COMP, double>, H, gen_R, n_measurements, measurements, silent);
+  wolff <orthogonal_R_t, vector_R_t> (N, D, L, T, dot <N_COMP, double>, H, gen_R, n_measurements, measurements, silent);
 
   free(measurements);
 
