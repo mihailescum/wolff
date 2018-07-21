@@ -1,9 +1,27 @@
 #pragma once
 
 #include <cmath>
-#include <stdlib.h>
 
 #include "types.h"
+
+/* The following is the minimum definition of a spin class.
+ *
+ * The class must contain an M_t and an F_t for holding the sum of an
+ * integer number of spins and a double-weighted number of spins,
+ * respectively.
+ *
+ * void init(X_t *p);
+ * void free_spin(X_t p);
+ * void free_spin(M_t p);
+ * void free_spin(F_t p);
+ * X_t copy(X_t x);
+ * void add(M_t *x1, int factor, X_t x2);
+ * void add(F_t *x1, double factor, X_t x2);
+ * M_t scalar_multiple(int factor, X_t x);
+ * double norm_squared(F_t x);
+ * void write_magnetization(M_t M, FILE *outfile);
+ *
+ */
 
 class ising_t {
   public:
@@ -33,8 +51,15 @@ ising_t copy(ising_t s) {
   return s;
 }
 
-template <class T>
-void add(T *s1, T a, ising_t s2) {
+void add(int *s1, int a, ising_t s2) {
+  if (s2.x) {
+    *s1 -= a;
+  } else {
+    *s1 += a;
+  }
+}
+
+void add(double *s1, double a, ising_t s2) {
   if (s2.x) {
     *s1 -= a;
   } else {
@@ -50,31 +75,11 @@ int scalar_multiple(int factor, ising_t s) {
   }
 }
 
-
 double norm_squared(double s) {
   return pow(s, 2);
 }
 
-template <class T>
-void write_magnetization(T M, FILE *outfile) {
-  fwrite(&M, sizeof(T), 1, outfile);
-}
-
-// below this line is unnecessary, but convenient
-
-double ising_dot(ising_t s1, ising_t s2) {
-  if (s1.x == s2.x) {
-    return 1.0;
-  } else {
-    return -1.0;
-  }
-}
-
-double scalar_field(ising_t s, double H) {
-  if (s.x) {
-    return -H;
-  } else {
-    return H;
-  }
+void write_magnetization(int M, FILE *outfile) {
+  fwrite(&M, sizeof(int), 1, outfile);
 }
 

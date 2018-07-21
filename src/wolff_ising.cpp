@@ -45,24 +45,50 @@ int main(int argc, char *argv[]) {
   gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(r, rand_seed());
 
-  state_t <z2_t, ising_t> s(D, L, T, ising_dot, std::bind(scalar_field, std::placeholders::_1, H));
+  // define spin-spin coupling
+  std::function <double(ising_t, ising_t)> Z = [] (ising_t s1, ising_t s2) -> double {
+    if (s1.x == s2.x) {
+      return 1.0;
+    } else {
+      return -1.0;
+    }
+  };
 
-  std::function <z2_t(gsl_rng *, const state_t <z2_t, ising_t> *)> gen_R = generate_ising_rotation;
+  // define spin-field coupling
+  std::function <double(ising_t)> B = [=] (ising_t s) -> double {
+    if (s.x) {
+      return -H;
+    } else {
+      return H;
+    }
+  };
 
+  // initialize state object
+  state_t <z2_t, ising_t> s(D, L, T, Z, B);
+
+  // define function that generates self-inverse rotations
+  std::function <z2_t(gsl_rng *, const state_t <z2_t, ising_t> *)> gen_R = [] (gsl_rng *, const state_t <z2_t, ising_t> *) -> z2_t {
+    z2_t rot;
+    rot.x = true;
+    return rot;
+  };
+
+  // define function that updates any number of measurements
   double average_M = 0;
-
-  typedef std::function <void(const state_t <z2_t, ising_t> *)> meas_func;
-
-  meas_func measurement = [&] (const state_t <z2_t, ising_t> *s) {
+  std::function <void(const state_t <z2_t, ising_t> *)> measurement = [&] (const state_t <z2_t, ising_t> *s) {
     average_M += (double)s->M / (double)N / (double)s->nv;
   };
 
+  // run wolff for N cluster flips
   wolff(N, &s, gen_R, measurement, r, silent);
 
+  // tell us what we found!
   printf("%" PRIcount " Ising runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, D, L, T, H, average_M);
 
+  // free the random number generator
   gsl_rng_free(r);
 
   return 0;
+
 }
 

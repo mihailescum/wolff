@@ -1,10 +1,21 @@
 
 #pragma once
 
-#include <gsl/gsl_rng.h>
 #include "types.h"
 #include "ising.h"
-#include "state.h"
+
+/* The minimum definition for a group type R_t to act on a spin type X_t is
+ * given by the following.
+ *
+ * void init(R_t *p);
+ * void free_spin(R_t r);
+ * R_t copy(R_t r);
+ * X_t act(R_t r, X_t x);
+ * R_t act(R_t r, R_t r);
+ * X_t act_inverse(R_t r, X_t x);
+ * R_t act_inverse(R_t r, R_t r);
+ *
+ */
 
 struct z2_t { bool x; };
 
@@ -51,14 +62,4 @@ ising_t act_inverse(z2_t r, ising_t s) {
 z2_t act_inverse(z2_t r1, z2_t r2) {
   return act(r1, r2);
 }
-
-// these are all functions necessary for wolff.h
-
-z2_t generate_ising_rotation(gsl_rng *r, const state_t <z2_t, ising_t> *s) {
-  z2_t rot;
-  rot.x = true;
-  return rot;
-}
-
-
 
