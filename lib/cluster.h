@@ -29,30 +29,6 @@
 #include "dihinf.h"
 #include "yule_walker.h"
 
-template <class T>
-void init(T*);
-
-template <class T>
-T scalar_multiple(v_t a, T b);
-
-template <class R_t, class X_t>
-X_t act(R_t a, X_t b);
-
-template <class R_t, class X_t>
-X_t act_inverse(R_t a, X_t b);
-
-template <class T>
-T copy(T a);
-
-template <class T>
-void free_spin(T a);
-
-template <class T>
-T add(T, T);
-
-template <class T>
-T subtract(T, T);
-
 template <class R_t, class X_t>
 void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   v_t nv = 0;
@@ -114,12 +90,13 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           state->E += dE;
 
           for (D_t i = 0; i < state->D; i++) {
-            double x = (double)((non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L) / (double)state->L; 
-            add(&(state->ReF[i]), -cos(2 * M_PI * x), rs_old);
-            add(&(state->ReF[i]),  cos(2 * M_PI * x), rs_new);
+            L_t x = (non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L;
 
-            add(&(state->ImF[i]), -sin(2 * M_PI * x), rs_old);
-            add(&(state->ImF[i]),  sin(2 * M_PI * x), rs_new);
+            add(&(state->ReF[i]), -state->precomputed_cos[i], rs_old);
+            add(&(state->ReF[i]),  state->precomputed_cos[i], rs_new);
+
+            add(&(state->ImF[i]), -state->precomputed_sin[i], rs_old);
+            add(&(state->ImF[i]),  state->precomputed_sin[i], rs_new);
           }
 
           free_spin (rs_old);
