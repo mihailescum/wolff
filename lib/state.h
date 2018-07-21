@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "graph.h"
+#include "ising.h"
 
 template <class R_t, class X_t>
 class state_t {
@@ -18,10 +19,10 @@ class state_t {
     X_t *spins;
     R_t R;
     double E;
-    X_t M; // the "sum" of the spins, like the total magnetization
+    typename X_t::M_t M; // the "sum" of the spins, like the total magnetization
     v_t last_cluster_size;
-    X_t *ReF;
-    X_t *ImF;
+    typename X_t::F_t *ReF;
+    typename X_t::F_t *ImF;
 
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
@@ -38,10 +39,10 @@ class state_t {
       }
       init (&R);
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
-      M = scalar_multiple(nv, spins[0]);
+      M = scalar_multiple((int)nv, spins[0]);
       last_cluster_size = 0;
-      ReF = (X_t *)malloc(D * sizeof(X_t));
-      ImF = (X_t *)malloc(D * sizeof(X_t));
+      ReF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
+      ImF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
       for (D_t i = 0; i < D; i++) {
         ReF[i] = scalar_multiple(0, spins[0]);
         ImF[i] = scalar_multiple(0, spins[0]);

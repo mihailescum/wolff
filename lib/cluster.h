@@ -23,6 +23,8 @@
 #include "measurement.h"
 #include "vector.h"
 #include "orthogonal.h"
+#include "ising.h"
+#include "z2.h"
 #include "dihedral.h"
 #include "dihinf.h"
 #include "yule_walker.h"
@@ -107,17 +109,17 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           double dE = state->H(rs_old) - state->H(rs_new);
           prob = 1.0 - exp(-dE / state->T);
 
-          subtract (&(state->M), rs_old);
-          add (&(state->M), rs_new);
+          add(&(state->M), -1, rs_old);
+          add(&(state->M),  1, rs_new);
           state->E += dE;
 
           for (D_t i = 0; i < state->D; i++) {
             double x = (double)((non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L) / (double)state->L; 
-            scalar_subtract(&(state->ReF[i]), cos(2 * M_PI * x), rs_old);
-            scalar_add(&(state->ReF[i]), cos(2 * M_PI * x), rs_new);
+            add(&(state->ReF[i]), -cos(2 * M_PI * x), rs_old);
+            add(&(state->ReF[i]),  cos(2 * M_PI * x), rs_new);
 
-            scalar_subtract(&(state->ImF[i]), sin(2 * M_PI * x), rs_old);
-            scalar_add(&(state->ImF[i]), sin(2 * M_PI * x), rs_new);
+            add(&(state->ImF[i]), -sin(2 * M_PI * x), rs_old);
+            add(&(state->ImF[i]),  sin(2 * M_PI * x), rs_new);
           }
 
           free_spin (rs_old);

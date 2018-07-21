@@ -14,6 +14,7 @@ file(GLOB CSOURCES lib/*.c)
 file(GLOB CPPSOURCES lib/*.cpp)
 
 add_executable(wolff_finite src/wolff_finite.c ${CSOURCES})
+add_executable(wolff_ising src/wolff_ising.cpp ${CPPSOURCES} ${CSOURCES})
 add_executable(wolff_planar src/wolff_On.cpp ${CPPSOURCES} ${CSOURCES})
 add_executable(wolff_heisenberg src/wolff_On.cpp ${CPPSOURCES} ${CSOURCES})
 add_executable(analyze_correlations src/analyze_correlations.cpp ${CPPSOURCES} ${CSOURCES})
@@ -28,9 +29,10 @@ if (OPENMP_FOUND)
 endif()
 
 target_link_libraries(wolff_finite gsl cblas fftw3 m)
+target_link_libraries(wolff_ising gsl cblas fftw3 m)
 target_link_libraries(wolff_heisenberg gsl cblas fftw3 m)
 target_link_libraries(wolff_planar gsl cblas fftw3 m)
 target_link_libraries(analyze_correlations gsl cblas fftw3 m)
 
-install(TARGETS wolff_finite wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
+install(TARGETS wolff_finite wolff_ising wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
 

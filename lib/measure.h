@@ -1,7 +1,9 @@
 
 #pragma once
 
-#define POSSIBLE_MEASUREMENTS 4
+#include "measurement.h"
+
+#define POSSIBLE_MEASUREMENTS 5
 const unsigned char measurement_energy        = 1 << 0;
 const unsigned char measurement_clusterSize   = 1 << 1;
 const unsigned char measurement_magnetization = 1 << 2;
@@ -40,6 +42,13 @@ std::function <void(const state_t <R_t, X_t> *)> measurement_fourier_file(FILE *
   return [=](const state_t <R_t, X_t> *s) {
     float smaller_X = (float)correlation_length(s);
     fwrite(&smaller_X, sizeof(float), 1, file);
+  };
+}
+
+template <class R_t, class X_t>
+std::function <void(const state_t <R_t, X_t> *)> measurement_average_cluster(meas_t *x) {
+  return [=](const state_t <R_t, X_t> *s) {
+    meas_update(x, s->last_cluster_size);
   };
 }
 
