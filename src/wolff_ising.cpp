@@ -1,6 +1,12 @@
 
 #include <getopt.h>
+#include <GL/glut.h>
 
+// include your group and spin space
+#include <z2.h>
+#include <ising.h>
+
+// include wolff.h
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
@@ -13,10 +19,11 @@ int main(int argc, char *argv[]) {
   double H = 0.0;
 
   bool silent = false;
+  bool draw = false;
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "N:q:D:L:T:J:H:s")) != -1) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:sd")) != -1) {
     switch (opt) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
@@ -35,6 +42,9 @@ int main(int argc, char *argv[]) {
       break;
     case 's': // don't print anything during simulation. speeds up slightly
       silent = true;
+      break;
+    case 'd':
+      draw = true;
       break;
     default:
       exit(EXIT_FAILURE);
@@ -74,10 +84,41 @@ int main(int argc, char *argv[]) {
   };
 
   // define function that updates any number of measurements
+  std::function <void(const state_t <z2_t, ising_t> *)> measurement;
+
   double average_M = 0;
-  std::function <void(const state_t <z2_t, ising_t> *)> measurement = [&] (const state_t <z2_t, ising_t> *s) {
-    average_M += (double)s->M / (double)N / (double)s->nv;
-  };
+  if (!draw) {
+    // a very simple example: measure the average magnetization
+    measurement = [&] (const state_t <z2_t, ising_t> *s) {
+      average_M += (double)s->M / (double)N / (double)s->nv;
+    };
+  } else {
+    // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
+
+    // initialize glut
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(L,L);
+    glutCreateWindow("null");
+    glClearColor(0.0,0.0,0.0,0.0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, L, 0.0, L);
+
+    measurement = [&] (const state_t <z2_t, ising_t> *s) {
+      average_M += (double)s->M / (double)N / (double)s->nv;
+      glClear(GL_COLOR_BUFFER_BIT);
+      for (v_t i = 0; i < pow(L, 2); i++) {
+        if (s->spins[i].x == s->R.x) {
+          glColor3f(0.0, 0.0, 0.0);
+        } else {
+          glColor3f(1.0, 1.0, 1.0);
+        }
+        glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
+      }
+      glFlush();
+    };
+  }
 
   // run wolff for N cluster flips
   wolff(N, &s, gen_R, measurement, r, silent);
@@ -87,6 +128,9 @@ int main(int argc, char *argv[]) {
 
   // free the random number generator
   gsl_rng_free(r);
+
+  if (draw) {
+  }
 
   return 0;
 

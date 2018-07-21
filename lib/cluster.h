@@ -23,8 +23,6 @@
 #include "measurement.h"
 #include "vector.h"
 #include "orthogonal.h"
-#include "ising.h"
-#include "z2.h"
 #include "dihedral.h"
 #include "dihinf.h"
 #include "yule_walker.h"

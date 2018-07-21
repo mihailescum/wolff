@@ -29,7 +29,7 @@ if (OPENMP_FOUND)
 endif()
 
 target_link_libraries(wolff_finite gsl cblas fftw3 m)
-target_link_libraries(wolff_ising gsl cblas fftw3 m)
+target_link_libraries(wolff_ising gsl cblas fftw3 m glut GL GLU)
 target_link_libraries(wolff_heisenberg gsl cblas fftw3 m)
 target_link_libraries(wolff_planar gsl cblas fftw3 m)
 target_link_libraries(analyze_correlations gsl cblas fftw3 m)
