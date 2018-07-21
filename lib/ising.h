@@ -76,6 +76,14 @@ int scalar_multiple(int factor, ising_t s) {
   }
 }
 
+double scalar_multiple(double factor, ising_t s) {
+  if (s.x) {
+    return -factor;
+  } else {
+    return factor;
+  }
+}
+
 double norm_squared(double s) {
   return pow(s, 2);
 }

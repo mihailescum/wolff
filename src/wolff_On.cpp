@@ -1,5 +1,8 @@
 
 #include <getopt.h>
+#ifdef HAVE_GLUT
+#include <GL/glut.h>
+#endif
 
 #include <wolff.h>
 #include <correlation.h>
@@ -29,6 +32,36 @@ double H_modulated(vector_R_t v, int order, double mag) {
   return mag * cos(order * theta(v));
 }
 
+double hue_to_R(double theta) {
+  if (((M_PI / 3 <= theta) && (theta < 2 * M_PI / 3)) || ((4 * M_PI / 3 <= theta) && (theta < 5 * M_PI / 3))) {
+    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
+  } else if (((0 <= theta) && (theta < M_PI / 3)) || ((5 * M_PI / 3 <= theta) && (theta <= 2 * M_PI))) {
+    return 1.0;
+  } else {
+    return 0.0;
+  }
+}
+
+double hue_to_G(double theta) {
+  if (((0 <= theta) && (theta < M_PI / 3)) || ((M_PI <= theta) && (theta < 4 * M_PI / 3))) {
+    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
+  } else if (((M_PI / 3 <= theta) && (theta < 2 * M_PI / 3)) || ((2 * M_PI / 3 <= theta) && (theta < M_PI))) {
+    return 1.0;
+  } else {
+    return 0.0;
+  }
+}
+
+double hue_to_B(double theta) {
+  if (((2 * M_PI / 3 <= theta) && (theta < M_PI)) || ((5 * M_PI / 3 <= theta) && (theta <= 2 * M_PI))) {
+    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
+  } else if (((M_PI <= theta) && (theta < 4 * M_PI / 3)) || ((4 * M_PI / 3 <= theta) && (theta < 5 * M_PI / 3))) {
+    return 1.0;
+  } else {
+    return 0.0;
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   count_t N = (count_t)1e7;
@@ -41,6 +74,8 @@ int main(int argc, char *argv[]) {
   bool silent = false;
   bool use_pert = false;
   bool N_is_sweeps = false;
+  bool draw = false;
+  unsigned int window_size = 512;
 
   bool modulated_field = false;
   int order = 2;
@@ -54,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   unsigned char measurement_flags = 0;
 
-  while ((opt = getopt(argc, argv, "N:q:D:L:T:J:H:spe:mo:M:S")) != -1) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:spe:mo:M:Sdw:")) != -1) {
     switch (opt) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
@@ -92,6 +127,17 @@ int main(int argc, char *argv[]) {
       break;
     case 'S':
       N_is_sweeps = true;
+      break;
+    case 'd':
+#ifdef HAVE_GLUT
+      draw = true;
+      break;
+#else
+      printf("You didn't compile this with the glut library installed!\n");
+      exit(EXIT_FAILURE);
+#endif
+    case 'w':
+      window_size = atoi(optarg);
       break;
     default:
       exit(EXIT_FAILURE);
@@ -153,6 +199,33 @@ int main(int argc, char *argv[]) {
     other_f = [&] (const On_t *s) {
       sum_of_clusterSize += s->last_cluster_size;
     };
+  } else if (draw) {
+#ifdef HAVE_GLUT
+    // initialize glut
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(window_size, window_size);
+    glutCreateWindow("wolff");
+    glClearColor(0.0,0.0,0.0,0.0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, L, 0.0, L);
+
+    other_f = [&] (const On_t *s) {
+      glClear(GL_COLOR_BUFFER_BIT);
+      for (v_t i = 0; i < pow(L, 2); i++) {
+        vector_R_t v_tmp = act_inverse(s->R, s->spins[i]);
+        double thetai = fmod(2 * M_PI + theta(v_tmp), 2 * M_PI);
+        free_spin(v_tmp);
+        double saturation = 0.7;
+        double value = 0.9;
+        double chroma = saturation * value;
+        glColor3f(chroma * hue_to_R(thetai) + (value - chroma), chroma * hue_to_G(thetai) + (value - chroma), chroma * hue_to_B(thetai) + (value - chroma));
+        glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
+      }
+      glFlush();
+    };
+#endif
   } else {
     other_f = [] (const On_t *s) {};
   }

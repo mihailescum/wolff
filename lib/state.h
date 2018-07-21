@@ -47,8 +47,8 @@ class state_t {
       ReF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
       ImF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
       for (D_t i = 0; i < D; i++) {
-        ReF[i] = scalar_multiple(0, spins[0]);
-        ImF[i] = scalar_multiple(0, spins[0]);
+        ReF[i] = scalar_multiple(0.0, spins[0]);
+        ImF[i] = scalar_multiple(0.0, spins[0]);
       }
       precomputed_cos = (double *)malloc(L * sizeof(double));
       precomputed_sin = (double *)malloc(L * sizeof(double));

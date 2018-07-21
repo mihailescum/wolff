@@ -80,6 +80,17 @@ vector_t <q, T> scalar_multiple(int a, vector_t <q, T> v) {
 }
 
 template <q_t q, class T>
+vector_t <q, T> scalar_multiple(double a, vector_t <q, T> v) {
+  vector_t <q, T> multiple;
+  multiple.x = (T *)malloc(q * sizeof(T));
+  for (q_t i = 0; i < q; i++) {
+    multiple.x[i] = a * v.x[i];
+  }
+
+  return multiple;
+}
+
+template <q_t q, class T>
 double norm_squared (vector_t <q, T> v) {
   double tmp = 0;
 

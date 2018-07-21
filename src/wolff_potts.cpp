@@ -1,19 +1,17 @@
 
 #include <getopt.h>
-#ifdef HAVE_GLUT
 #include <GL/glut.h>
-#endif
 
 // include your group and spin space
-#include <z2.h>
-#include <ising.h>
+#include <symmetric.h>
+#include <potts.h>
 
 // include wolff.h
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
 
-  count_t N = (count_t)1e4;
+  count_t N = (count_t)1e7;
 
   D_t D = 2;
   L_t L = 128;
@@ -22,11 +20,10 @@ int main(int argc, char *argv[]) {
 
   bool silent = false;
   bool draw = false;
-  unsigned int window_size = 512;
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "N:D:L:T:H:sdw:")) != -1) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:sd")) != -1) {
     switch (opt) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
@@ -47,15 +44,7 @@ int main(int argc, char *argv[]) {
       silent = true;
       break;
     case 'd':
-#ifdef HAVE_GLUT
       draw = true;
-      break;
-#else
-      printf("You didn't compile this with the glut library installed!\n");
-      exit(EXIT_FAILURE);
-#endif
-    case 'w':
-      window_size = atoi(optarg);
       break;
     default:
       exit(EXIT_FAILURE);
@@ -67,7 +56,7 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(ising_t, ising_t)> Z = [] (ising_t s1, ising_t s2) -> double {
+  std::function <double(potts_t, ising_t)> Z = [] (ising_t s1, ising_t s2) -> double {
     if (s1.x == s2.x) {
       return 1.0;
     } else {
@@ -106,12 +95,11 @@ int main(int argc, char *argv[]) {
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
 
-#ifdef HAVE_GLUT
     // initialize glut
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(window_size, window_size);
-    glutCreateWindow("wolff");
+    glutInitWindowSize(L,L);
+    glutCreateWindow("null");
     glClearColor(0.0,0.0,0.0,0.0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -130,7 +118,6 @@ int main(int argc, char *argv[]) {
       }
       glFlush();
     };
-#endif
   }
 
   // run wolff for N cluster flips
