@@ -50,7 +50,9 @@ int main(int argc, char *argv[]) {
   q_t H_ind = 0;
   double epsilon = 1;
 
-  unsigned char measurement_flags = measurement_energy | measurement_clusterSize;
+//  unsigned char measurement_flags = measurement_energy | measurement_clusterSize;
+
+  unsigned char measurement_flags = 0;
 
   while ((opt = getopt(argc, argv, "N:q:D:L:T:J:H:spe:mo:M:S")) != -1) {
     switch (opt) {
@@ -116,7 +118,6 @@ int main(int argc, char *argv[]) {
     pert_type = "UNIFORM";
   }
 
-
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
   fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"FIELD_TYPE\" -> ", timestamp, ON_strings[N_COMP], N_COMP, D, L, (v_t)pow(L, D), D * (v_t)pow(L, D), T);
@@ -143,52 +144,20 @@ int main(int argc, char *argv[]) {
 
   fclose(outfile_info);
 
-  unsigned int n_measurements = 0;
-  std::function <void(const On_t *)> *measurements = (std::function <void(const On_t *)> *)calloc(POSSIBLE_MEASUREMENTS, sizeof(std::function <void(const On_t *)>));
-  FILE *outfile_M, *outfile_E, *outfile_S, *outfile_F;
+  FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
 
-  if (measurement_flags & measurement_energy) {
-    char *filename_E = (char *)malloc(255 * sizeof(char));
-    sprintf(filename_E, "wolff_%lu_E.dat", timestamp);
-    outfile_E = fopen(filename_E, "wb");
-    free(filename_E);
-    measurements[n_measurements] = measurement_energy_file<orthogonal_R_t, vector_R_t> (outfile_E);
-    n_measurements++;
-  }
+  std::function <void(const On_t *)> other_f;
+  uint64_t sum_of_clusterSize = 0;
 
-  if (measurement_flags & measurement_clusterSize) {
-    char *filename_S = (char *)malloc(255 * sizeof(char));
-    sprintf(filename_S, "wolff_%lu_S.dat", timestamp);
-    outfile_S = fopen(filename_S, "wb");
-    free(filename_S);
-    measurements[n_measurements] = measurement_cluster_file<orthogonal_R_t, vector_R_t> (outfile_S);
-    n_measurements++;
-  }
-
-  if (measurement_flags & measurement_magnetization) {
-    char *filename_M = (char *)malloc(255 * sizeof(char));
-    sprintf(filename_M, "wolff_%lu_M.dat", timestamp);
-    outfile_M = fopen(filename_M, "wb");
-    free(filename_M);
-    measurements[n_measurements] = measurement_magnetization_file<orthogonal_R_t, vector_R_t> (outfile_M);
-    n_measurements++;
-  }
-
-  if (measurement_flags & measurement_fourierZero) {
-    char *filename_F = (char *)malloc(255 * sizeof(char));
-    sprintf(filename_F, "wolff_%lu_F.dat", timestamp);
-    outfile_F = fopen(filename_F, "wb");
-    free(filename_F);
-    measurements[n_measurements] = measurement_fourier_file<orthogonal_R_t, vector_R_t> (outfile_F);
-    n_measurements++;
-  }
-
-  meas_t *meas_sweeps;
   if (N_is_sweeps) {
-    meas_sweeps = (meas_t *)calloc(1, sizeof(meas_t));
-    measurements[n_measurements] = measurement_average_cluster<orthogonal_R_t, vector_R_t> (meas_sweeps);
-    n_measurements++;
+    other_f = [&] (const On_t *s) {
+      sum_of_clusterSize += s->last_cluster_size;
+    };
+  } else {
+    other_f = [] (const On_t *s) {};
   }
+
+  std::function <void(const On_t *)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
 
   std::function <double(vector_R_t)> H;
 
@@ -207,35 +176,18 @@ int main(int argc, char *argv[]) {
   if (N_is_sweeps) {
     count_t N_rounds = 0;
     printf("\n");
-    while (N_rounds * N * meas_sweeps->x < N * s.nv) {
-      printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)(N_rounds * N * meas_sweeps->x / s.nv), N, s.E, s.last_cluster_size);
-      wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, n_measurements, measurements, r, silent);
+    while (sum_of_clusterSize < N * s.nv) {
+      printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
+      wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, measurements, r, silent);
       N_rounds++;
     }
-    printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)(N_rounds * N * meas_sweeps->x / s.nv), N, s.E, s.last_cluster_size);
+    printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
   } else {
-    wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, n_measurements, measurements, r, silent);
+    wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, measurements, r, silent);
   }
 
-  free(measurements);
 
-  if (measurement_flags & measurement_energy) {
-    fclose(outfile_E);
-  }
-  if (measurement_flags & measurement_clusterSize) {
-    fclose(outfile_S);
-  }
-  if (measurement_flags & measurement_magnetization) {
-    fclose(outfile_M);
-  }
-  if (measurement_flags & measurement_fourierZero) {
-    fclose(outfile_F);
-  }
-
-  if (N_is_sweeps) {
-    free(meas_sweeps);
-  }
-
+  measure_free_files(measurement_flags, outfiles);
   free(H_vec);
   gsl_rng_free(r);
 

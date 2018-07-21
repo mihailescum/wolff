@@ -3,7 +3,7 @@
 #include "state.h"
 
 template <class R_t, class X_t>
-void wolff(count_t N, state_t <R_t, X_t> *s, std::function <R_t(gsl_rng *, const state_t <R_t, X_t> *)> gen_R, unsigned int n_measurements, std::function <void(const state_t <R_t, X_t> *)> *measurements, gsl_rng *r, bool silent) {
+void wolff(count_t N, state_t <R_t, X_t> *s, std::function <R_t(gsl_rng *, const state_t <R_t, X_t> *)> gen_R, std::function <void(const state_t <R_t, X_t> *)> measurements, gsl_rng *r, bool silent) {
 
   if (!silent) printf("\n");
   for (count_t steps = 0; steps < N; steps++) {
@@ -14,9 +14,7 @@ void wolff(count_t N, state_t <R_t, X_t> *s, std::function <R_t(gsl_rng *, const
     flip_cluster <R_t, X_t> (s, v0, step, r);
     free_spin(step);
 
-    for (unsigned int i = 0; i < n_measurements; i++) {
-      measurements[i](s);
-    }
+    measurements(s);
   }
 
   if (!silent) {

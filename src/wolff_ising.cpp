@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     case 'T': // temperature 
       T = atof(optarg);
       break;
-    case 'H': // external field. nth call couples to state n
+    case 'H': // external field
       H = atof(optarg);
       break;
     case 's': // don't print anything during simulation. speeds up slightly
@@ -49,21 +49,18 @@ int main(int argc, char *argv[]) {
 
   std::function <z2_t(gsl_rng *, const state_t <z2_t, ising_t> *)> gen_R = generate_ising_rotation;
 
-  unsigned int n_measurements = 1;
-
   double average_M = 0;
 
-  std::function <void(const state_t <z2_t, ising_t> *)> *measurements = (std::function <void(const state_t <z2_t, ising_t> *)> *)calloc(1, sizeof(std::function <void(const state_t <z2_t, ising_t> *)>));
+  typedef std::function <void(const state_t <z2_t, ising_t> *)> meas_func;
 
-  measurements[0] = [&] (const state_t <z2_t, ising_t> *s) {
+  meas_func measurement = [&] (const state_t <z2_t, ising_t> *s) {
     average_M += (double)s->M / (double)N / (double)s->nv;
   };
 
-  wolff(N, &s, gen_R, n_measurements, measurements, r, silent);
+  wolff(N, &s, gen_R, measurement, r, silent);
 
   printf("%" PRIcount " Ising runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, D, L, T, H, average_M);
 
-  free(measurements);
   gsl_rng_free(r);
 
   return 0;
