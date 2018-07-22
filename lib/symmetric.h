@@ -6,6 +6,7 @@
 #include "types.h"
 
 #ifdef __cplusplus
+#include "potts.h"
 extern "C" {
 #endif
 
@@ -39,11 +40,11 @@ void init(symmetric_t<q> *p) {
 
 template <q_t q>
 void free_spin(symmetric_t<q> p) {
-  free(p->perm);
+  free(p.perm);
 }
 
 template <q_t q>
-symmetric_t<q_t> copy(symmetric_t<q_t> x) {
+symmetric_t<q> copy(symmetric_t<q> x) {
   symmetric_t<q> x2;
   x2.perm = (q_t *)malloc(q * sizeof(q_t));
 

@@ -1,29 +1,37 @@
 
 #include <getopt.h>
+
+#ifdef HAVE_GLUT
 #include <GL/glut.h>
+#endif
 
 // include your group and spin space
 #include <symmetric.h>
 #include <potts.h>
+#include <colors.h>
 
 // include wolff.h
 #include <wolff.h>
 
+typedef state_t <symmetric_t<POTTSQ>, potts_t<POTTSQ>> sim_t;
+
 int main(int argc, char *argv[]) {
 
-  count_t N = (count_t)1e7;
+  count_t N = (count_t)1e4;
 
   D_t D = 2;
   L_t L = 128;
   double T = 2.26918531421;
-  double H = 0.0;
+  double *H_vec = (double *)calloc(MAX_Q, sizeof(double));
 
   bool silent = false;
   bool draw = false;
+  unsigned int window_size = 512;
 
   int opt;
+  q_t H_ind = 0;
 
-  while ((opt = getopt(argc, argv, "N:D:L:T:H:sd")) != -1) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:sdw:")) != -1) {
     switch (opt) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
@@ -37,14 +45,23 @@ int main(int argc, char *argv[]) {
     case 'T': // temperature 
       T = atof(optarg);
       break;
-    case 'H': // external field
-      H = atof(optarg);
+    case 'H': // external field. nth call couples to state n
+      H_vec[H_ind] = atof(optarg);
+      H_ind++;
       break;
     case 's': // don't print anything during simulation. speeds up slightly
       silent = true;
       break;
     case 'd':
+#ifdef HAVE_GLUT
       draw = true;
+      break;
+#else
+      printf("You didn't compile this with the glut library installed!\n");
+      exit(EXIT_FAILURE);
+#endif
+    case 'w':
+      window_size = atoi(optarg);
       break;
     default:
       exit(EXIT_FAILURE);
@@ -56,41 +73,49 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(potts_t, ising_t)> Z = [] (ising_t s1, ising_t s2) -> double {
+  std::function <double(potts_t<POTTSQ>, potts_t<POTTSQ>)> Z = [] (potts_t<POTTSQ> s1, potts_t<POTTSQ> s2) -> double {
     if (s1.x == s2.x) {
       return 1.0;
     } else {
-      return -1.0;
+      return 0.0;
     }
   };
 
   // define spin-field coupling
-  std::function <double(ising_t)> B = [=] (ising_t s) -> double {
-    if (s.x) {
-      return -H;
-    } else {
-      return H;
-    }
+  std::function <double(potts_t<POTTSQ>)> B = [=] (potts_t<POTTSQ> s) -> double {
+    return H_vec[s.x];
   };
 
   // initialize state object
-  state_t <z2_t, ising_t> s(D, L, T, Z, B);
+  state_t <symmetric_t<POTTSQ>, potts_t<POTTSQ>> s(D, L, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <z2_t(gsl_rng *, const state_t <z2_t, ising_t> *)> gen_R = [] (gsl_rng *, const state_t <z2_t, ising_t> *) -> z2_t {
-    z2_t rot;
-    rot.x = true;
+  std::function <symmetric_t<POTTSQ>(gsl_rng *, const sim_t *)> gen_R = [] (gsl_rng *r, const sim_t *s) -> symmetric_t<POTTSQ> {
+    symmetric_t<POTTSQ> rot;
+    init(&rot);
+
+    for (int i = POTTSQ - 1; i >= 0; i--) {
+      if (rot.perm[i] == i) {
+        q_t j = gsl_rng_uniform_int(r, i + 1);
+        if (rot.perm[j] == j) {
+          q_t tmp = rot.perm[i];
+          rot.perm[i] = rot.perm[j];
+          rot.perm[j] = tmp;
+        }
+      }
+    }
+
     return rot;
   };
 
   // define function that updates any number of measurements
-  std::function <void(const state_t <z2_t, ising_t> *)> measurement;
+  std::function <void(const sim_t *)> measurement;
 
   double average_M = 0;
   if (!draw) {
     // a very simple example: measure the average magnetization
-    measurement = [&] (const state_t <z2_t, ising_t> *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t *s) {
+      average_M += (double)s->M[0] / (double)N / (double)s->nv;
     };
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
@@ -98,22 +123,19 @@ int main(int argc, char *argv[]) {
     // initialize glut
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-    glutInitWindowSize(L,L);
-    glutCreateWindow("null");
+    glutInitWindowSize(window_size, window_size);
+    glutCreateWindow("wolff");
     glClearColor(0.0,0.0,0.0,0.0);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    measurement = [&] (const state_t <z2_t, ising_t> *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t *s) {
+      average_M += (double)s->M[0] / (double)N / (double)s->nv;
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
-        if (s->spins[i].x == s->R.x) {
-          glColor3f(0.0, 0.0, 0.0);
-        } else {
-          glColor3f(1.0, 1.0, 1.0);
-        }
+        potts_t<POTTSQ> tmp_s = act_inverse(s->R, s->spins[i]);
+        glColor3f(hue_to_R(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_G(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_B(tmp_s.x * 2 * M_PI / POTTSQ));
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
       }
       glFlush();
@@ -124,7 +146,7 @@ int main(int argc, char *argv[]) {
   wolff(N, &s, gen_R, measurement, r, silent);
 
   // tell us what we found!
-  printf("%" PRIcount " Ising runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, D, L, T, H, average_M);
+  printf("%" PRIcount " %d-Potts runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, POTTSQ, D, L, T, H_vec[0], average_M);
 
   // free the random number generator
   gsl_rng_free(r);

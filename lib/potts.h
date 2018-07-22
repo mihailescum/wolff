@@ -44,13 +44,11 @@ void free_spin(potts_t <q> s) {
   // do nothing!
 }
 
-template <q_t q>
-void free_spin(typename potts_t<q>::M_t s) {
+void free_spin(int *s) {
   free(s);
 }
 
-template <q_t q>
-void free_spin(typename potts_t<q>::F_t s) {
+void free_spin(double *s) {
   free(s);
 }
 
@@ -60,13 +58,13 @@ potts_t <q> copy(potts_t <q> s) {
 }
 
 template <q_t q>
-void add(typename potts_t<q>::M_t s1, int a, potts_t <q> s2) {
-  s1[s2.x] += a;
+void add(typename potts_t<q>::M_t *s1, int a, potts_t <q> s2) {
+  (*s1)[s2.x] += a;
 }
 
 template <q_t q>
-void add(typename potts_t<q>::F_t s1, double a, potts_t <q> s2) {
-  s1[s2.x] += a;
+void add(typename potts_t<q>::F_t *s1, double a, potts_t <q> s2) {
+  (*s1)[s2.x] += a;
 }
 
 template <q_t q>
@@ -78,13 +76,13 @@ typename potts_t<q>::M_t scalar_multiple(int factor, potts_t <q> s) {
 
 template <q_t q>
 typename potts_t<q>::F_t scalar_multiple(double factor, potts_t <q> s) {
-  int *F = (double *)calloc(q, sizeof(double));
-  M[s.x] += factor;
-  return M;
+  double *F = (double *)calloc(q, sizeof(double));
+  F[s.x] += factor;
+  return F;
 }
 
 template <q_t q>
-double norm_squared(typename potts<q>::F_t s) {
+double norm_squared(typename potts_t<q>::F_t s) {
   double total = 0;
   for (q_t i = 0; i < q; i++) {
     total += pow(s[i], 2);

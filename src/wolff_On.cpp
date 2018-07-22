@@ -1,5 +1,6 @@
 
 #include <getopt.h>
+
 #ifdef HAVE_GLUT
 #include <GL/glut.h>
 #endif
@@ -7,6 +8,7 @@
 #include <wolff.h>
 #include <correlation.h>
 #include <measure.h>
+#include <colors.h>
 
 typedef orthogonal_t <N_COMP, double> orthogonal_R_t;
 typedef vector_t <N_COMP, double> vector_R_t;
@@ -32,36 +34,6 @@ double H_modulated(vector_R_t v, int order, double mag) {
   return mag * cos(order * theta(v));
 }
 
-double hue_to_R(double theta) {
-  if (((M_PI / 3 <= theta) && (theta < 2 * M_PI / 3)) || ((4 * M_PI / 3 <= theta) && (theta < 5 * M_PI / 3))) {
-    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
-  } else if (((0 <= theta) && (theta < M_PI / 3)) || ((5 * M_PI / 3 <= theta) && (theta <= 2 * M_PI))) {
-    return 1.0;
-  } else {
-    return 0.0;
-  }
-}
-
-double hue_to_G(double theta) {
-  if (((0 <= theta) && (theta < M_PI / 3)) || ((M_PI <= theta) && (theta < 4 * M_PI / 3))) {
-    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
-  } else if (((M_PI / 3 <= theta) && (theta < 2 * M_PI / 3)) || ((2 * M_PI / 3 <= theta) && (theta < M_PI))) {
-    return 1.0;
-  } else {
-    return 0.0;
-  }
-}
-
-double hue_to_B(double theta) {
-  if (((2 * M_PI / 3 <= theta) && (theta < M_PI)) || ((5 * M_PI / 3 <= theta) && (theta <= 2 * M_PI))) {
-    return 1.0 - fabs(fmod(theta / (2 * M_PI / 6), 2) - 1.0);
-  } else if (((M_PI <= theta) && (theta < 4 * M_PI / 3)) || ((4 * M_PI / 3 <= theta) && (theta < 5 * M_PI / 3))) {
-    return 1.0;
-  } else {
-    return 0.0;
-  }
-}
-
 int main(int argc, char *argv[]) {
 
   count_t N = (count_t)1e7;
@@ -81,7 +53,6 @@ int main(int argc, char *argv[]) {
   int order = 2;
 
   int opt;
-  q_t J_ind = 0;
   q_t H_ind = 0;
   double epsilon = 1;
 
