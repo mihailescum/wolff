@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   state_t <z2_t, ising_t> s(D, L, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <z2_t(gsl_rng *, const state_t <z2_t, ising_t> *)> gen_R = [] (gsl_rng *, const state_t <z2_t, ising_t> *) -> z2_t {
+  std::function <z2_t(gsl_rng *, ising_t)> gen_R = [] (gsl_rng *, ising_t s) -> z2_t {
     z2_t rot;
     rot.x = true;
     return rot;

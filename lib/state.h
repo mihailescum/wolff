@@ -5,7 +5,6 @@
 
 #include "types.h"
 #include "graph.h"
-#include "ising.h"
 
 template <class R_t, class X_t>
 class state_t {

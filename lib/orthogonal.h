@@ -144,7 +144,7 @@ orthogonal_t <q, T> act_inverse (orthogonal_t <q, T> m1, orthogonal_t <q, T> m2)
 }
 
 template <q_t q>
-orthogonal_t <q, double> generate_rotation_uniform (gsl_rng *r, const state_t <orthogonal_t <q, double>, vector_t <q, double>> *s) {
+orthogonal_t <q, double> generate_rotation_uniform (gsl_rng *r, vector_t <q, double> v) {
   orthogonal_t <q, double> ptr;
   ptr.is_reflection = true;
   ptr.x = (double *)calloc(q, sizeof(double));
@@ -166,7 +166,7 @@ orthogonal_t <q, double> generate_rotation_uniform (gsl_rng *r, const state_t <o
 }
 
 template <q_t q>
-orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state_t <orthogonal_t <q, double>, vector_t <q, double>> *s, double epsilon) {
+orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, vector_t <q, double> v, double epsilon) {
   orthogonal_t <q, double> m;
   vector_t <q, double> tmp_v;
   m.is_reflection = true;
@@ -179,15 +179,15 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state
 
   for (q_t i = 0; i < q; i++) {
     tmp_v.x[i] = gsl_ran_ugaussian(r);
-    M2 += pow(s->M.x[i], 2);
-    tmpM += tmp_v.x[i] * s->M.x[i];
+    M2 += pow(v.x[i], 2);
+    tmpM += tmp_v.x[i] * v.x[i];
   }
 
   double v2 = 0;
   double factor = gsl_ran_ugaussian(r);
 
   for (q_t i = 0; i < q; i++) {
-    tmp_v.x[i] = (tmp_v.x[i] - tmpM * s->M.x[i] / M2) + epsilon * factor * s->M.x[i] / sqrt(M2);
+    tmp_v.x[i] = (tmp_v.x[i] - tmpM * v.x[i] / M2) + epsilon * factor * v.x[i] / sqrt(M2);
     v2 += tmp_v.x[i] * tmp_v.x[i];
   }
 
@@ -197,9 +197,7 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const state
     tmp_v.x[i] /= mag_v;
   }
 
-  vector_t <q, double> v = act_inverse(s->R, tmp_v);
-  free(tmp_v.x);
-  m.x = v.x;
+  m.x = tmp_v.x;
 
   v2 = 0;
 

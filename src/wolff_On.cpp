@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 
   const char *pert_type;
 
-  std::function <orthogonal_R_t(gsl_rng *, const On_t *)> gen_R;
+  std::function <orthogonal_R_t(gsl_rng *, vector_R_t)> gen_R;
 
   if (use_pert) {
     gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon);

@@ -19,6 +19,7 @@
  * void add(M_t *x1, int factor, X_t x2);
  * void add(F_t *x1, double factor, X_t x2);
  * M_t scalar_multiple(int factor, X_t x);
+ * F_t scalar_multiple(double factor, X_t x);
  * double norm_squared(F_t x);
  * void write_magnetization(M_t M, FILE *outfile);
  *
