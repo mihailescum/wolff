@@ -1,31 +1,14 @@
 
 #pragma once
 
-#include <functional>
-#include <assert.h>
-#include <fftw3.h>
-#include <float.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
-#include <inttypes.h>
 #include <cmath>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
 
-#include "state.h"
 #include "types.h"
-#include "rand.h"
+#include "state.h"
 #include "stack.h"
-#include "convex.h"
 #include "graph.h"
-#include "tree.h"
-#include "measurement.h"
-#include "vector.h"
-#include "orthogonal.h"
-#include "dihedral.h"
-#include "dihinf.h"
-#include "yule_walker.h"
 
 template <class R_t, class X_t>
 void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {

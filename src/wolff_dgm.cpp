@@ -10,6 +10,7 @@
 #include <height.h>
 
 // include wolff.h
+#include <rand.h>
 #include <wolff.h>
 
 typedef state_t <dihedral_inf_t<int64_t>, height_t<int64_t>> sim_t;

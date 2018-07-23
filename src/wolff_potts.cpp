@@ -11,6 +11,7 @@
 #include <colors.h>
 
 // include wolff.h
+#include <rand.h>
 #include <wolff.h>
 
 typedef state_t <symmetric_t<POTTSQ>, potts_t<POTTSQ>> sim_t;

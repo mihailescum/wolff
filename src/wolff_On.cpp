@@ -1,14 +1,19 @@
 
 #include <getopt.h>
+#include <stdio.h>
 
 #ifdef HAVE_GLUT
 #include <GL/glut.h>
 #endif
 
+#include <vector.h>
+#include <orthogonal.h>
+
 #include <wolff.h>
 #include <correlation.h>
 #include <measure.h>
 #include <colors.h>
+#include <rand.h>
 
 typedef orthogonal_t <N_COMP, double> orthogonal_R_t;
 typedef vector_t <N_COMP, double> vector_R_t;

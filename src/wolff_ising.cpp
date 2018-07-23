@@ -9,6 +9,7 @@
 #include <ising.h>
 
 // include wolff.h
+#include <rand.h>
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
