@@ -116,6 +116,7 @@ int main(int argc, char *argv[]) {
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
 
+#ifdef HAVE_GLUT
     // initialize glut
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -149,6 +150,7 @@ int main(int argc, char *argv[]) {
       }
       glFlush();
     };
+#endif
   }
 
   // run wolff for N cluster flips
