@@ -23,12 +23,13 @@ void compute_OO(int N, fftw_plan forward_plan, double *forward_data, fftw_plan r
   reverse_data[0] = forward_data[0] * forward_data[0];
   reverse_data[N / 2] = forward_data[N/2] * forward_data[N/2];
 
-  for (count_t i = 1; i < N / 2 - 1; i++) {
-    reverse_data[i] = forward_data[i] * forward_data[i] + forward_data[N - i] * forward_data[N - i];
+  for (count_t i = 1; i < N / 2; i++) {
+    reverse_data[i] = pow(forward_data[i], 2) + pow(forward_data[N - i], 2);
     reverse_data[N - i] = 0;
   }
 
   fftw_execute(reverse_plan);
+
 }
 
 double finite_energy(q_t nb, double *J, q_t q, double *H, v_t nv, v_t ne, uint32_t *bo, uint32_t *so) {
@@ -81,7 +82,7 @@ int main (int argc, char *argv[]) {
   }
   FILE *metadata;
 
-  fftw_set_timelimit(10);
+  fftw_set_timelimit(1);
 
   if (from_stdin) {
     metadata = stdin;
@@ -111,7 +112,7 @@ int main (int argc, char *argv[]) {
 
    printf("%lu: Processing...\n", id);
 
-   bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK") || 0 == strcmp(model, "DGM");
+   bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK");
 
     if (is_finite) {
       q_t nb;
@@ -232,27 +233,23 @@ int main (int argc, char *argv[]) {
       free(filename_M);
 
     } else {
-      double T;
-      fscanf(metadata, "\"T\" -> %lf, \"H\" -> {", &T);
-      double *H = (double *)malloc(q * sizeof(double));
-
-      for (q_t i = 0; i < q - 1; i++) {
-        fscanf(metadata, "%lf, ", &(H[i]));
-      }
-      char *field = (char *)malloc(32 * sizeof(char));
-      double epsilon;
-      fscanf(metadata, "%lf}, \"GENERATOR\" -> \"%[^\"]\", \"EPS\" -> %lf |>\n", &(H[q - 1]), field, &epsilon);
-
-      free(field);
-      free(H);
+      char *junk = (char *)malloc(1024 * sizeof(char));
+      fscanf(metadata, "%[^\n]\n", junk); // throw away the rest of the line, we don't need it
+      free(junk);
 
       char *filename_E = (char *)malloc(128 * sizeof(char));
+      char *filename_F = (char *)malloc(128 * sizeof(char));
+      char *filename_M = (char *)malloc(128 * sizeof(char));
       char *filename_S = (char *)malloc(128 * sizeof(char));
 
       sprintf(filename_E, "wolff_%lu_E.dat", id);
+      sprintf(filename_F, "wolff_%lu_F.dat", id);
+      sprintf(filename_M, "wolff_%lu_M.dat", id);
       sprintf(filename_S, "wolff_%lu_S.dat", id);
 
       FILE *file_E = fopen(filename_E, "rb");
+      FILE *file_F = fopen(filename_F, "rb");
+      FILE *file_M = fopen(filename_M, "rb");
       FILE *file_S = fopen(filename_S, "rb");
 
       fseek(file_S, 0, SEEK_END);
@@ -269,41 +266,115 @@ int main (int argc, char *argv[]) {
         int M = N - drop;
         double M_f = (double)M;
 
-        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
-
-        fread(data_S, sizeof(uint32_t), N, file_S);
-        double mean_S = mean(M, data_S + drop);
-        free(data_S);
-
-        double *forward_data = (double *)fftw_malloc(M * sizeof(double));
-        fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
-
-
-        float *data_E = (float *)malloc(N * sizeof(float));
-        fread(data_E, sizeof(float), N, file_E);
-        for (int i = 0; i < M; i++) {
-          forward_data[i] = (double)data_E[drop + i];
-        }
-        free(data_E);
-
-        double mean_E = mean(M, forward_data);
-
-        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
-        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
-
-        compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
-
         if (length > M) {
           length = M;
         }
 
-        sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
-        FILE *file_E_new = fopen(filename_E, "wb");
-        fwrite(&M_f, sizeof(double), 1, file_E_new);
-        fwrite(&mean_E, sizeof(double), 1, file_E_new);
-        fwrite(&mean_S, sizeof(double), 1, file_E_new);
-        fwrite(reverse_data, sizeof(double), length, file_E_new);
-        fclose(file_E_new);
+        double *forward_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
+
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
+
+        if (file_S != NULL) {
+          uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
+
+          fread(data_S, sizeof(uint32_t), N, file_S);
+          fclose(file_S);
+
+          for (int i = 0; i < M; i++) {
+            forward_data[i] = (double)data_S[drop + i];
+          }
+          free(data_S);
+
+          double mean_S = mean(M, forward_data);
+
+          compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+          sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
+          FILE *file_S_new = fopen(filename_S, "wb");
+          fwrite(&M_f, sizeof(double), 1, file_S_new);
+          fwrite(&mean_S, sizeof(double), 1, file_S_new);
+          fwrite(reverse_data, sizeof(double), length, file_S_new);
+          fclose(file_S_new);
+        }
+        if (file_F != NULL) {
+          float *data_F = (float *)malloc(N * sizeof(float));
+
+          fread(data_F, sizeof(float), N, file_F);
+          fclose(file_F);
+
+          for (int i = 0; i < M; i++) {
+            forward_data[i] = (double)data_F[drop + i];
+          }
+          free(data_F);
+
+          double mean_F = mean(M, forward_data);
+
+          compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+          sprintf(filename_F, "wolff_%lu_F_OO.dat", id);
+          FILE *file_F_new = fopen(filename_F, "wb");
+          fwrite(&M_f, sizeof(double), 1, file_F_new);
+          fwrite(&mean_F, sizeof(double), 1, file_F_new);
+          fwrite(reverse_data, sizeof(double), length, file_F_new);
+          fclose(file_F_new);
+        }
+        if (file_E != NULL) {
+          float *data_E = (float *)malloc(N * sizeof(float));
+
+          fread(data_E, sizeof(float), N, file_E);
+          fclose(file_E);
+
+          for (int i = 0; i < M; i++) {
+            forward_data[i] = (double)data_E[drop + i];
+          }
+          free(data_E);
+
+          double mean_E = mean(M, forward_data);
+
+          compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+          sprintf(filename_E, "wolff_%lu_E_OO.dat", id);
+          FILE *file_E_new = fopen(filename_E, "wb");
+          fwrite(&M_f, sizeof(double), 1, file_E_new);
+          fwrite(&mean_E, sizeof(double), 1, file_E_new);
+          fwrite(reverse_data, sizeof(double), length, file_E_new);
+          fclose(file_E_new);
+        }
+        if (file_M != NULL) {
+          if (0 == strcmp(model, "PLANAR")) {
+            float *data_M = (float *)malloc(2 * N * sizeof(float));
+            fread(data_M, sizeof(float), 2 * N, file_M);
+            fclose(file_M);
+            for (int i = 0; i < M; i++) {
+              forward_data[i] = (double)sqrt(pow(data_M[2 * drop + 2 * i], 2) + pow(data_M[2 * drop + 2 * i + 1], 2));
+            }
+            free(data_M);
+          } else if (0 == strcmp(model, "HEISENBERG")) {
+            float *data_M = (float *)malloc(3 * N * sizeof(float));
+            fread(data_M, sizeof(float), 3 * N, file_M);
+            fclose(file_M);
+            for (int i = 0; i < M; i++) {
+              forward_data[i] = sqrt(pow(data_M[3 * drop + 3 * i], 2) + pow(data_M[3 * drop + 3 * i + 1], 2) + pow(data_M[3 * drop + 3 * i + 2], 2));
+            }
+            free(data_M);
+          } else {
+            printf("UNKNOWN MODEL\n");
+            exit(EXIT_FAILURE);
+          }
+
+          double mean_M = mean(M, forward_data);
+
+          compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+          sprintf(filename_M, "wolff_%lu_M_OO.dat", id);
+          FILE *file_M_new = fopen(filename_M, "wb");
+          fwrite(&M_f, sizeof(double), 1, file_M_new);
+          fwrite(&mean_M, sizeof(double), 1, file_M_new);
+          fwrite(reverse_data, sizeof(double), length, file_M_new);
+          fclose(file_M_new);
+        }
 
         printf("\033[F%lu: Correlation functions for %d steps written.\n", id, M);
         fftw_destroy_plan(forward_plan);
@@ -314,10 +385,8 @@ int main (int argc, char *argv[]) {
       }
       free(filename_E);
       free(filename_S);
-
-      fclose(file_E);
-      fclose(file_S);
-
+      free(filename_F);
+      free(filename_M);
     }
   }
 
