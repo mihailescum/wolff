@@ -16,6 +16,24 @@ double mean(int N, T *data) {
   return total / N;
 }
 
+double squared_mean(int N, double *data) {
+  double total = 0;
+  for (int i = 0; i < N; i++) {
+    total += data[i];
+  }
+
+  return total / N;
+}
+
+double central_moment(int N, double *data, double mean, int m) {
+  double total = 0;
+  for (int i = 0; i < N; i++) {
+    total += pow(data[i] - mean, m);
+  }
+
+  return total / N;
+}
+
 void compute_OO(int N, fftw_plan forward_plan, double *forward_data, fftw_plan reverse_plan, double *reverse_data) {
 
   fftw_execute(forward_plan);
@@ -163,6 +181,10 @@ int main (int argc, char *argv[]) {
 
       if (speedy_drop) {
         drop = N - pow(2, floor(log(N) / log(2)));
+      } else {
+        if (N % 2 == 1 && drop % 2 == 0) {
+          drop++; // make sure M is even
+        }
       }
 
       if (N <= drop) {
@@ -170,15 +192,41 @@ int main (int argc, char *argv[]) {
       } else {
         int M = N - drop;
 
-        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
-        fread(data_S, N, sizeof(uint32_t), file_S);
-        double mean_S = mean(M, data_S + drop);
-        free(data_S);
+        double M_f = (double)M;
+
+        if (length > M) {
+          length = M;
+        }
 
         double *forward_data = (double *)fftw_malloc(M * sizeof(double));
         fftw_plan forward_plan = fftw_plan_r2r_1d(M, forward_data, forward_data, FFTW_R2HC, 0);
+        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
+        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
-        double M_f = (double)M;
+
+        uint32_t *data_S = (uint32_t *)malloc(N * sizeof(uint32_t));
+        fread(data_S, N, sizeof(uint32_t), file_S);
+        for (count_t i = 0; i < M; i++) {
+          forward_data[i] = (double)data_S[drop + i];
+        }
+        free(data_S);
+        double mean_S = mean(M, forward_data);
+        double squaredMean_S = squared_mean(M, forward_data);
+        double moment2_S = central_moment(M, forward_data, mean_S, 2);
+        double moment4_S = central_moment(M, forward_data, mean_S, 4);
+
+        compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
+
+        sprintf(filename_S, "wolff_%lu_S_OO.dat", id);
+
+        FILE *file_S = fopen(filename_S, "wb");
+        fwrite(&M_f, sizeof(double), 1, file_S);
+        fwrite(&mean_S, sizeof(double), 1, file_S);
+        fwrite(&squaredMean_S, sizeof(double), 1, file_S);
+        fwrite(&moment2_S, sizeof(double), 1, file_S);
+        fwrite(&moment4_S, sizeof(double), 1, file_S);
+        fwrite(reverse_data, sizeof(double), length, file_S);
+        fclose(file_S);
 
         uint32_t *data_B = (uint32_t *)malloc((nb - 1) * N * sizeof(uint32_t));
         uint32_t *data_M = (uint32_t *)malloc((q - 1) * N * sizeof(uint32_t));
@@ -190,25 +238,23 @@ int main (int argc, char *argv[]) {
         }
 
         double mean_E = mean(M, forward_data);
+        double squaredMean_E = squared_mean(M, forward_data);
+        double moment2_E = central_moment(M, forward_data, mean_E, 2);
+        double moment4_E = central_moment(M, forward_data, mean_E, 4);
 
         free(data_B);
         free(data_M);
-
-        double *reverse_data = (double *)fftw_malloc(M * sizeof(double));
-        fftw_plan reverse_plan = fftw_plan_r2r_1d(M, reverse_data, reverse_data, FFTW_HC2R, 0);
 
         compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
         sprintf(filename_B, "wolff_%lu_E_OO.dat", id);
 
-        if (length > M) {
-          length = M;
-        }
-
         FILE *file_E = fopen(filename_B, "wb");
         fwrite(&M_f, sizeof(double), 1, file_E);
         fwrite(&mean_E, sizeof(double), 1, file_E);
-        fwrite(&mean_S, sizeof(double), 1, file_E);
+        fwrite(&squaredMean_E, sizeof(double), 1, file_E);
+        fwrite(&moment2_E, sizeof(double), 1, file_E);
+        fwrite(&moment4_E, sizeof(double), 1, file_E);
         fwrite(reverse_data, sizeof(double), length, file_E);
         fclose(file_E);
 
@@ -258,6 +304,10 @@ int main (int argc, char *argv[]) {
 
       if (speedy_drop) {
         drop = N - pow(2, floor(log(N) / log(2)));
+      } else {
+        if (N % 2 == 1 && drop % 2 == 0) {
+          drop++; // make sure M is even
+        }
       }
 
       if (N <= drop) {
@@ -288,6 +338,9 @@ int main (int argc, char *argv[]) {
           free(data_S);
 
           double mean_S = mean(M, forward_data);
+          double squaredMean_S = squared_mean(M, forward_data);
+          double moment2_S = central_moment(M, forward_data, mean_S, 2);
+          double moment4_S = central_moment(M, forward_data, mean_S, 4);
 
           compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -295,6 +348,9 @@ int main (int argc, char *argv[]) {
           FILE *file_S_new = fopen(filename_S, "wb");
           fwrite(&M_f, sizeof(double), 1, file_S_new);
           fwrite(&mean_S, sizeof(double), 1, file_S_new);
+          fwrite(&squaredMean_S, sizeof(double), 1, file_S_new);
+          fwrite(&moment2_S, sizeof(double), 1, file_S_new);
+          fwrite(&moment4_S, sizeof(double), 1, file_S_new);
           fwrite(reverse_data, sizeof(double), length, file_S_new);
           fclose(file_S_new);
         }
@@ -310,6 +366,9 @@ int main (int argc, char *argv[]) {
           free(data_F);
 
           double mean_F = mean(M, forward_data);
+          double squaredMean_F = squared_mean(M, forward_data);
+          double moment2_F = central_moment(M, forward_data, mean_F, 2);
+          double moment4_F = central_moment(M, forward_data, mean_F, 4);
 
           compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -317,6 +376,9 @@ int main (int argc, char *argv[]) {
           FILE *file_F_new = fopen(filename_F, "wb");
           fwrite(&M_f, sizeof(double), 1, file_F_new);
           fwrite(&mean_F, sizeof(double), 1, file_F_new);
+          fwrite(&squaredMean_F, sizeof(double), 1, file_F_new);
+          fwrite(&moment2_F, sizeof(double), 1, file_F_new);
+          fwrite(&moment4_F, sizeof(double), 1, file_F_new);
           fwrite(reverse_data, sizeof(double), length, file_F_new);
           fclose(file_F_new);
         }
@@ -332,6 +394,9 @@ int main (int argc, char *argv[]) {
           free(data_E);
 
           double mean_E = mean(M, forward_data);
+          double squaredMean_E = squared_mean(M, forward_data);
+          double moment2_E = central_moment(M, forward_data, mean_E, 2);
+          double moment4_E = central_moment(M, forward_data, mean_E, 4);
 
           compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -339,6 +404,9 @@ int main (int argc, char *argv[]) {
           FILE *file_E_new = fopen(filename_E, "wb");
           fwrite(&M_f, sizeof(double), 1, file_E_new);
           fwrite(&mean_E, sizeof(double), 1, file_E_new);
+          fwrite(&squaredMean_E, sizeof(double), 1, file_E_new);
+          fwrite(&moment2_E, sizeof(double), 1, file_E_new);
+          fwrite(&moment4_E, sizeof(double), 1, file_E_new);
           fwrite(reverse_data, sizeof(double), length, file_E_new);
           fclose(file_E_new);
         }
@@ -365,6 +433,9 @@ int main (int argc, char *argv[]) {
           }
 
           double mean_M = mean(M, forward_data);
+          double squaredMean_M = squared_mean(M, forward_data);
+          double moment2_M = central_moment(M, forward_data, mean_M, 2);
+          double moment4_M = central_moment(M, forward_data, mean_M, 4);
 
           compute_OO(M, forward_plan, forward_data, reverse_plan, reverse_data);
 
@@ -372,6 +443,9 @@ int main (int argc, char *argv[]) {
           FILE *file_M_new = fopen(filename_M, "wb");
           fwrite(&M_f, sizeof(double), 1, file_M_new);
           fwrite(&mean_M, sizeof(double), 1, file_M_new);
+          fwrite(&squaredMean_M, sizeof(double), 1, file_M_new);
+          fwrite(&moment2_M, sizeof(double), 1, file_M_new);
+          fwrite(&moment4_M, sizeof(double), 1, file_M_new);
           fwrite(reverse_data, sizeof(double), length, file_M_new);
           fclose(file_M_new);
         }
