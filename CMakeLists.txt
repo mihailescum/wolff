@@ -14,7 +14,6 @@ link_directories(~/.local/lib)
 file(GLOB CSOURCES lib/*.c)
 file(GLOB CPPSOURCES lib/*.cpp)
 
-add_executable(wolff_finite src/wolff_finite.c ${CSOURCES})
 add_executable(wolff_ising src/wolff_ising.cpp ${CPPSOURCES} ${CSOURCES})
 add_executable(wolff_dgm src/wolff_dgm.cpp ${CPPSOURCES} ${CSOURCES})
 add_executable(wolff_cgm src/wolff_cgm.cpp ${CPPSOURCES} ${CSOURCES})
@@ -37,7 +36,6 @@ FIND_LIBRARY(GLU NAMES GLU)
 FIND_LIBRARY(GLUT NAMES glut)
 FIND_LIBRARY(TESTING NAMES Idontexist)
 
-target_link_libraries(wolff_finite cblas gsl m)
 target_link_libraries(analyze_correlations cblas gsl fftw3 m)
 if (${GLUT} MATCHES "GLUT-NOTFOUND")
   target_link_libraries(wolff_ising cblas gsl m)
@@ -64,5 +62,5 @@ else()
   target_compile_definitions(wolff_heisenberg PUBLIC HAVE_GLUT)
 endif()
 
-install(TARGETS wolff_finite wolff_ising wolff_dgm wolff_cgm wolff_3potts wolff_4potts wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
+install(TARGETS wolff_ising wolff_dgm wolff_cgm wolff_3potts wolff_4potts wolff_heisenberg wolff_planar analyze_correlations DESTINATION bin)
 

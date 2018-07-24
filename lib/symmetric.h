@@ -2,27 +2,9 @@
 #pragma once
 
 #include <stdlib.h>
-
 #include "types.h"
-
-#ifdef __cplusplus
 #include "potts.h"
-extern "C" {
-#endif
 
-q_t *symmetric_compose(q_t q, const q_t *g1, const q_t *g2);
-
-q_t symmetric_act(const q_t *g, q_t s);
-
-q_t *symmetric_invert(q_t q, const q_t *g);
-
-q_t *symmetric_gen_transformations(q_t q);
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
 template <q_t q>
 class symmetric_t {
   public:
@@ -100,5 +82,4 @@ symmetric_t<q> act_inverse(symmetric_t<q> r1, symmetric_t<q> r2) {
 
   return r3;
 }
-#endif
 
