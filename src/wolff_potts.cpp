@@ -10,6 +10,11 @@
 #include <potts.h>
 #include <colors.h>
 
+#define N_STATES POTTSQ
+const potts_t<POTTSQ> states[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+q_t state_to_ind(potts_t<POTTSQ> state) { return (q_t)state.x; }
+#include <finite_states.h>
+
 // include wolff.h
 #include <rand.h>
 #include <wolff.h>

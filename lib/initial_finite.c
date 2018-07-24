@@ -1,6 +1,24 @@
 
 #include "initial_finite.h"
 
+double *precompute_cos(L_t L) {
+  double *x = (double *)malloc(L * sizeof(double));
+  for (L_t i = 0; i < L; i++) {
+    x[i] = cos(2 * M_PI * (double)i / (double)L);
+  }
+
+  return x;
+}
+
+double *precompute_sin(L_t L) {
+  double *x = (double *)malloc(L * sizeof(double));
+  for (L_t i = 0; i < L; i++) {
+    x[i] = sin(2 * M_PI * (double)i / (double)L);
+  }
+
+  return x;
+}
+
 double *Jprobs_from_J(q_t q, double T, double *J) {
   double *J_probs = (double *)calloc(pow(q, 2), sizeof(double));
 
@@ -112,6 +130,13 @@ state_finite_t *initial_finite_prepare_ising(D_t D, L_t L, double T, double *H) 
   s->B = (v_t *)calloc(2, sizeof(v_t));
   s->B[0] = s->ne;
 
+  s->ReF = (double *)calloc(D * 2, sizeof(double));
+  s->ImF = (double *)calloc(D * 2, sizeof(double));
+
+
+  s->precomputed_cos = precompute_cos(L);
+  s->precomputed_sin = precompute_sin(L);
+
   return s;
 }
 
@@ -167,6 +192,12 @@ state_finite_t *initial_finite_prepare_potts(D_t D, L_t L, q_t q, double T, doub
   s->M[0] = s->nv; // everyone starts in state 0, remember?
   s->B = (v_t *)calloc(s->n_bond_types, sizeof(v_t));
   s->B[0] = s->ne; // everyone starts in state 0, remember?
+
+  s->ReF = (double *)calloc(D * q, sizeof(double));
+  s->ImF = (double *)calloc(D * q, sizeof(double));
+
+  s->precomputed_cos = precompute_cos(L);
+  s->precomputed_sin = precompute_sin(L);
 
   return s;
 }
@@ -230,9 +261,14 @@ state_finite_t *initial_finite_prepare_clock(D_t D, L_t L, q_t q, double T, doub
   s->B = (v_t *)calloc(s->n_bond_types, sizeof(v_t));
   s->B[0] = s->ne; // everyone starts in state 0, remember?
 
+  s->ReF = (double *)calloc(D * q, sizeof(double));
+  s->ImF = (double *)calloc(D * q, sizeof(double));
+
+  s->precomputed_cos = precompute_cos(L);
+  s->precomputed_sin = precompute_sin(L);
+
   return s;
 }
-
 
 state_finite_t *initial_finite_prepare_dgm(D_t D, L_t L, q_t q, double T, double *H) {
   state_finite_t *s = (state_finite_t *)calloc(1, sizeof(state_finite_t));
@@ -291,6 +327,12 @@ state_finite_t *initial_finite_prepare_dgm(D_t D, L_t L, q_t q, double T, double
   s->B = (v_t *)calloc(s->n_bond_types, sizeof(v_t));
   s->B[0] = s->nv; // everyone starts in state 0, remember?
 
+  s->ReF = (double *)calloc(D * q, sizeof(double));
+  s->ImF = (double *)calloc(D * q, sizeof(double));
+
+  s->precomputed_cos = precompute_cos(L);
+  s->precomputed_sin = precompute_sin(L);
+
   return s;
 }
 
@@ -321,6 +363,10 @@ void state_finite_free(state_finite_t *s) {
   free(s->involutions);
   free(s->transform_site_to_zero);
   free(s->bond_with_zero_type);
+  free(s->ReF);
+  free(s->ImF);
+  free(s->precomputed_cos);
+  free(s->precomputed_sin);
   free(s);
 }
 

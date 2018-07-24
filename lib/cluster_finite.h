@@ -45,6 +45,10 @@ typedef struct {
   q_t *R;
   v_t *B;
   v_t *M;
+  double *ReF;
+  double *ImF;
+  double *precomputed_cos;
+  double *precomputed_sin;
 } state_finite_t;
 
 v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot, gsl_rng *r);

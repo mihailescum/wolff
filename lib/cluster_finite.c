@@ -34,7 +34,7 @@ v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot_ind, gsl_rng *r) {
       v_t nn = s->g->v_i[v + 1] - s->g->v_i[v];
 
       for (v_t i = 0; i < nn; i++) {
-        q_t sn;
+        q_t sn, non_ghost;
         double prob;
         bool external_neighbor = false;
 
@@ -42,8 +42,10 @@ v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot_ind, gsl_rng *r) {
 
         if (vn == s->g->nv - 1) {
           external_neighbor = true;
+          non_ghost = v;
         } else {
           sn = s->spins[vn];
+          non_ghost = vn;
         }
 
         if (external_flipped || external_neighbor) {
@@ -61,6 +63,16 @@ v_t flip_cluster_finite(state_finite_t *s, v_t v0, R_t rot_ind, gsl_rng *r) {
 
           s->M[rot_s_old]--;
           s->M[rot_s_new]++;
+
+          for (D_t i = 0; i < s->D; i++) {
+            L_t x = (non_ghost / (v_t)pow(s->L, s->D - i - 1)) % s->L;
+
+            s->ReF[s->D * i + rot_s_old] -= s->precomputed_cos[i];
+            s->ReF[s->D * i + rot_s_new] += s->precomputed_cos[i];
+
+            s->ImF[s->D * i + rot_s_old] -= s->precomputed_sin[i];
+            s->ImF[s->D * i + rot_s_new] += s->precomputed_sin[i];
+          }
 
         } else {
           q_t diff_old = s->bond_with_zero_type[s->transformations[s->q * s->transform_site_to_zero[sn] + s_old]];

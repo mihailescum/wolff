@@ -64,7 +64,11 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
             non_ghost = vn;
           }
           double dE = state->H(rs_old) - state->H(rs_new);
+#ifdef FINITE_STATES
+          prob = H_probs[N_STATES * state_to_ind(rs_old) + state_to_ind(rs_new)];
+#else
           prob = 1.0 - exp(-dE / state->T);
+#endif
 
           add(&(state->M), -1, rs_old);
           add(&(state->M),  1, rs_new);
@@ -84,7 +88,11 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           free_spin (rs_new);
         } else {
           double dE = state->J(si_old, sj) - state->J(si_new, sj);
+#ifdef FINITE_STATES
+          prob = J_probs[N_STATES * N_STATES * state_to_ind(si_old) + N_STATES * state_to_ind(si_new) + state_to_ind(sj)];
+#else
           prob = 1.0 - exp(-dE / state->T);
+#endif
           state->E += dE;
         }
 
