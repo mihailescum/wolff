@@ -8,9 +8,6 @@
 #include <z2.h>
 #include <ising.h>
 
-#define N_STATES 2
-const ising_t states[N_STATES] = {false, true};
-q_t state_to_ind(ising_t state) { return (q_t)state.x; }
 #include <finite_states.h>
 
 // include wolff.h
