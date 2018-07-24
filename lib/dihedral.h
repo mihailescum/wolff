@@ -5,26 +5,26 @@
 #include "potts.h"
 
 template <class T, q_t q>
-struct dihedral2_t { bool is_reflection; T x; };
+struct dihedral_t { bool is_reflection; T x; };
 
 template <class T, q_t q>
-void init(dihedral2_t<T, q> *ptr) {
+void init(dihedral_t<T, q> *ptr) {
   ptr->is_reflection = false;
   ptr->x = (T)0;
 }
 
 template <class T, q_t q>
-dihedral2_t<T, q> copy(dihedral2_t<T, q> r) {
+dihedral_t<T, q> copy(dihedral_t<T, q> r) {
   return r;
 }
 
 template <class T, q_t q>
-void free_spin(dihedral2_t<T, q> r) {
+void free_spin(dihedral_t<T, q> r) {
   // do nothing!
 }
 
 template <q_t q>
-potts_t<q> act(dihedral2_t<q_t, q> r, potts_t<q> s) {
+potts_t<q> act(dihedral_t<q_t, q> r, potts_t<q> s) {
   potts_t<q> s2;
   if (r.is_reflection) {
     s2.x = ((q + r.x) - s.x) % q;
@@ -36,8 +36,8 @@ potts_t<q> act(dihedral2_t<q_t, q> r, potts_t<q> s) {
 }
 
 template <q_t q>
-dihedral2_t<q_t,q> act(dihedral2_t<q_t,q> r1, dihedral2_t<q_t,q> r2) {
-  dihedral2_t<q_t,q> r3;
+dihedral_t<q_t,q> act(dihedral_t<q_t,q> r1, dihedral_t<q_t,q> r2) {
+  dihedral_t<q_t,q> r3;
 
   if (r1.is_reflection) {
     r3.is_reflection = !(r2.is_reflection);
@@ -51,7 +51,7 @@ dihedral2_t<q_t,q> act(dihedral2_t<q_t,q> r1, dihedral2_t<q_t,q> r2) {
 }
 
 template <q_t q>
-potts_t<q> act_inverse(dihedral2_t<q_t,q> r, potts_t<q> s) {
+potts_t<q> act_inverse(dihedral_t<q_t,q> r, potts_t<q> s) {
   potts_t<q> s2;
   if (r.is_reflection) {
     s2.x = ((r.x + q) - s.x) % q;
@@ -63,8 +63,8 @@ potts_t<q> act_inverse(dihedral2_t<q_t,q> r, potts_t<q> s) {
 }
 
 template <q_t q>
-dihedral2_t<q_t, q> act_inverse(dihedral2_t<q_t,q> r1, dihedral2_t<q_t,q> r2) {
-  dihedral2_t<q_t,q> r3;
+dihedral_t<q_t, q> act_inverse(dihedral_t<q_t,q> r1, dihedral_t<q_t,q> r2) {
+  dihedral_t<q_t,q> r3;
 
   if (r1.is_reflection) {
     r3.is_reflection = !(r2.is_reflection);
