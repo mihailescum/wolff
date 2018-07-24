@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   unsigned int window_size = 512;
 
   bool modulated_field = false;
-  int order = 2;
+  unsigned int order = 1;
 
   int opt;
   q_t H_ind = 0;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   std::function <orthogonal_R_t(gsl_rng *, vector_R_t)> gen_R;
 
   if (use_pert) {
-    gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon);
+    gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon, order);
     pert_type = "PERTURB";
   } else {
     gen_R = generate_rotation_uniform <N_COMP>;
