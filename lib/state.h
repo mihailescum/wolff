@@ -13,7 +13,7 @@ class state_t {
     L_t L;
     v_t nv;
     v_t ne;
-    graph_t *g;
+    graph_t g;
     double T;
     X_t *spins;
     R_t R;
@@ -29,12 +29,10 @@ class state_t {
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
 
-    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), T(T), J(J), H(H) {
-      graph_t *h = graph_create_square(D, L);
-      nv = h->nv;
-      ne = h->ne;
-      g = graph_add_ext(h);
-      graph_free(h);
+    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), T(T), J(J), H(H), g(D, L) {
+      nv = g.nv;
+      ne = g.ne;
+      g.add_ext();
       spins = (X_t *)malloc(nv * sizeof(X_t));
       for (v_t i = 0; i < nv; i++) {
         init (&(spins[i]));
@@ -58,7 +56,6 @@ class state_t {
     }
 
     ~state_t() {
-      graph_free(g);
       for (v_t i = 0; i < nv; i++) {
         free_spin(spins[i]);
       }

@@ -36,11 +36,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         si_new = act (r, si_old);
       }
 
-      v_t nn = state->g->v_i[v + 1] - state->g->v_i[v];
-
-      for (v_t i = 0; i < nn; i++) {
-        v_t vn = state->g->v_adj[state->g->v_i[v] + i];
-
+      for (v_t vn : state->g.v_adj[v]) {
         X_t sj;
 
         if (vn != state->nv) {
@@ -101,7 +97,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         }
       }
 
-      if (v == state->g->nv - 1) {
+      if (v == state->nv) {
         free_spin(state->R);
         state->R = R_new;
       } else {
@@ -109,7 +105,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         state->spins[v] = si_new;
       }
 
-      if (v != state->g->nv - 1) { // count the number of non-external sites that flip
+      if (v != state->nv) { // count the number of non-external sites that flip
         nv++;
       }
     }

@@ -2,27 +2,20 @@
 #pragma once
 
 #include <inttypes.h>
-#include <math.h>
+#include <cmath>
 #include <stdlib.h>
+#include <vector>
 
 #include "types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class graph_t {
+  public:
+    v_t ne;
+    v_t nv;
+    std::vector<std::vector<v_t>> v_adj;
 
-typedef struct {
-  v_t ne;
-  v_t nv;
-  v_t *v_i;
-  v_t *v_adj;
-} graph_t;
+    graph_t(D_t D, L_t L);
+    void add_ext();
 
-graph_t *graph_create_square(D_t D, L_t L);
-graph_t *graph_add_ext(const graph_t *G);
-void graph_free(graph_t *h);
-
-#ifdef __cplusplus
-}
-#endif
+};
 
