@@ -94,6 +94,6 @@ void write_magnetization(int M, FILE *outfile) {
 }
 
 #define N_STATES 2
-const ising_t states[2] = {(bool)0, (bool)1};
+const ising_t states[2] = {{(bool)0}, {(bool)1}};
 q_t state_to_ind(ising_t state) { return (q_t)state.x; }
 

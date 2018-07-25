@@ -191,7 +191,6 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, vector_t <q
     v.x = v0.x;
   }
 
-  double m2 = 0;
   double m_dot_v = 0;
 
   for (q_t i = 0; i < q; i++) {
