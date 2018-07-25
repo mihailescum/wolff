@@ -77,11 +77,11 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           for (D_t i = 0; i < state->D; i++) {
             L_t x = (non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L;
 
-            add(&(state->ReF[i]), -state->precomputed_cos[i], rs_old);
-            add(&(state->ReF[i]),  state->precomputed_cos[i], rs_new);
+            add(&(state->ReF[i]), -state->precomputed_cos[x], rs_old);
+            add(&(state->ReF[i]),  state->precomputed_cos[x], rs_new);
 
-            add(&(state->ImF[i]), -state->precomputed_sin[i], rs_old);
-            add(&(state->ImF[i]),  state->precomputed_sin[i], rs_new);
+            add(&(state->ImF[i]), -state->precomputed_sin[x], rs_old);
+            add(&(state->ImF[i]),  state->precomputed_sin[x], rs_new);
           }
 
           free_spin (rs_old);

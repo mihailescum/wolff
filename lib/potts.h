@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "types.h"
+#include "vector.h"
 
 /* The following is the minimum definition of a spin class.
  *
@@ -30,8 +31,8 @@ class potts_t {
   public:
     q_t x;
 
-    typedef int *M_t;
-    typedef double *F_t;
+    typedef vector_t<q, int> M_t;
+    typedef vector_t<q, double> F_t;
 };
 
 template <q_t q>
@@ -44,56 +45,54 @@ void free_spin(potts_t <q> s) {
   // do nothing!
 }
 
-void free_spin(int *s) {
-  free(s);
-}
-
-void free_spin(double *s) {
-  free(s);
-}
-
 template <q_t q>
 potts_t <q> copy(potts_t <q> s) {
   return s;
 }
 
 template <q_t q>
-void add(typename potts_t<q>::M_t *s1, int a, potts_t <q> s2) {
-  (*s1)[s2.x] += a;
+void add(vector_t<q, int> *s1, int a, potts_t <q> s2) {
+  (s1->x)[s2.x] += a;
 }
 
 template <q_t q>
-void add(typename potts_t<q>::F_t *s1, double a, potts_t <q> s2) {
-  (*s1)[s2.x] += a;
+void add(vector_t<q, double> *s1, double a, potts_t <q> s2) {
+  (s1->x)[s2.x] += a;
 }
 
 template <q_t q>
-typename potts_t<q>::M_t scalar_multiple(int factor, potts_t <q> s) {
-  int *M = (int *)calloc(q, sizeof(int));
-  M[s.x] += factor;
+vector_t<q, int> scalar_multiple(int factor, potts_t <q> s) {
+  vector_t<q, int> M;
+  M.x = (int *)calloc(q, sizeof(int));
+  M.x[s.x] += factor;
   return M;
 }
 
 template <q_t q>
-typename potts_t<q>::F_t scalar_multiple(double factor, potts_t <q> s) {
-  double *F = (double *)calloc(q, sizeof(double));
-  F[s.x] += factor;
+vector_t<q, double> scalar_multiple(double factor, potts_t <q> s) {
+  vector_t<q, double> F;
+  F.x = (double *)calloc(q, sizeof(double));
+  F.x[s.x] += factor;
   return F;
 }
 
+// we could inherit norm_squared from vector.h, but convention dictates that
+// potts norms be changed by a constant factor
 template <q_t q>
-double norm_squared(typename potts_t<q>::F_t s) {
+double norm_squared(vector_t<q, double> s) {
   double total = 0;
   for (q_t i = 0; i < q; i++) {
-    total += pow(s[i], 2);
+    total += pow(s.x[i], 2);
   }
 
   return total * (double)q / ((double)q - 1.0);
 }
 
+// we could inherit write_magnetization from vector.h, but since M.x must sum
+// to nv we don't need to write the last element
 template <q_t q>
-void write_magnetization(typename potts_t<q>::M_t M, FILE *outfile) {
-  fwrite(&M, sizeof(int), q, outfile);
+void write_magnetization(vector_t<q, int> M, FILE *outfile) {
+  fwrite(M.x, sizeof(int), q - 1, outfile);
 }
 
 // knock yourself out

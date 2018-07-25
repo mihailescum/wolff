@@ -6,11 +6,10 @@
 #include <GL/glut.h>
 #endif
 
-#include <vector.h>
 #include <orthogonal.h>
+#include <vector.h>
 
 #include <wolff.h>
-#include <correlation.h>
 #include <measure.h>
 #include <colors.h>
 #include <rand.h>
@@ -234,7 +233,6 @@ int main(int argc, char *argv[]) {
   } else {
     wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, measurements, r, silent);
   }
-
 
   measure_free_files(measurement_flags, outfiles);
   free(H_vec);

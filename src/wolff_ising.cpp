@@ -1,5 +1,8 @@
 
 #include <getopt.h>
+#include <stdio.h>
+
+// if you have GLUT installed, you can see graphics!
 #ifdef HAVE_GLUT
 #include <GL/glut.h>
 #endif
@@ -8,10 +11,17 @@
 #include <z2.h>
 #include <ising.h>
 
+// finite_states.h can be included for spin types that have special variables
+// defined, and it causes wolff execution to use precomputed bond probabilities
 #include <finite_states.h>
 
-// include wolff.h
+// rand.h uses a unix-specific way to seed the random number generator
 #include <rand.h>
+
+// measure.h contains useful functions for saving timeseries to files
+#include <measure.h>
+
+// include wolff.h
 #include <wolff.h>
 
 int main(int argc, char *argv[]) {
@@ -25,11 +35,15 @@ int main(int argc, char *argv[]) {
 
   bool silent = false;
   bool draw = false;
+  bool N_is_sweeps = false;
   unsigned int window_size = 512;
+
+  // don't measure anything by default
+  unsigned char measurement_flags = 0;
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "N:D:L:T:H:sdw:")) != -1) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:sdw:M:S")) != -1) {
     switch (opt) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
@@ -49,6 +63,9 @@ int main(int argc, char *argv[]) {
     case 's': // don't print anything during simulation. speeds up slightly
       silent = true;
       break;
+    case 'S':
+      N_is_sweeps = true;
+      break;
     case 'd':
 #ifdef HAVE_GLUT
       draw = true;
@@ -60,9 +77,21 @@ int main(int argc, char *argv[]) {
     case 'w':
       window_size = atoi(optarg);
       break;
+    case 'M':
+      measurement_flags ^= 1 << atoi(optarg);
+      break;
     default:
       exit(EXIT_FAILURE);
     }
+  }
+
+  // get nanosecond timestamp for unique run id
+  unsigned long timestamp;
+
+  {
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    timestamp = spec.tv_sec*1000000000LL + spec.tv_nsec;
   }
 
   // initialize random number generator
@@ -97,18 +126,16 @@ int main(int argc, char *argv[]) {
     return rot;
   };
 
-  // define function that updates any number of measurements
-  std::function <void(const state_t <z2_t, ising_t> *)> measurement;
+  FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
 
-  double average_M = 0;
-  if (!draw) {
-    // a very simple example: measure the average magnetization
-    measurement = [&] (const state_t <z2_t, ising_t> *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+  std::function <void(const state_t<z2_t, ising_t> *)> other_f;
+  uint64_t sum_of_clusterSize = 0;
+
+  if (N_is_sweeps) {
+    other_f = [&] (const state_t<z2_t, ising_t> *s) {
+      sum_of_clusterSize += s->last_cluster_size;
     };
-  } else {
-    // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
-
+  } else if (draw) {
 #ifdef HAVE_GLUT
     // initialize glut
     glutInit(&argc, argv);
@@ -120,33 +147,51 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    measurement = [&] (const state_t <z2_t, ising_t> *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+    other_f = [] (const state_t <z2_t, ising_t> *s) {
       glClear(GL_COLOR_BUFFER_BIT);
-      for (v_t i = 0; i < pow(L, 2); i++) {
+      for (v_t i = 0; i < pow(s->L, 2); i++) {
         if (s->spins[i].x == s->R.x) {
           glColor3f(0.0, 0.0, 0.0);
         } else {
           glColor3f(1.0, 1.0, 1.0);
         }
-        glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
+        glRecti(i / s->L, i % s->L, (i / s->L) + 1, (i % s->L) + 1);
       }
       glFlush();
     };
 #endif
+  } else {
+    other_f = [] (const state_t<z2_t, ising_t> *s) {};
+  }
+
+  std::function <void(const state_t<z2_t, ising_t> *)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
+
+  // add line to metadata file with run info
+  {
+    FILE *outfile_info = fopen("wolff_metadata.txt", "a");
+
+    fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"ISING\", \"q\" -> 2, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"H\" -> %.15f |>\n", timestamp, s.D, s.L, s.nv, s.ne, T, H);
+
+    fclose(outfile_info);
   }
 
   // run wolff for N cluster flips
-  wolff(N, &s, gen_R, measurement, r, silent);
-
-  // tell us what we found!
-  printf("%" PRIcount " Ising runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, D, L, T, H, average_M);
+  if (N_is_sweeps) {
+    count_t N_rounds = 0;
+    printf("\n");
+    while (sum_of_clusterSize < N * s.nv) {
+      printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
+      wolff(N, &s, gen_R, measurements, r, silent);
+      N_rounds++;
+    }
+    printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
+  } else {
+    wolff(N, &s, gen_R, measurements, r, silent);
+  }
 
   // free the random number generator
   gsl_rng_free(r);
-
-  if (draw) {
-  }
+  measure_free_files(measurement_flags, outfiles);
 
   return 0;
 

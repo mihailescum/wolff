@@ -8,6 +8,7 @@
 
 #include "state.h"
 #include "types.h"
+#include "vector.h"
 
 template <q_t q, class T>
 struct orthogonal_t { bool is_reflection; T *x; };
