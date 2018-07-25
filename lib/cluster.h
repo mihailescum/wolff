@@ -4,23 +4,25 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 #include <cmath>
+#include <vector>
+#include <stack>
 
 #include "types.h"
 #include "state.h"
-#include "stack.h"
 #include "graph.h"
 
 template <class R_t, class X_t>
 void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
   v_t nv = 0;
 
-  ll_t *stack = NULL;     // create a new stack
-  stack_push(&stack, v0); // push the initial vertex to the stack
+  std::stack<v_t> stack;
+  stack.push(v0);
 
-  bool *marks = (bool *)calloc(state->nv + 1, sizeof(bool));
+  std::vector<bool> marks(state->g.nv, false);
 
-  while (stack != NULL) {
-    v_t v = stack_pop(&stack);
+  while (!stack.empty()) {
+    v_t v = stack.top();
+    stack.pop();
 
     if (!marks[v]) {
       X_t si_old, si_new;
@@ -93,7 +95,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         }
 
         if (gsl_rng_uniform(rand) < prob) { // and with probability...
-          stack_push(&stack, vn); // push the neighboring vertex to the stack
+          stack.push(vn); // push the neighboring vertex to the stack
         }
       }
 
@@ -110,8 +112,6 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       }
     }
   }
-
-  free(marks);
 
   state->last_cluster_size = nv;
 }
