@@ -101,13 +101,13 @@ int main(int argc, char *argv[]) {
   };
 
   // define function that updates any number of measurements
-  std::function <void(const sim_t *)> measurement;
+  std::function <void(const sim_t&)> measurement;
 
   double average_M = 0;
   if (!draw) {
     // a very simple example: measure the average magnetization
-    measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M[0] / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t& s) {
+      average_M += (double)s.M[0] / (double)N / (double)s.nv;
     };
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
@@ -123,11 +123,11 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M[0] / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t& s) {
+      average_M += (double)s.M[0] / (double)N / (double)s.nv;
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
-        potts_t<POTTSQ> tmp_s = s->R.act_inverse(s->spins[i]);
+        potts_t<POTTSQ> tmp_s = s.R.act_inverse(s.spins[i]);
         glColor3f(hue_to_R(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_G(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_B(tmp_s.x * 2 * M_PI / POTTSQ));
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
       }
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   }
 
   // run wolff for N cluster flips
-  wolff(N, &s, gen_R, measurement, r, silent);
+  wolff(N, s, gen_R, measurement, r, silent);
 
   // tell us what we found!
   printf("%" PRIcount " %d-Potts runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, POTTSQ, D, L, T, H_vec[0], average_M);

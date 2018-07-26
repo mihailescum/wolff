@@ -25,7 +25,7 @@ class z2_t {
 
   z2_t(bool x) : x(x) {}
 
-  ising_t act(const ising_t& s) {
+  ising_t act(const ising_t& s) const {
     if (x) {
       return ising_t(!s.x);
     } else {
@@ -33,7 +33,7 @@ class z2_t {
     }
   }
 
-  z2_t act(const z2_t& r) {
+  z2_t act(const z2_t& r) const {
     if (x) {
       return z2_t(!r.x);
     } else {
@@ -41,11 +41,11 @@ class z2_t {
     }
   }
 
-  ising_t act_inverse(const ising_t& s) {
+  ising_t act_inverse(const ising_t& s) const {
     return this->act(s);
   }
 
-  z2_t act_inverse(const z2_t& r) {
+  z2_t act_inverse(const z2_t& r) const {
     return this->act(r);
   }
 };

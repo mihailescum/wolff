@@ -105,13 +105,13 @@ int main(int argc, char *argv[]) {
   };
 
   // define function that updates any number of measurements
-  std::function <void(const sim_t *)> measurement;
+  std::function <void(const sim_t&)> measurement;
 
   double average_M = 0;
   if (!draw) {
     // a very simple example: measure the average magnetization
-    measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t& s) {
+      average_M += (double)s.M / (double)N / (double)s.nv;
     };
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
@@ -127,13 +127,13 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M / (double)N / (double)s->nv;
+    measurement = [&] (const sim_t& s) {
+      average_M += (double)s.M / (double)N / (double)s.nv;
       glClear(GL_COLOR_BUFFER_BIT);
       int64_t max_h = INT64_MIN;
       int64_t min_h = INT64_MAX;
       for (v_t i = 0; i < pow(L, 2); i++) {
-        int64_t cur_h = (s->R.act_inverse(s->spins[i])).x;
+        int64_t cur_h = (s.R.act_inverse(s.spins[i])).x;
         if (cur_h < min_h) {
           min_h = cur_h;
         }
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       }
 
       for (v_t i = 0; i < pow(L, 2); i++) {
-        int64_t cur_h = (s->R.act_inverse(s->spins[i])).x;
+        int64_t cur_h = (s.R.act_inverse(s.spins[i])).x;
         double mag = ((double)(cur_h - min_h)) / ((double)(max_h - min_h));
         glColor3f(mag, mag, mag);
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   }
 
   // run wolff for N cluster flips
-  wolff(N, &s, gen_R, measurement, r, silent);
+  wolff(N, s, gen_R, measurement, r, silent);
 
   // tell us what we found!
   printf("%" PRIcount " DGM runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, D, L, T, H, average_M);

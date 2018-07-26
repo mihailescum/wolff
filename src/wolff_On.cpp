@@ -167,12 +167,12 @@ int main(int argc, char *argv[]) {
 
   FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
 
-  std::function <void(const On_t *)> other_f;
+  std::function <void(const On_t&)> other_f;
   uint64_t sum_of_clusterSize = 0;
 
   if (N_is_sweeps) {
-    other_f = [&] (const On_t *s) {
-      sum_of_clusterSize += s->last_cluster_size;
+    other_f = [&] (const On_t& s) {
+      sum_of_clusterSize += s.last_cluster_size;
     };
   } else if (draw) {
 #ifdef HAVE_GLUT
@@ -186,10 +186,10 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    other_f = [&] (const On_t *s) {
+    other_f = [&] (const On_t& s) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
-        vector_R_t v_tmp = s->R.act_inverse(s->spins[i]);
+        vector_R_t v_tmp = s.R.act_inverse(s.spins[i]);
         double thetai = fmod(2 * M_PI + theta(v_tmp), 2 * M_PI);
         double saturation = 0.7;
         double value = 0.9;
@@ -201,10 +201,10 @@ int main(int argc, char *argv[]) {
     };
 #endif
   } else {
-    other_f = [] (const On_t *s) {};
+    other_f = [] (const On_t& s) {};
   }
 
-  std::function <void(const On_t *)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
+  std::function <void(const On_t&)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
 
   std::function <double(const vector_R_t&)> H;
 
@@ -225,12 +225,12 @@ int main(int argc, char *argv[]) {
     printf("\n");
     while (sum_of_clusterSize < N * s.nv) {
       printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
-      wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, measurements, r, silent);
+      wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, measurements, r, silent);
       N_rounds++;
     }
     printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
   } else {
-    wolff <orthogonal_R_t, vector_R_t> (N, &s, gen_R, measurements, r, silent);
+    wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, measurements, r, silent);
   }
 
   measure_free_files(measurement_flags, outfiles);

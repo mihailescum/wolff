@@ -126,12 +126,12 @@ int main(int argc, char *argv[]) {
 
   FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
 
-  std::function <void(const state_t<z2_t, ising_t> *)> other_f;
+  std::function <void(const state_t<z2_t, ising_t>&)> other_f;
   uint64_t sum_of_clusterSize = 0;
 
   if (N_is_sweeps) {
-    other_f = [&] (const state_t<z2_t, ising_t> *s) {
-      sum_of_clusterSize += s->last_cluster_size;
+    other_f = [&] (const state_t<z2_t, ising_t>& s) {
+      sum_of_clusterSize += s.last_cluster_size;
     };
   } else if (draw) {
 #ifdef HAVE_GLUT
@@ -145,24 +145,24 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    other_f = [] (const state_t <z2_t, ising_t> *s) {
+    other_f = [] (const state_t <z2_t, ising_t>& s) {
       glClear(GL_COLOR_BUFFER_BIT);
-      for (v_t i = 0; i < pow(s->L, 2); i++) {
-        if (s->spins[i].x == s->R.x) {
+      for (v_t i = 0; i < pow(s.L, 2); i++) {
+        if (s.spins[i].x == s.R.x) {
           glColor3f(0.0, 0.0, 0.0);
         } else {
           glColor3f(1.0, 1.0, 1.0);
         }
-        glRecti(i / s->L, i % s->L, (i / s->L) + 1, (i % s->L) + 1);
+        glRecti(i / s.L, i % s.L, (i / s.L) + 1, (i % s.L) + 1);
       }
       glFlush();
     };
 #endif
   } else {
-    other_f = [] (const state_t<z2_t, ising_t> *s) {};
+    other_f = [] (const state_t<z2_t, ising_t>& s) {};
   }
 
-  std::function <void(const state_t<z2_t, ising_t> *)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
+  std::function <void(const state_t<z2_t, ising_t>&)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
 
   // add line to metadata file with run info
   {
@@ -179,12 +179,12 @@ int main(int argc, char *argv[]) {
     printf("\n");
     while (sum_of_clusterSize < N * s.nv) {
       printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
-      wolff(N, &s, gen_R, measurements, r, silent);
+      wolff(N, s, gen_R, measurements, r, silent);
       N_rounds++;
     }
     printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
   } else {
-    wolff(N, &s, gen_R, measurements, r, silent);
+    wolff(N, s, gen_R, measurements, r, silent);
   }
 
   // free the random number generator

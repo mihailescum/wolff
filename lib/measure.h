@@ -29,17 +29,17 @@ FILE **measure_setup_files(unsigned char flags, unsigned long timestamp) {
 }
 
 template <class R_t, class X_t>
-std::function <void(const state_t <R_t, X_t> *)> measure_function_write_files(unsigned char flags, FILE **files, std::function <void(const state_t <R_t, X_t> *)> other_f) {
-  return [=] (const state_t <R_t, X_t> *s) {
+std::function <void(const state_t <R_t, X_t>&)> measure_function_write_files(unsigned char flags, FILE **files, std::function <void(const state_t <R_t, X_t>&)> other_f) {
+  return [=] (const state_t <R_t, X_t>& s) {
     if (flags & measurement_energy) {
-      float smaller_E = (float)s->E;
+      float smaller_E = (float)s.E;
       fwrite(&smaller_E, sizeof(float), 1, files[0]);
     }
     if (flags & measurement_clusterSize) {
-      fwrite(&(s->last_cluster_size), sizeof(uint32_t), 1, files[1]);
+      fwrite(&(s.last_cluster_size), sizeof(uint32_t), 1, files[1]);
     }
     if (flags & measurement_magnetization) {
-      write_magnetization(s->M, files[2]);
+      write_magnetization(s.M, files[2]);
     }
     if (flags & measurement_fourierZero) {
       float smaller_X = (float)correlation_length(s);
