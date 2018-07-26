@@ -1,7 +1,9 @@
 
 #pragma once
 
-#include "measurement.h"
+#include "state.h"
+#include "correlation.h"
+#include <functional>
 
 #define POSSIBLE_MEASUREMENTS 4
 const unsigned char measurement_energy        = 1 << 0;
@@ -10,14 +12,6 @@ const unsigned char measurement_magnetization = 1 << 2;
 const unsigned char measurement_fourierZero    = 1 << 3;
 
 char const *measurement_labels[] = {"E", "S", "M", "F"};
-
-#ifdef __cplusplus
-
-#include "state.h"
-#include "correlation.h"
-#include <functional>
-
-
 
 FILE **measure_setup_files(unsigned char flags, unsigned long timestamp) {
   FILE **files = (FILE **)calloc(POSSIBLE_MEASUREMENTS, sizeof(FILE *));
@@ -65,7 +59,5 @@ void measure_free_files(unsigned char flags, FILE **files) {
 
   free(files);
 }
-
-#endif
 
 
