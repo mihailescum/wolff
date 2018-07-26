@@ -2,6 +2,7 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 
 #include "types.h"
 #include "graph.h"
@@ -15,7 +16,7 @@ class state_t {
     v_t ne;
     graph_t g;
     double T;
-    X_t *spins;
+    std::vector<X_t> spins;
     R_t R;
     double E;
     typename X_t::M_t M; // the "sum" of the spins, like the total magnetization
@@ -29,23 +30,20 @@ class state_t {
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
 
-    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), T(T), J(J), H(H), g(D, L) {
+    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), g(D, L), T(T), J(J), H(H) {
       nv = g.nv;
       ne = g.ne;
       g.add_ext();
-      spins = (X_t *)malloc(nv * sizeof(X_t));
-      for (v_t i = 0; i < nv; i++) {
-        init (&(spins[i]));
-      }
+      spins.resize(nv);
       init (&R);
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
-      M = scalar_multiple((int)nv, spins[0]);
+      M = spins[0] * nv;
       last_cluster_size = 0;
       ReF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
       ImF = (typename X_t::F_t *)malloc(D * sizeof(typename X_t::F_t));
       for (D_t i = 0; i < D; i++) {
-        ReF[i] = scalar_multiple(0.0, spins[0]);
-        ImF[i] = scalar_multiple(0.0, spins[0]);
+        ReF[i] = spins[0] * 0.0;
+        ImF[i] = spins[0] * 0.0;
       }
       precomputed_cos = (double *)malloc(L * sizeof(double));
       precomputed_sin = (double *)malloc(L * sizeof(double));
@@ -56,16 +54,7 @@ class state_t {
     }
 
     ~state_t() {
-      for (v_t i = 0; i < nv; i++) {
-        free_spin(spins[i]);
-      }
-      free(spins);
       free_spin(R);
-      free_spin(M);
-      for (D_t i = 0; i < D; i++) {
-        free_spin(ReF[i]);
-        free_spin(ImF[i]);
-      }
       free(ReF);
       free(ImF);
       free(precomputed_sin);

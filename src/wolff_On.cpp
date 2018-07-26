@@ -20,8 +20,8 @@ typedef state_t <orthogonal_R_t, vector_R_t> On_t;
 
 // angle from the x-axis of a two-vector
 double theta(vector_R_t v) {
-  double x = v.x[0];
-  double y = v.x[1];
+  double x = v[0];
+  double y = v[1];
 
   double val = atan(y / x);
 
@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
       for (v_t i = 0; i < pow(L, 2); i++) {
         vector_R_t v_tmp = act_inverse(s->R, s->spins[i]);
         double thetai = fmod(2 * M_PI + theta(v_tmp), 2 * M_PI);
-        free_spin(v_tmp);
         double saturation = 0.7;
         double value = 0.9;
         double chroma = saturation * value;

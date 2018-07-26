@@ -68,22 +68,20 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           prob = 1.0 - exp(-dE / state->T);
 #endif
 
-          add(&(state->M), -1, rs_old);
-          add(&(state->M),  1, rs_new);
+          state->M -= rs_old;
+          state->M += rs_new;
+
           state->E += dE;
 
           for (D_t i = 0; i < state->D; i++) {
             L_t x = (non_ghost / (v_t)pow(state->L, state->D - i - 1)) % state->L;
 
-            add(&(state->ReF[i]), -state->precomputed_cos[x], rs_old);
-            add(&(state->ReF[i]),  state->precomputed_cos[x], rs_new);
+            state->ReF[i] -= rs_old * state->precomputed_cos[x];
+            state->ReF[i] += rs_new * state->precomputed_cos[x];
 
-            add(&(state->ImF[i]), -state->precomputed_sin[x], rs_old);
-            add(&(state->ImF[i]),  state->precomputed_sin[x], rs_new);
+            state->ImF[i] -= rs_old * state->precomputed_sin[x];
+            state->ImF[i] += rs_new * state->precomputed_sin[x];
           }
-
-          free_spin (rs_old);
-          free_spin (rs_new);
         } else {
           double dE = state->J(si_old, sj) - state->J(si_new, sj);
 #ifdef FINITE_STATES
@@ -103,7 +101,6 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         free_spin(state->R);
         state->R = R_new;
       } else {
-        free_spin(state->spins[v]);
         state->spins[v] = si_new;
       }
 

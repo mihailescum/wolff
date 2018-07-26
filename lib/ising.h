@@ -31,58 +31,49 @@ class ising_t {
 
     typedef int M_t;
     typedef double F_t;
+
+    ising_t() {
+      x = false;
+    }
+
+    ising_t(bool x) : x(x) {}
+
+    inline int operator*(v_t a) const {
+      if (x) {
+        return -(int)a;
+      } else {
+        return (int)a;
+      }
+    }
+
+    inline double operator*(double a) const {
+      if (x) {
+        return -a;
+      } else {
+        return a;
+      }
+    }
+
 };
 
-void init(ising_t *p) {
-  p->x = false;
-}
-
-void free_spin(ising_t s) {
-  // do nothing!
-}
-
-void free_spin(int s) {
-  // do nothing
-}
-
-void free_spin(double s) {
-  // do nothing
-}
-
-ising_t copy(ising_t s) {
-  return s;
-}
-
-void add(int *s1, int a, ising_t s2) {
-  if (s2.x) {
-    *s1 -= a;
-  } else {
-    *s1 += a;
-  }
-}
-
-void add(double *s1, double a, ising_t s2) {
-  if (s2.x) {
-    *s1 -= a;
-  } else {
-    *s1 += a;
-  }
-}
-
-int scalar_multiple(int factor, ising_t s) {
+inline int& operator+=(int& M, const ising_t &s) {
   if (s.x) {
-    return -factor;
+    M--;
   } else {
-    return factor;
+    M++;
   }
+
+  return M;
 }
 
-double scalar_multiple(double factor, ising_t s) {
+inline int& operator-=(int& M, const ising_t &s) {
   if (s.x) {
-    return -factor;
+    M++;
   } else {
-    return factor;
+    M--;
   }
+
+  return M;
 }
 
 double norm_squared(double s) {
