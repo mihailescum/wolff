@@ -6,36 +6,43 @@
 #include <GL/glut.h>
 #endif
 
-#include <orthogonal.h>
-#include <vector.h>
+#include <circle_group.h>
+#include <angle.h>
 
 #include <wolff.h>
 #include <measure.h>
 #include <colors.h>
 #include <rand.h>
 
-typedef orthogonal_t <N_COMP, double> orthogonal_R_t;
-typedef vector_t <N_COMP, double> vector_R_t;
+typedef circle_group_t orthogonal_R_t;
+typedef angle_t vector_R_t;
 typedef state_t <orthogonal_R_t, vector_R_t> On_t;
 
-// angle from the x-axis of a two-vector
-double theta(vector_R_t v) {
+double H_modulated(vector_R_t v, int order, double mag) {
+  return mag * cos(order * v.x);
+}
+
+double theta(double *v) {
   double x = v[0];
   double y = v[1];
 
-  double val = atan(y / x);
-
-  if (x < 0.0 && y > 0.0) {
-    return M_PI + val;
-  } else if ( x < 0.0 && y < 0.0 ) {
-    return - M_PI + val;
+  if (x == 0) { 
+    if (y >= 0) {
+      return M_PI / 2;
+    } else {
+      return - M_PI / 2;
+    }
   } else {
-    return val;
-  }
-}
+    double val = atan(y / x);
 
-double H_modulated(vector_R_t v, int order, double mag) {
-  return mag * cos(order * theta(v));
+    if (x < 0.0 && y > 0.0) {
+      return M_PI + val;
+    } else if ( x < 0.0 && y < 0.0 ) {
+      return - M_PI + val;
+    } else {
+      return val;
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -132,23 +139,39 @@ int main(int argc, char *argv[]) {
   std::function <orthogonal_R_t(gsl_rng *, vector_R_t)> gen_R;
 
   if (use_pert) {
-    gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon, order);
+    gen_R = [=] (gsl_rng *r, const angle_t& t) -> circle_group_t {
+      circle_group_t rot;
+      rot.is_reflection = true;
+
+      unsigned int x = gsl_rng_uniform_int(r, order);
+      double amount = epsilon * gsl_ran_ugaussian(r);
+
+      rot.x = fmod(2 * M_PI * (1.0 + (double)x / (double)order + amount), 2 * M_PI);
+
+      return rot;
+    };
     pert_type = "PERTURB";
   } else {
-    gen_R = generate_rotation_uniform <N_COMP>;
+    gen_R = [=] (gsl_rng *r, const angle_t& t) -> circle_group_t {
+      circle_group_t rot;
+      rot.is_reflection = true;
+      rot.x = 2 * M_PI * gsl_rng_uniform(r);
+
+      return rot;
+    };
     pert_type = "UNIFORM";
   }
 
   FILE *outfile_info = fopen("wolff_metadata.txt", "a");
 
-  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"FIELD_TYPE\" -> ", timestamp, ON_strings[N_COMP], N_COMP, D, L, (v_t)pow(L, D), D * (v_t)pow(L, D), T);
+  fprintf(outfile_info, "<| \"ID\" -> %lu, \"MODEL\" -> \"%s\", \"q\" -> %d, \"D\" -> %" PRID ", \"L\" -> %" PRIL ", \"NV\" -> %" PRIv ", \"NE\" -> %" PRIv ", \"T\" -> %.15f, \"FIELD_TYPE\" -> ", timestamp, ON_strings[2], 2, D, L, (v_t)pow(L, D), D * (v_t)pow(L, D), T);
   if (modulated_field) {
     fprintf(outfile_info, "\"MODULATED\", \"ORDER\" -> %d, \"H\" -> %.15f, ", order, H_vec[0]);
   } else {
     fprintf(outfile_info, "\"VECTOR\", \"H\" -> {");
-    for (q_t i = 0; i < N_COMP; i++) {
+    for (q_t i = 0; i < 2; i++) {
       fprintf(outfile_info, "%.15f", H_vec[i]);
-      if (i < N_COMP - 1) {
+      if (i < 2 - 1) {
         fprintf(outfile_info, ", ");
       }
     }
@@ -190,11 +213,10 @@ int main(int argc, char *argv[]) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
         vector_R_t v_tmp = s->R.act_inverse(s->spins[i]);
-        double thetai = fmod(2 * M_PI + theta(v_tmp), 2 * M_PI);
         double saturation = 0.7;
         double value = 0.9;
         double chroma = saturation * value;
-        glColor3f(chroma * hue_to_R(thetai) + (value - chroma), chroma * hue_to_G(thetai) + (value - chroma), chroma * hue_to_B(thetai) + (value - chroma));
+        glColor3f(chroma * hue_to_R(v_tmp.x) + (value - chroma), chroma * hue_to_G(v_tmp.x) + (value - chroma), chroma * hue_to_B(v_tmp.x) + (value - chroma));
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
       }
       glFlush();
@@ -206,19 +228,33 @@ int main(int argc, char *argv[]) {
 
   std::function <void(const On_t *)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
 
-  std::function <double(const vector_R_t&)> H;
+  std::function <double(const angle_t&, const angle_t&)> J = [] (const angle_t& t1, const angle_t& t2) -> double {
+    return cos(t1.x - t2.x);
+  };
+
+  std::function <double(const angle_t &)> H;
 
   if (modulated_field) {
-    H = std::bind(H_modulated, std::placeholders::_1, order, H_vec[0]);
+    H = [=] (const angle_t& t) -> double {
+      return H_vec[0] * cos(order * t.x);
+    };
   } else {
-    H = std::bind(H_vector <N_COMP, double>, std::placeholders::_1, H_vec);
+    double mag = 0;
+    for (q_t i = 0; i < 2; i++) {
+      mag += pow(H_vec[i], 2);
+    }
+    mag = sqrt(mag);
+    double t0 = theta(H_vec);
+    H = [=] (const angle_t& t) -> double {
+      return mag * cos(t0 + t.x);
+    };
   }
 
   // initialize random number generator
   gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2);
   gsl_rng_set(r, rand_seed());
 
-  state_t <orthogonal_R_t, vector_R_t> s(D, L, T, dot <N_COMP, double>, H);
+  state_t <orthogonal_R_t, vector_R_t> s(D, L, T, J, H);
 
   if (N_is_sweeps) {
     count_t N_rounds = 0;

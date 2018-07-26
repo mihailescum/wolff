@@ -75,12 +75,12 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(height_t<int64_t>, height_t<int64_t>)> Z = [] (height_t<int64_t> h1, height_t<int64_t> h2) -> double {
+  std::function <double(const height_t<int64_t>&, const height_t<int64_t>&)> Z = [] (const height_t<int64_t>& h1, const height_t<int64_t>& h2) -> double {
     return -pow(h1.x - h2.x, 2);
   };
 
   // define spin-field coupling
-  std::function <double(height_t<int64_t>)> B = [=] (height_t<int64_t> h) -> double {
+  std::function <double(const height_t<int64_t> &)> B = [=] (const height_t<int64_t>& h) -> double {
     return -H * pow(h.x, 2);;
   };
 

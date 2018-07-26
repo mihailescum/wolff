@@ -31,7 +31,9 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       R_old = state->R;
       marks[v] = true;
 
-      if (v == state->nv) {
+      bool v_is_ghost = (v == state->nv);
+
+      if (v_is_ghost) {
         R_new = r.act(R_old);
       } else {
         si_old = state->spins[v];
@@ -40,19 +42,18 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
 
       for (const v_t &vn : state->g.v_adj[v]) {
         X_t sj;
+        bool vn_is_ghost = (vn == state->nv);
 
-        if (vn != state->nv) {
+        if (!vn_is_ghost) {
           sj = state->spins[vn];
         }
 
         double prob;
 
-        bool is_ext = (v == state->nv || vn == state->nv);
-
-        if (is_ext) {
+        if (v_is_ghost || vn_is_ghost) {
           X_t rs_old, rs_new;
           v_t non_ghost;
-          if (vn == state->nv) {
+          if (vn_is_ghost) {
             rs_old = R_old.act_inverse(si_old);
             rs_new = R_old.act_inverse(si_new);
             non_ghost = v;
@@ -61,6 +62,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
             rs_new = R_new.act_inverse(sj);
             non_ghost = vn;
           }
+
           double dE = state->H(rs_old) - state->H(rs_new);
 #ifdef FINITE_STATES
           prob = H_probs[state_to_ind(rs_old)][state_to_ind(rs_new)];
@@ -97,7 +99,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         }
       }
 
-      if (v == state->nv) {
+      if (v_is_ghost) {
         state->R = R_new;
       } else {
         state->spins[v] = si_new;

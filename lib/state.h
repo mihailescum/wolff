@@ -27,10 +27,10 @@ class state_t {
     std::vector<double> precomputed_cos;
     std::vector<double> precomputed_sin;
 
-    std::function <double(X_t, X_t)> J;
-    std::function <double(X_t)> H;
+    std::function <double(const X_t&, const X_t&)> J;
+    std::function <double(const X_t&)> H;
 
-    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), g(D, L), T(T), R(), J(J), H(H) {
+    state_t(D_t D, L_t L, double T, std::function <double(const X_t&, const X_t&)> J, std::function <double(const X_t&)> H) : D(D), L(L), g(D, L), T(T), R(), J(J), H(H) {
       nv = g.nv;
       ne = g.ne;
       g.add_ext();

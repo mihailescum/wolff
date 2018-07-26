@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(ising_t, ising_t)> Z = [] (ising_t s1, ising_t s2) -> double {
+  std::function <double(const ising_t&, const ising_t&)> Z = [] (const ising_t& s1, const ising_t& s2) -> double {
     if (s1.x == s2.x) {
       return 1.0;
     } else {
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   };
 
   // define spin-field coupling
-  std::function <double(ising_t)> B = [=] (ising_t s) -> double {
+  std::function <double(const ising_t&)> B = [=] (const ising_t& s) -> double {
     if (s.x) {
       return -H;
     } else {

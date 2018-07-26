@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(height_t<double>, height_t<double>)> Z = [] (height_t<double> h1, height_t<double> h2) -> double {
+  std::function <double(const height_t<double>&, const height_t<double>&)> Z = [] (const height_t<double>& h1, const height_t<double>& h2) -> double {
     return -pow(h1.x - h2.x, 2);
   };
 

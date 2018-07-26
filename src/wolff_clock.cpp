@@ -78,12 +78,12 @@ int main(int argc, char *argv[]) {
   gsl_rng_set(r, rand_seed());
 
   // define spin-spin coupling
-  std::function <double(potts_t<POTTSQ>, potts_t<POTTSQ>)> Z = [] (potts_t<POTTSQ> s1, potts_t<POTTSQ> s2) -> double {
+  std::function <double(const potts_t<POTTSQ>&, const potts_t<POTTSQ>&)> Z = [] (const potts_t<POTTSQ>& s1, const potts_t<POTTSQ>& s2) -> double {
     return cos(2 * M_PI * (double)(s1.x + POTTSQ - s2.x) / (double)POTTSQ);
   };
 
   // define spin-field coupling
-  std::function <double(potts_t<POTTSQ>)> B = [=] (potts_t<POTTSQ> s) -> double {
+  std::function <double(const potts_t<POTTSQ>&)> B = [=] (const potts_t<POTTSQ>& s) -> double {
     return H_vec[s.x];
   };
 

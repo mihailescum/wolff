@@ -109,7 +109,7 @@ void write_magnetization(vector_t <q, double> M, FILE *outfile) {
 }
 
 template <q_t q, class T>
-T dot(vector_t <q, T> v1, vector_t <q, T> v2) {
+T dot(const vector_t <q, T>& v1, const vector_t <q, T>& v2) {
   T prod = 0;
 
   for (q_t i = 0; i < q; i++) {
@@ -120,7 +120,7 @@ T dot(vector_t <q, T> v1, vector_t <q, T> v2) {
 }
 
 template <q_t q, class T>
-double H_vector(vector_t <q, T> v1, T *H) {
+double H_vector(const vector_t <q, T>& v1, T *H) {
   vector_t <q, T> H_vec(H);
   return (double)(dot <q, T> (v1, H_vec));
 }

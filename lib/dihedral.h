@@ -21,7 +21,6 @@ class dihedral_t {
       }
     }
 
-
     dihedral_t<q> act(dihedral_t<q> r) const {
       if (this->is_reflection) {
         return dihedral_t<q>(!(r.is_reflection), ((q + this->x) - r.x) % q); 
