@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
   }
 
   // initialize random number generator
-  gsl_rng *r = gsl_rng_alloc(gsl_rng_mt19937);
+  gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2);
   gsl_rng_set(r, rand_seed());
 
   state_t <orthogonal_R_t, vector_R_t> s(D, L, T, dot <N_COMP, double>, H);
