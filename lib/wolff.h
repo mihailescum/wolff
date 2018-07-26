@@ -16,7 +16,6 @@ void wolff(count_t N, state_t <R_t, X_t> *s, std::function <R_t(gsl_rng *, X_t s
     v_t v0 = gsl_rng_uniform_int(r, s->nv);
     R_t step = gen_R(r, s->spins[v0]);
     flip_cluster <R_t, X_t> (s, v0, step, r);
-    free_spin(step);
 
     measurements(s);
   }

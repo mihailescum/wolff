@@ -4,76 +4,46 @@
 #include "types.h"
 #include "potts.h"
 
-template <class T, q_t q>
-struct dihedral_t { bool is_reflection; T x; };
-
-template <class T, q_t q>
-void init(dihedral_t<T, q> *ptr) {
-  ptr->is_reflection = false;
-  ptr->x = (T)0;
-}
-
-template <class T, q_t q>
-dihedral_t<T, q> copy(dihedral_t<T, q> r) {
-  return r;
-}
-
-template <class T, q_t q>
-void free_spin(dihedral_t<T, q> r) {
-  // do nothing!
-}
-
 template <q_t q>
-potts_t<q> act(dihedral_t<q_t, q> r, potts_t<q> s) {
-  potts_t<q> s2;
-  if (r.is_reflection) {
-    s2.x = ((q + r.x) - s.x) % q;
-  } else {
-    s2.x = (r.x + s.x) % q;
-  }
+class dihedral_t {
+  public:
+    bool is_reflection;
+    q_t x;
 
-  return s2;
-}
+    dihedral_t() : is_reflection(false), x(0) {}
+    dihedral_t(bool x, q_t y) : is_reflection(x), x(y) {}
 
-template <q_t q>
-dihedral_t<q_t,q> act(dihedral_t<q_t,q> r1, dihedral_t<q_t,q> r2) {
-  dihedral_t<q_t,q> r3;
+    potts_t<q> act(const potts_t<q>& s) const {
+      if (this->is_reflection) {
+        return potts_t<q>(((q + this->x) - s.x) % q);
+      } else {
+        return potts_t<q>((this->x + s.x) % q);
+      }
+    }
 
-  if (r1.is_reflection) {
-    r3.is_reflection = !(r2.is_reflection);
-    r3.x = ((q + r1.x) - r2.x) % q;
-  } else {
-    r3.is_reflection = r2.is_reflection;
-    r3.x = (r1.x + r2.x) % q;
-  }
 
-  return r3;
-}
+    dihedral_t<q> act(dihedral_t<q> r) const {
+      if (this->is_reflection) {
+        return dihedral_t<q>(!(r.is_reflection), ((q + this->x) - r.x) % q); 
+      } else {
+        return dihedral_t<q>(r.is_reflection, (this->x + r.x) % q);
+      }
+    }
 
-template <q_t q>
-potts_t<q> act_inverse(dihedral_t<q_t,q> r, potts_t<q> s) {
-  potts_t<q> s2;
-  if (r.is_reflection) {
-    s2.x = ((r.x + q) - s.x) % q;
-  } else {
-    s2.x = ((s.x + q) - r.x) % q;
-  }
+    potts_t<q> act_inverse(potts_t<q> s) const {
+      if (this->is_reflection) {
+        return this->act(s);
+      } else {
+        return potts_t<q>(((s.x + q) - this->x) % q);
+      }
+    }
 
-  return s2;
-}
-
-template <q_t q>
-dihedral_t<q_t, q> act_inverse(dihedral_t<q_t,q> r1, dihedral_t<q_t,q> r2) {
-  dihedral_t<q_t,q> r3;
-
-  if (r1.is_reflection) {
-    r3.is_reflection = !(r2.is_reflection);
-    r3.x = ((r1.x + q) - r2.x) % q;
-  } else {
-    r3.is_reflection = r2.is_reflection;
-    r3.x = ((r2.x + q) - r1.x) % q;
-  }
-
-  return r3;
-}
+    dihedral_t<q> act_inverse(dihedral_t<q> r) const {
+      if (this->is_reflection) {
+        return this->act(r);
+      } else {
+        return dihedral_t<q>(r.is_reflection, ((r.x + q) - this->x) % q);
+      }
+    }
+};
 

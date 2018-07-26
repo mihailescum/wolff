@@ -118,7 +118,6 @@ int main(int argc, char *argv[]) {
   // define function that generates self-inverse rotations
   std::function <symmetric_t<POTTSQ>(gsl_rng *, potts_t<POTTSQ>)> gen_R = [] (gsl_rng *r, potts_t<POTTSQ> v) -> symmetric_t<POTTSQ> {
     symmetric_t<POTTSQ> rot;
-    init(&rot);
 
     q_t j = gsl_rng_uniform_int(r, POTTSQ - 1);
     q_t swap_v;
@@ -128,8 +127,8 @@ int main(int argc, char *argv[]) {
       swap_v = j + 1;
     }
 
-    rot.perm[v.x] = swap_v;
-    rot.perm[swap_v] = v.x;
+    rot[v.x] = swap_v;
+    rot[swap_v] = v.x;
 
     return rot;
   };
@@ -158,7 +157,7 @@ int main(int argc, char *argv[]) {
     other_f = [] (const sim_t *s) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(s->L, 2); i++) {
-        potts_t<POTTSQ> tmp_s = act_inverse(s->R, s->spins[i]);
+        potts_t<POTTSQ> tmp_s = s->R.act_inverse(s->spins[i]);
         glColor3f(hue_to_R(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_G(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_B(tmp_s.x * 2 * M_PI / POTTSQ));
         glRecti(i / s->L, i % s->L, (i / s->L) + 1, (i % s->L) + 1);
       }

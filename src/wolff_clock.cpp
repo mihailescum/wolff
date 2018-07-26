@@ -18,7 +18,7 @@
 #include <rand.h>
 #include <wolff.h>
 
-typedef state_t <dihedral_t<q_t,POTTSQ>, potts_t<POTTSQ>> sim_t;
+typedef state_t <dihedral_t<POTTSQ>, potts_t<POTTSQ>> sim_t;
 
 int main(int argc, char *argv[]) {
 
@@ -88,11 +88,11 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize state object
-  state_t <dihedral_t<q_t,POTTSQ>, potts_t<POTTSQ>> s(D, L, T, Z, B);
+  state_t <dihedral_t<POTTSQ>, potts_t<POTTSQ>> s(D, L, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <dihedral_t<q_t,POTTSQ>(gsl_rng *, potts_t<POTTSQ>)> gen_R = [] (gsl_rng *r, potts_t<POTTSQ> v) -> dihedral_t<q_t,POTTSQ> {
-    dihedral_t<q_t,POTTSQ> rot;
+  std::function <dihedral_t<POTTSQ>(gsl_rng *, potts_t<POTTSQ>)> gen_R = [] (gsl_rng *r, potts_t<POTTSQ> v) -> dihedral_t<POTTSQ> {
+    dihedral_t<POTTSQ> rot;
     rot.is_reflection = true;
     q_t x = gsl_rng_uniform_int(r, POTTSQ - 1);
     rot.x = (2 * v.x + x + 1) % POTTSQ;
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
       average_M += (double)s->M[0] / (double)N / (double)s->nv;
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
-        potts_t<POTTSQ> tmp_s = act_inverse(s->R, s->spins[i]);
+        potts_t<POTTSQ> tmp_s = s->R.act_inverse(s->spins[i]);
         glColor3f(hue_to_R(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_G(tmp_s.x * 2 * M_PI / POTTSQ), hue_to_B(tmp_s.x * 2 * M_PI / POTTSQ));
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);
       }

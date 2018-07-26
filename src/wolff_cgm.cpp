@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
       double max_h = INT64_MIN;
       double min_h = INT64_MAX;
       for (v_t i = 0; i < pow(L, 2); i++) {
-        double cur_h = act_inverse(s->R, s->spins[i]).x;
+        double cur_h = (s->R.act_inverse(s->spins[i])).x;
         if (cur_h < min_h) {
           min_h = cur_h;
         }
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
       }
 
       for (v_t i = 0; i < pow(L, 2); i++) {
-        double cur_h = act_inverse(s->R, s->spins[i]).x;
+        double cur_h = (s->R.act_inverse(s->spins[i])).x;
         double mag = ((double)(cur_h - min_h)) / ((double)(max_h - min_h));
         glColor3f(mag, mag, mag);
         glRecti(i / L, i % L, (i / L) + 1, (i % L) + 1);

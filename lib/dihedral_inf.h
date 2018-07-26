@@ -4,75 +4,44 @@
 #include "height.h"
 
 template <class T>
-struct dihedral_inf_t { bool is_reflection; T x; };
+class dihedral_inf_t {
+  public:
+  bool is_reflection;
+  T x;
 
-template <class T>
-void init(dihedral_inf_t<T> *ptr) {
-  ptr->is_reflection = false;
-  ptr->x = (T)0;
-}
+  dihedral_inf_t() : is_reflection(false), x(0) {}
+  dihedral_inf_t(bool x, T y) : is_reflection(x), x(y) {}
 
-template <class T>
-dihedral_inf_t<T> copy(dihedral_inf_t<T> r) {
-  return r;
-}
-
-template <class T>
-void free_spin(dihedral_inf_t<T> r) {
-  // do nothing!
-}
-
-template <class T>
-height_t<T> act(dihedral_inf_t<T> r, height_t<T> h) {
-  height_t<T> h2;
-  if (r.is_reflection) {
-    h2.x = r.x - h.x;
-  } else {
-    h2.x = r.x + h.x;
+  height_t<T> act(const height_t<T>& h) const {
+    if (this->is_reflection) {
+      return height_t(this->x - h.x);
+    } else {
+      return height_t(this->x + h.x);
+    }
   }
 
-  return h2;
-}
-
-template <class T>
-dihedral_inf_t<T> act(dihedral_inf_t<T> r1, dihedral_inf_t<T> r2) {
-  dihedral_inf_t<T> r3;
-
-  if (r1.is_reflection) {
-    r3.is_reflection = !(r2.is_reflection);
-    r3.x = r1.x - r2.x;
-  } else {
-    r3.is_reflection = r2.is_reflection;
-    r3.x = r1.x + r2.x;
+  dihedral_inf_t<T> act(const dihedral_inf_t<T>& r) const {
+    if (this->is_reflection) {
+      return dihedral_inf_t<T>(!r.is_reflection, this->x - r.x);
+    } else {
+      return dihedral_inf_t<T>(r.is_reflection, this->x + r.x);
+    }
   }
 
-  return r3;
-}
-
-template <class T>
-height_t<T> act_inverse(dihedral_inf_t<T> r, height_t<T> h) {
-  height_t<T> h2;
-  if (r.is_reflection) {
-    h2.x = r.x - h.x;
-  } else {
-    h2.x = h.x - r.x;
+  height_t<T> act_inverse(const height_t<T>& h) const {
+    if (this->is_reflection) {
+      return this->act(h);
+    } else {
+      return height_t(h.x - this->x);
+    }
   }
 
-  return h2;
-}
-
-template <class T>
-dihedral_inf_t<T> act_inverse(dihedral_inf_t<T> r1, dihedral_inf_t<T> r2) {
-  dihedral_inf_t<T> r3;
-
-  if (r1.is_reflection) {
-    r3.is_reflection = !(r2.is_reflection);
-    r3.x = r1.x - r2.x;
-  } else {
-    r3.is_reflection = r2.is_reflection;
-    r3.x = r2.x - r1.x;
+  dihedral_inf_t<T> act_inverse(const dihedral_inf_t<T>& r) const {
+    if (this->is_reflection) {
+      return this->act(r);
+    } else {
+      return dihedral_inf_t<T>(r.is_reflection, r.x - this->x);
+    }
   }
-
-  return r3;
-}
+};
 

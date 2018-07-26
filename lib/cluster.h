@@ -32,13 +32,13 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       marks[v] = true;
 
       if (v == state->nv) {
-        R_new = act (r, R_old);
+        R_new = r.act(R_old);
       } else {
         si_old = state->spins[v];
-        si_new = act (r, si_old);
+        si_new = r.act(si_old);
       }
 
-      for (v_t vn : state->g.v_adj[v]) {
+      for (const v_t &vn : state->g.v_adj[v]) {
         X_t sj;
 
         if (vn != state->nv) {
@@ -53,17 +53,17 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
           X_t rs_old, rs_new;
           v_t non_ghost;
           if (vn == state->nv) {
-            rs_old = act_inverse (R_old, si_old);
-            rs_new = act_inverse (R_old, si_new);
+            rs_old = R_old.act_inverse(si_old);
+            rs_new = R_old.act_inverse(si_new);
             non_ghost = v;
           } else {
-            rs_old = act_inverse (R_old, sj);
-            rs_new = act_inverse (R_new, sj);
+            rs_old = R_old.act_inverse(sj);
+            rs_new = R_new.act_inverse(sj);
             non_ghost = vn;
           }
           double dE = state->H(rs_old) - state->H(rs_new);
 #ifdef FINITE_STATES
-          prob = H_probs[N_STATES * state_to_ind(rs_old) + state_to_ind(rs_new)];
+          prob = H_probs[state_to_ind(rs_old)][state_to_ind(rs_new)];
 #else
           prob = 1.0 - exp(-dE / state->T);
 #endif
@@ -85,7 +85,7 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
         } else {
           double dE = state->J(si_old, sj) - state->J(si_new, sj);
 #ifdef FINITE_STATES
-          prob = J_probs[N_STATES * N_STATES * state_to_ind(si_old) + N_STATES * state_to_ind(si_new) + state_to_ind(sj)];
+          prob = J_probs[state_to_ind(si_old)][state_to_ind(si_new)][state_to_ind(sj)];
 #else
           prob = 1.0 - exp(-dE / state->T);
 #endif
@@ -98,13 +98,9 @@ void flip_cluster(state_t <R_t, X_t> *state, v_t v0, R_t r, gsl_rng *rand) {
       }
 
       if (v == state->nv) {
-        free_spin(state->R);
         state->R = R_new;
       } else {
         state->spins[v] = si_new;
-      }
-
-      if (v != state->nv) { // count the number of non-external sites that flip
         nv++;
       }
     }

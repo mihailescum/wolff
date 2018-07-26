@@ -30,12 +30,11 @@ class state_t {
     std::function <double(X_t, X_t)> J;
     std::function <double(X_t)> H;
 
-    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), g(D, L), T(T), J(J), H(H) {
+    state_t(D_t D, L_t L, double T, std::function <double(X_t, X_t)> J, std::function <double(X_t)> H) : D(D), L(L), g(D, L), T(T), R(), J(J), H(H) {
       nv = g.nv;
       ne = g.ne;
       g.add_ext();
       spins.resize(nv);
-      init (&R);
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
       M = spins[0] * nv;
       last_cluster_size = 0;
@@ -51,10 +50,6 @@ class state_t {
         precomputed_cos[i] = cos(2 * M_PI * (double)i / (double)L);
         precomputed_sin[i] = sin(2 * M_PI * (double)i / (double)L);
       }
-    }
-
-    ~state_t() {
-      free_spin(R);
     }
 };
 

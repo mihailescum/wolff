@@ -120,10 +120,8 @@ int main(int argc, char *argv[]) {
   state_t <z2_t, ising_t> s(D, L, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <z2_t(gsl_rng *, ising_t)> gen_R = [] (gsl_rng *, ising_t s) -> z2_t {
-    z2_t rot;
-    rot.x = true;
-    return rot;
+  std::function <z2_t(gsl_rng *, ising_t)> gen_R = [] (gsl_rng *, const ising_t& s) -> z2_t {
+    return z2_t(true);
   };
 
   FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
