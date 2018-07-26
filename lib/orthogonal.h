@@ -24,6 +24,7 @@ class orthogonal_t : public std::array<std::array<T, q>, q> {
 
   vector_t<q, T> act(const vector_t <q, T>& v) const {
     vector_t <q, T> v_rot;
+    v_rot.fill(0);
 
     if (is_reflection) {
       double prod = 0;
@@ -80,6 +81,7 @@ class orthogonal_t : public std::array<std::array<T, q>, q> {
       return this->act(v); // reflections are their own inverse
     } else {
       vector_t <q, T> v_rot;
+      v_rot.fill(0);
 
       for (q_t i = 0; i < q; i++) {
         for (q_t j = 0; j < q; j++) {

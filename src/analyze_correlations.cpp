@@ -20,7 +20,7 @@ double mean(int N, T *data) {
 double squared_mean(int N, double *data) {
   double total = 0;
   for (int i = 0; i < N; i++) {
-    total += data[i];
+    total += pow(data[i], 2);
   }
 
   return total / N;
