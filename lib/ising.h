@@ -53,7 +53,6 @@ class ising_t {
         return a;
       }
     }
-
 };
 
 inline int& operator+=(int& M, const ising_t &s) {

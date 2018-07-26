@@ -81,10 +81,10 @@ class vector_t : public std::array<T, q> {
 };
 
 
-template<q_t q>
-double norm_squared(vector_t<q, double> v) {
+template<q_t q, class T>
+double norm_squared(vector_t<q, T> v) {
   double tmp = 0;
-  for (double &x : v) {
+  for (T &x : v) {
     tmp += pow(x, 2);
   }
 

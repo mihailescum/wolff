@@ -20,7 +20,7 @@ graph_t::graph_t(D_t D, L_t L) {
 }
 
 void graph_t::add_ext() {
-  for (std::vector<v_t> v_adj_i : v_adj) {
+  for (std::vector<v_t>& v_adj_i : v_adj) {
     v_adj_i.push_back(nv);
   }
 

@@ -32,50 +32,32 @@ struct height_t {
 
   typedef T M_t;
   typedef double F_t;
+
+  height_t() : x(0) {}
+
+  height_t(T x) : x(x) {}
+
+  inline T operator*(v_t a) const {
+    return x * a;
+  }
+
+  inline double operator*(double a) const {
+    return x * a;
+  }
 };
 
 template <class T>
-void init(height_t<T> *ptr) {
-  ptr->x = (T)0;
+inline T& operator+=(T& M, const height_t<T> &h) {
+  M += h.x;
+
+  return M;
 }
 
 template <class T>
-void free_spin(height_t<T> h) {
-  // do nothing!
-}
+inline T& operator-=(T& M, const height_t<T> &h) {
+  M -= h.x;
 
-template <class T>
-void free_spin(T h) {
-  // do nothing!
-}
-
-void free_spin(double h) {
-  // do nothing!
-}
-
-template <class T>
-height_t<T> copy(height_t<T> h) {
-  return h;
-}
-
-template <class T>
-void add(T *h1, int a, height_t<T> h2) {
-  (*h1) += a * h2.x;
-}
-
-template <class T>
-void add(double *h1, double a, height_t<T> h2) {
-  (*h1) += a * h2.x;
-}
-
-template <class T>
-T scalar_multiple(int factor, height_t<T> h) {
-  return factor * h.x;
-}
-
-template <class T>
-double scalar_multiple(double factor, height_t<T> h) {
-  return factor * h.x;
+  return M;
 }
 
 double norm_squared(double h) {

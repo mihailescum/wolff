@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   if (!draw) {
     // a very simple example: measure the average magnetization
     measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M.x[0] / (double)N / (double)s->nv;
+      average_M += (double)s->M[0] / (double)N / (double)s->nv;
     };
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     gluOrtho2D(0.0, L, 0.0, L);
 
     measurement = [&] (const sim_t *s) {
-      average_M += (double)s->M.x[0] / (double)N / (double)s->nv;
+      average_M += (double)s->M[0] / (double)N / (double)s->nv;
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
         potts_t<POTTSQ> tmp_s = act_inverse(s->R, s->spins[i]);

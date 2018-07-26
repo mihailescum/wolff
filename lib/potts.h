@@ -33,47 +33,40 @@ class potts_t {
 
     typedef vector_t<q, int> M_t;
     typedef vector_t<q, double> F_t;
+
+    potts_t() : x(0) {}
+
+    potts_t(q_t x) : x(x) {}
+
+    inline vector_t<q, int> operator*(v_t a) const {
+      vector_t<q, int> result;
+      result.fill(0);
+      result[x] = (int)a;
+
+      return result;
+    }
+
+    inline vector_t<q, double> operator*(double a) const {
+      vector_t<q, double> result;
+      result.fill(0.0);
+      result[x] = a;
+
+      return result;
+    }
 };
 
 template <q_t q>
-void init(potts_t <q> *p) {
-  p->x = 0;
-}
+inline vector_t<q, int>& operator+=(vector_t<q, int>& M, const potts_t<q> &s) {
+  M[s.x]++;
 
-template <q_t q>
-void free_spin(potts_t <q> s) {
-  // do nothing!
-}
-
-template <q_t q>
-potts_t <q> copy(potts_t <q> s) {
-  return s;
-}
-
-template <q_t q>
-void add(vector_t<q, int> *s1, int a, potts_t <q> s2) {
-  (s1->x)[s2.x] += a;
-}
-
-template <q_t q>
-void add(vector_t<q, double> *s1, double a, potts_t <q> s2) {
-  (s1->x)[s2.x] += a;
-}
-
-template <q_t q>
-vector_t<q, int> scalar_multiple(int factor, potts_t <q> s) {
-  vector_t<q, int> M;
-  M.x = (int *)calloc(q, sizeof(int));
-  M.x[s.x] += factor;
   return M;
 }
 
 template <q_t q>
-vector_t<q, double> scalar_multiple(double factor, potts_t <q> s) {
-  vector_t<q, double> F;
-  F.x = (double *)calloc(q, sizeof(double));
-  F.x[s.x] += factor;
-  return F;
+inline vector_t<q, int>& operator-=(vector_t<q, int>& M, const potts_t<q> &s) {
+  M[s.x]--;
+
+  return M;
 }
 
 // we could inherit norm_squared from vector.h, but convention dictates that
@@ -81,8 +74,8 @@ vector_t<q, double> scalar_multiple(double factor, potts_t <q> s) {
 template <q_t q>
 double norm_squared(vector_t<q, double> s) {
   double total = 0;
-  for (q_t i = 0; i < q; i++) {
-    total += pow(s.x[i], 2);
+  for (double& x : s) {
+    total += pow(x, 2);
   }
 
   return total * (double)q / ((double)q - 1.0);
@@ -92,7 +85,9 @@ double norm_squared(vector_t<q, double> s) {
 // to nv we don't need to write the last element
 template <q_t q>
 void write_magnetization(vector_t<q, int> M, FILE *outfile) {
-  fwrite(M.x, sizeof(int), q - 1, outfile);
+  for (int& x : M) {
+    fwrite(&x, sizeof(int), q - 1, outfile);
+  }
 }
 
 // knock yourself out
