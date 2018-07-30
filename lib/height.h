@@ -44,6 +44,10 @@ struct height_t {
   inline double operator*(double a) const {
     return x * a;
   }
+
+  inline T operator-(const height_t& h) const {
+    return x - h.x;
+  }
 };
 
 template <class T>

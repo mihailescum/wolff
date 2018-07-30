@@ -53,6 +53,16 @@ class potts_t {
 
       return result;
     }
+
+    inline vector_t<q, int> operator-(const potts_t<q> &s) const {
+      vector_t<q, int> result;
+      result.fill(0);
+
+      result[x]++;
+      result[s.x]--;
+
+      return result;
+    }
 };
 
 template <q_t q>

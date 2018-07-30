@@ -78,10 +78,11 @@ int main (int argc, char *argv[]) {
   count_t length = (count_t)1e4;
   bool speedy_drop = false;
   bool from_stdin = false;
+  bool oldstyle = false;
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "d:l:sp")) != -1) {
+  while ((opt = getopt(argc, argv, "d:l:spo")) != -1) {
     switch (opt) {
       case 'd':
         drop = (count_t)atof(optarg);
@@ -94,6 +95,9 @@ int main (int argc, char *argv[]) {
         break;
       case 'p':
         from_stdin = true;
+        break;
+      case 'o':
+        oldstyle = true;
         break;
       default:
         exit(EXIT_FAILURE);
@@ -131,9 +135,9 @@ int main (int argc, char *argv[]) {
 
    printf("%lu: Processing...\n", id);
 
-   bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK");
+//   bool is_finite = 0 == strcmp(model, "ISING") || 0 == strcmp(model, "POTTS") || 0 == strcmp(model, "CLOCK");
 
-    if (is_finite) {
+    if (oldstyle) {
       q_t nb;
       double T;
       fscanf(metadata, "\"NB\" -> %" SCNq ", \"T\" -> %lf, \"J\" -> {", &nb, &T);
