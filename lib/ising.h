@@ -53,6 +53,18 @@ class ising_t {
         return a;
       }
     }
+
+    inline int operator-(const ising_t &s) const {
+      if (x == s.x) {
+        return 0;
+      } else {
+        if (x) {
+          return -2;
+        } else {
+          return 2;
+        }
+      }
+    }
 };
 
 inline int& operator+=(int& M, const ising_t &s) {

@@ -9,6 +9,10 @@
 
 template <class R_t, class X_t>
 class state_t {
+  private:
+    // updating fourier terms F requires many cos and sin calls, faster to do it beforehand.
+    std::vector<std::vector<double>> precomputed_cos;
+    std::vector<std::vector<double>> precomputed_sin;
   public:
     D_t D;
     L_t L;
@@ -23,9 +27,6 @@ class state_t {
     v_t last_cluster_size;
     std::vector<typename X_t::F_t> ReF;
     std::vector<typename X_t::F_t> ImF;
-    // updating fourier terms F requires many cos and sin calls, faster to do it beforehand.
-    std::vector<double> precomputed_cos;
-    std::vector<double> precomputed_sin;
 
     std::function <double(const X_t&, const X_t&)> J;
     std::function <double(const X_t&)> H;
@@ -44,11 +45,35 @@ class state_t {
         ReF[i] = spins[0] * 0.0;
         ImF[i] = spins[0] * 0.0;
       }
-      precomputed_cos.resize(L);
-      precomputed_sin.resize(L);
-      for (L_t i = 0; i < L; i++) {
-        precomputed_cos[i] = cos(2 * M_PI * (double)i / (double)L);
-        precomputed_sin[i] = sin(2 * M_PI * (double)i / (double)L);
+      precomputed_cos.resize(nv);
+      precomputed_sin.resize(nv);
+      for (v_t i = 0; i < nv; i++) {
+        precomputed_cos[i].resize(D);
+        precomputed_sin[i].resize(D);
+        for (D_t j = 0; j < D; j++) {
+          precomputed_cos[i][j] = cos(2 * M_PI * g.coordinate[i][j] / (double)L);
+          precomputed_sin[i][j] = sin(2 * M_PI * g.coordinate[i][j] / (double)L);
+        }
+      }
+    }
+
+    void update_magnetization(const X_t& s_old, const X_t& s_new) {
+      M -= s_old;
+      M += s_new;
+    }
+
+    void update_energy(const double& dE) {
+      E += dE;
+    }
+
+    void update_fourierZero(v_t v, const X_t& s_old, const X_t& s_new) {
+#ifdef DIMENSION
+      for (D_t i = 0; i < DIMENSION; i++) {
+#else
+      for (D_t i = 0; i < D; i++) {
+#endif
+        ReF[i] += (s_new - s_old) * precomputed_cos[v][i];
+        ImF[i] += (s_new - s_old) * precomputed_sin[v][i];
       }
     }
 };

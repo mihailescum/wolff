@@ -61,6 +61,12 @@ class vector_t : public std::array<T, q> {
 
       return result;
     }
+
+    inline vector_t<q, T> operator-(const vector_t<q, T>& v) const {
+      vector_t<q, T> diff = *this;
+      diff -= v;
+      return diff;
+    }
 };
 
 

@@ -25,77 +25,63 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, gsl_rng *rand) {
     stack.pop();
 
     if (!marks[v]) { // don't reprocess anyone we've already visited!
-      X_t si_old, si_new;
-      R_t R_old, R_new;
+      X_t si_new;
+      R_t R_new;
 
-      R_old = s.R;
       marks[v] = true;
 
       bool v_is_ghost = (v == s.nv); // ghost site has the last index
 
       if (v_is_ghost) {
-        R_new = r.act(R_old); // if we are, then we're moving the transformation
+        R_new = r.act(s.R); // if we are, then we're moving the transformation
       } else {
-        si_old = s.spins[v];
-        si_new = r.act(si_old); // otherwise, we're moving the spin at our site
+        si_new = r.act(s.spins[v]); // otherwise, we're moving the spin at our site
       }
 
       for (const v_t &vn : s.g.v_adj[v]) {
-        X_t sj;
         bool vn_is_ghost = (vn == s.nv); // any of our neighbors could be the ghost
 
-        if (!vn_is_ghost) {
-          sj = s.spins[vn];
-        }
+        double dE, prob;
 
-        double prob;
-
-        if (v_is_ghost || vn_is_ghost) { // if this is a ghost-involved bond...
+        if (v_is_ghost || vn_is_ghost) { // this is a ghost-involved bond
           X_t rs_old, rs_new;
           v_t non_ghost;
+
           if (vn_is_ghost) {
-            rs_old = R_old.act_inverse(si_old);
-            rs_new = R_old.act_inverse(si_new);
+            // if our neighbor is the ghost, the current site is a normal
+            // spin - rotate it back!
+            rs_old = s.R.act_inverse(s.spins[v]);
+            rs_new = s.R.act_inverse(si_new);
             non_ghost = v;
           } else {
-            rs_old = R_old.act_inverse(sj);
-            rs_new = R_new.act_inverse(sj);
+            /* if we're the ghost, we need to rotate our neighbor back in
+               both the old and new ways */
+            rs_old = s.R.act_inverse(s.spins[vn]);
+            rs_new = R_new.act_inverse(s.spins[vn]);
             non_ghost = vn;
           }
 
-          double dE = s.H(rs_old) - s.H(rs_new);
+          dE = s.H(rs_old) - s.H(rs_new);
 
 #ifdef FINITE_STATES
           prob = H_probs[state_to_ind(rs_old)][state_to_ind(rs_new)];
-#else
-          prob = 1.0 - exp(-dE / s.T);
 #endif
 
-          s.M -= rs_old;
-          s.M += rs_new;
-
-          s.E += dE;
-
-          for (D_t i = 0; i < s.D; i++) {
-            L_t x = (non_ghost / (v_t)pow(s.L, s.D - i - 1)) % s.L;
-
-            s.ReF[i] -= rs_old * s.precomputed_cos[x];
-            s.ReF[i] += rs_new * s.precomputed_cos[x];
-
-            s.ImF[i] -= rs_old * s.precomputed_sin[x];
-            s.ImF[i] += rs_new * s.precomputed_sin[x];
-          }
-        } else { // otherwise, we're at a perfectly normal bond!
-          double dE = s.J(si_old, sj) - s.J(si_new, sj);
+          s.update_magnetization(rs_old, rs_new);
+          s.update_fourierZero(non_ghost, rs_old, rs_new);
+        } else { // this is a perfectly normal bond!
+          dE = s.J(s.spins[v], s.spins[vn]) - s.J(si_new, s.spins[vn]);
 
 #ifdef FINITE_STATES
-          prob = J_probs[state_to_ind(si_old)][state_to_ind(si_new)][state_to_ind(sj)];
-#else
-          prob = 1.0 - exp(-dE / s.T);
+          prob = J_probs[state_to_ind(s.spins[v])][state_to_ind(si_new)][state_to_ind(s.spins[vn])];
 #endif
-
-          s.E += dE;
         }
+
+        s.update_energy(dE);
+
+#ifndef FINITE_STATES
+        prob = 1.0 - exp(-dE / s.T);
+#endif
 
         if (gsl_rng_uniform(rand) < prob) {
           stack.push(vn); // push the neighboring vertex to the stack

@@ -13,6 +13,7 @@ class graph_t {
     v_t ne;
     v_t nv;
     std::vector<std::vector<v_t>> v_adj;
+    std::vector<std::vector<double>> coordinate;
 
     graph_t(D_t D, L_t L);
     void add_ext();

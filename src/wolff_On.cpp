@@ -42,7 +42,11 @@ int main(int argc, char *argv[]) {
 
   count_t N = (count_t)1e7;
 
+#ifdef DIMENSION
+  D_t D = DIMENSION;
+#else
   D_t D = 2;
+#endif
   L_t L = 128;
   double T = 2.26918531421;
   double *H_vec = (double *)calloc(MAX_Q, sizeof(double));
@@ -69,9 +73,15 @@ int main(int argc, char *argv[]) {
     case 'N': // number of steps
       N = (count_t)atof(optarg);
       break;
+#ifdef DIMENSION
+    case 'D': // dimension
+      printf("Dimension was specified at compile time, you can't change it now!\n");
+      exit(EXIT_FAILURE);
+#else
     case 'D': // dimension
       D = atoi(optarg);
       break;
+#endif
     case 'L': // linear size
       L = atoi(optarg);
       break;
