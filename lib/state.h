@@ -58,8 +58,7 @@ class state_t {
     }
 
     void update_magnetization(const X_t& s_old, const X_t& s_new) {
-      M -= s_old;
-      M += s_new;
+      M += s_new - s_old;
     }
 
     void update_energy(const double& dE) {
