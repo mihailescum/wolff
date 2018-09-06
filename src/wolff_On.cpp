@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
       epsilon = sqrt(T);
     }
     gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon, order);
-    pert_type = "PERTURB";
+    pert_type = "PERTURB2";
   } else {
     gen_R = generate_rotation_uniform <N_COMP>;
     pert_type = "UNIFORM";
