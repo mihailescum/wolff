@@ -182,7 +182,7 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const vecto
 
   v2 = 0;
 
-  double factor = epsilon * gsl_ran_ugaussian(r);
+  double factor = gsl_ran_gaussian(r, epsilon);
 
   for (q_t i = 0; i < q; i++) {
     m[0][i] = m[0][i] + factor * v[i]; // perturb orthogonal vector in original direction
