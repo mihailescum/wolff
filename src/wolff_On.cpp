@@ -153,10 +153,10 @@ int main(int argc, char *argv[]) {
       Hish = sqrt(H2);
     }
 
-    epsilon = sqrt(N_COMP * T / (D + Hish / 2));
+    epsilon = sqrt((N_COMP - 1) * T / (D + Hish / 2));
 
     gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon, order);
-    pert_type = "PERTURB3";
+    pert_type = "PERTURB4";
   } else {
     gen_R = generate_rotation_uniform <N_COMP>;
     pert_type = "UNIFORM";
