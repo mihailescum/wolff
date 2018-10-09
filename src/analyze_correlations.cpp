@@ -432,6 +432,15 @@ int main (int argc, char *argv[]) {
               forward_data[i] = sqrt(pow(data_M[3 * drop + 3 * i], 2) + pow(data_M[3 * drop + 3 * i + 1], 2) + pow(data_M[3 * drop + 3 * i + 2], 2));
             }
             free(data_M);
+          } else if (0 == strcmp(model, "ISING")) {
+            float *data_M = (int *)malloc(N * sizeof(float));
+            fread(data_M, sizeof(int), N, file_M);
+            fclose(file_M);
+            for (int i = 0; i < M; i++) {
+              forward_data[i] = (double)data_M[i];
+            }
+            free(data_M);
+          }
           } else {
             printf("UNKNOWN MODEL\n");
             exit(EXIT_FAILURE);
