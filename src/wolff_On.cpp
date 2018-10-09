@@ -142,8 +142,21 @@ int main(int argc, char *argv[]) {
   std::function <orthogonal_R_t(gsl_rng *, vector_R_t)> gen_R;
 
   if (use_pert) {
+    double Hish;
+    if (modulated_field) {
+      Hish = fabs(H_vec[0]);
+    } else {
+      double H2 = 0;
+      for (q_t i = 0; i < N_COMP; i++) {
+        H2 += pow(H_vec[i], 2);
+      }
+      Hish = sqrt(H2);
+    }
+
+    epsilon = sqrt((N_COMP - 1) * T / (D + Hish / 2)) / 2;
+
     gen_R = std::bind(generate_rotation_perturbation <N_COMP>, std::placeholders::_1, std::placeholders::_2, epsilon, order);
-    pert_type = "PERTURB";
+    pert_type = "PERTURB5";
   } else {
     gen_R = generate_rotation_uniform <N_COMP>;
     pert_type = "UNIFORM";

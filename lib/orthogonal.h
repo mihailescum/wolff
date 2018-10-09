@@ -163,22 +163,36 @@ orthogonal_t <q, double> generate_rotation_perturbation (gsl_rng *r, const vecto
   double m_dot_v = 0;
 
   for (q_t i = 0; i < q; i++) {
-    m[0][i] = gsl_ran_ugaussian(r);
+    m[0][i] = gsl_ran_ugaussian(r); // create a random vector
     m_dot_v += m[0][i] * v[i];
   }
 
   double v2 = 0;
-  double factor = epsilon * gsl_ran_ugaussian(r);
 
   for (q_t i = 0; i < q; i++) {
-    m[0][i] = m[0][i] - m_dot_v * v[i] + factor * v[i];
+    m[0][i] = m[0][i] - m_dot_v * v[i]; // find the component orthogonal to v
     v2 += pow(m[0][i], 2);
   }
 
   double mag_v = sqrt(v2);
 
   for (q_t i = 0; i < q; i++) {
-    m[0][i] /= mag_v;
+    m[0][i] /= mag_v; // normalize
+  }
+
+  v2 = 0;
+
+  double factor = gsl_ran_gaussian(r, epsilon);
+
+  for (q_t i = 0; i < q; i++) {
+    m[0][i] += factor * v[i]; // perturb orthogonal vector in original direction
+    v2 += pow(m[0][i], 2);
+  }
+
+  mag_v = sqrt(v2);
+
+  for (q_t i = 0; i < q; i++) {
+    m[0][i] /= mag_v; // normalize
   }
 
   return m;
