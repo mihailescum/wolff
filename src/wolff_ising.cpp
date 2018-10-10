@@ -117,7 +117,11 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize state object
+#ifndef NOFIELD
   state_t <z2_t, ising_t> s(D, L, T, Z, B);
+#else
+  state_t <z2_t, ising_t> s(D, L, T, Z);
+#endif
 
   // define function that generates self-inverse rotations
   std::function <z2_t(gsl_rng *, ising_t)> gen_R = [] (gsl_rng *, const ising_t& s) -> z2_t {

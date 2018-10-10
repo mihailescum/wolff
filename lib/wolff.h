@@ -6,7 +6,11 @@ template <class R_t, class X_t>
 void wolff(count_t N, state_t <R_t, X_t>& s, std::function <R_t(gsl_rng *, X_t s0)> gen_R, std::function <void(const state_t <R_t, X_t>&)> measurements, gsl_rng *r, bool silent) {
 
 #ifdef FINITE_STATES
+#ifdef NOFIELD
+  initialize_probs(s.J, s.T);
+#else
   initialize_probs(s.J, s.H, s.T);
+#endif
 #endif
 
   if (!silent) printf("\n");
