@@ -241,7 +241,11 @@ int main(int argc, char *argv[]) {
   gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2);
   gsl_rng_set(r, rand_seed());
 
+#ifndef NOFIELD
   state_t <orthogonal_R_t, vector_R_t> s(D, L, T, dot <N_COMP, double>, H);
+#else
+  state_t <orthogonal_R_t, vector_R_t> s(D, L, T, dot <N_COMP, double>);
+#endif
 
   if (N_is_sweeps) {
     count_t N_rounds = 0;

@@ -25,23 +25,27 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, gsl_rng *rand) {
     stack.pop();
 
     if (!marks[v]) { // don't reprocess anyone we've already visited!
-      X_t si_new;
-      R_t R_new;
-
       marks[v] = true;
+
+      X_t si_new;
+#ifndef NOFIELD
+      R_t R_new;
 
       bool v_is_ghost = (v == s.nv); // ghost site has the last index
 
       if (v_is_ghost) {
         R_new = r.act(s.R); // if we are, then we're moving the transformation
-      } else {
+      } else
+#endif
+      {
         si_new = r.act(s.spins[v]); // otherwise, we're moving the spin at our site
       }
 
       for (const v_t &vn : s.g.v_adj[v]) {
-        bool vn_is_ghost = (vn == s.nv); // any of our neighbors could be the ghost
-
         double dE, prob;
+
+#ifndef NOFIELD
+        bool vn_is_ghost = (vn == s.nv); // any of our neighbors could be the ghost
 
         if (v_is_ghost || vn_is_ghost) { // this is a ghost-involved bond
           X_t rs_old, rs_new;
@@ -69,7 +73,9 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, gsl_rng *rand) {
 
           s.update_magnetization(rs_old, rs_new);
           s.update_fourierZero(non_ghost, rs_old, rs_new);
-        } else { // this is a perfectly normal bond!
+        } else // this is a perfectly normal bond!
+#endif
+        {
           dE = s.J(s.spins[v], s.spins[vn]) - s.J(si_new, s.spins[vn]);
 
 #ifdef FINITE_STATES
@@ -88,9 +94,12 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, gsl_rng *rand) {
         }
       }
 
+#ifndef NOFIELD
       if (v_is_ghost) {
         s.R = R_new;
-      } else {
+      } else
+#endif
+      {
         s.spins[v] = si_new;
         nv++;
       }

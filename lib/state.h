@@ -29,14 +29,22 @@ class state_t {
     std::vector<typename X_t::F_t> ImF;
 
     std::function <double(const X_t&, const X_t&)> J;
+#ifndef NOFIELD
     std::function <double(const X_t&)> H;
 
     state_t(D_t D, L_t L, double T, std::function <double(const X_t&, const X_t&)> J, std::function <double(const X_t&)> H) : D(D), L(L), g(D, L), T(T), R(), J(J), H(H) {
+#else
+    state_t(D_t D, L_t L, double T, std::function <double(const X_t&, const X_t&)> J) : D(D), L(L), g(D, L), T(T), R(), J(J) {
+#endif
       nv = g.nv;
       ne = g.ne;
-      g.add_ext();
       spins.resize(nv);
+#ifndef NOFIELD
+      g.add_ext();
       E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
+#else
+      E = - (double)ne * J(spins[0], spins[0]);
+#endif
       M = spins[0] * nv;
       last_cluster_size = 0;
       ReF.resize(D);
