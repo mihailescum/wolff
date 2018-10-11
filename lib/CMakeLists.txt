@@ -1,0 +1,17 @@
+
+project(libwolff LANGUAGES C CXX)
+
+add_library(wolff SHARED src/graph.cpp)
+
+target_include_directories(wolff PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+
+install(TARGETS wolff EXPORT wolffConfig
+    ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT wolffConfig DESTINATION share/wolff/cmake)
+
+export(TARGETS wolff FILE wolffConfig.cmake)
