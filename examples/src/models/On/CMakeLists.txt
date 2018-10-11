@@ -25,5 +25,5 @@ else()
   target_link_libraries(wolff_heisenberg             wolff wolff_examples glut GL GLU)
 endif()
 
-install(TARGETS wolff_planar wolff_planar_2d_no-field wolff_heisenberg DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS wolff_planar wolff_planar_2d_no-field wolff_heisenberg DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 

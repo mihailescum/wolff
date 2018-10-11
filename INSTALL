@@ -1,0 +1,12 @@
+
+To install, initialize cmake in a build directory, e.g.,
+
+# mkdir build
+# cd build
+# cmake ..
+# make
+
+The core library requires only the standard C++ libraries and a modern
+compiler. Most of the example code also has no dependencies. Compilation of
+examples/tools/analyze_correlations.cpp requires the FFTW3 library.
+

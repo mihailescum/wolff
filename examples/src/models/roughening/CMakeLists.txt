@@ -17,5 +17,5 @@ else()
   target_link_libraries(wolff_cgm             wolff wolff_examples glut GL GLU)
 endif()
 
-install(TARGETS wolff_dgm wolff_cgm DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS wolff_dgm wolff_cgm DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 

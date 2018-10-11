@@ -24,5 +24,5 @@ else()
   target_link_libraries(wolff_ising_2d_no-field wolff wolff_examples glut GL GLU)
 endif()
 
-install(TARGETS wolff_ising wolff_ising_2d wolff_ising_2d_no-field DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS wolff_ising wolff_ising_2d wolff_ising_2d_no-field DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 

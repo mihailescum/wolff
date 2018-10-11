@@ -1,0 +1,19 @@
+
+A library for running the Wolff algorithm on arbitrary systems in arbitrary
+fields. A "spin state" and "spin symmetry transformation" type must be
+supplied to defined a system, along with a spin-spin coupling, a spin-field
+coupling, and a generator of transformations of rank two. The library then
+supplies the tools to run Wolff cluster-flip steps on the resulting (for now)
+hypercubic lattice system, with arbitrary measurements taken along the way.
+
+The core code resides in lib. lib/include/wolff.hpp is the principle
+interface, but lib/include/wolff/cluster.hpp does the heavy lifting, with
+essential data structures defined by lib/include/wolff/graph.h and
+lib/include/wolff/state.h. Skimming these files, or reviewing how they are
+used in the included examples, should help with their use. The simplest
+example is contained in examples/src/models/ising.
+
+lib/include/wolff/finite_states.h can be invoked when special objects have
+been defined to significantly speed computation for systems whose spins have
+finitely many states.
+

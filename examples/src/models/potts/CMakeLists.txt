@@ -35,5 +35,5 @@ else()
   target_link_libraries(wolff_5clock             wolff wolff_examples glut GL GLU)
 endif()
 
-install(TARGETS wolff_3potts wolff_4potts wolff_7potts wolff_3clock wolff_5clock DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS wolff_3potts wolff_4potts wolff_7potts wolff_3clock wolff_5clock DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
 
