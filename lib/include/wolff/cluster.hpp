@@ -65,7 +65,11 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand
             non_ghost = vn;
           }
 
+#ifdef SITE_DEPENDENCE
+          dE = s.H(non_ghost, rs_old) - s.H(non_ghost, rs_new);
+#else
           dE = s.H(rs_old) - s.H(rs_new);
+#endif
 
 #ifdef FINITE_STATES
           prob = H_probs[state_to_ind(rs_old)][state_to_ind(rs_new)];
@@ -76,7 +80,12 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand
         } else // this is a perfectly normal bond!
 #endif
         {
+#ifdef BOND_DEPENDENCE
+          dE = s.J(v, s.spins[v], vn, s.spins[vn]) - s.J(v, si_new, vn, s.spins[vn]);
+#else
           dE = s.J(s.spins[v], s.spins[vn]) - s.J(si_new, s.spins[vn]);
+#endif
+
 
 #ifdef FINITE_STATES
           prob = J_probs[state_to_ind(s.spins[v])][state_to_ind(si_new)][state_to_ind(s.spins[vn])];

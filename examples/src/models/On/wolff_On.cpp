@@ -212,7 +212,11 @@ int main(int argc, char *argv[]) {
     other_f = [&] (const On_t& s) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
+#ifdef NOFIELD
+        vector_R_t v_tmp = s.spins[i];
+#else
         vector_R_t v_tmp = s.R.act_inverse(s.spins[i]);
+#endif
         double thetai = fmod(2 * M_PI + theta(v_tmp), 2 * M_PI);
         double saturation = 0.7;
         double value = 0.9;

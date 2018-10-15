@@ -1,4 +1,6 @@
 
+#define SITE_DEPENDENCE
+
 #include <getopt.h>
 #include <stdio.h>
 
@@ -10,10 +12,6 @@
 // include your group and spin space
 #include "z2.hpp"
 #include "ising.hpp"
-
-// finite_states.h can be included for spin types that have special variables
-// defined, and it causes wolff execution to use precomputed bond probabilities
-#include <wolff/finite_states.hpp>
 
 #include <randutils/randutils.hpp>
 
@@ -106,12 +104,19 @@ int main(int argc, char *argv[]) {
     }
   };
 
+  // create random field
+  std::vector<double> random_field_values(pow(L, D));
+  std::normal_distribution<double> distribution(0.0, H);
+  for (v_t i = 0; i < pow(L, D); i++) {
+    random_field_values[i] = distribution(rng);
+  }
+
   // define spin-field coupling
-  std::function <double(const ising_t&)> B = [=] (const ising_t& s) -> double {
+  std::function <double(v_t, const ising_t&)> B = [&] (v_t v, const ising_t& s) -> double {
     if (s.x) {
-      return -H;
+      return -random_field_values[v];
     } else {
-      return H;
+      return random_field_values[v];
     }
   };
 

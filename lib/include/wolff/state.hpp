@@ -16,35 +16,83 @@ class state_t {
   public:
     D_t D;
     L_t L;
-    v_t nv;
-    v_t ne;
-    graph_t g;
-    double T;
-    std::vector<X_t> spins;
-    R_t R;
-    double E;
+    v_t nv; // the number of vertices in the lattice
+    v_t ne; // the number of edges in the lattice
+    graph_t g; // the graph defining the lattice without ghost
+    double T; // the temperature
+    std::vector<X_t> spins; // the state of the ordinary spins
+#ifndef NOFIELD
+    R_t R; // the current state of the ghost site
+#endif
+    double E; // the system's total energy
     typename X_t::M_t M; // the "sum" of the spins, like the total magnetization
-    v_t last_cluster_size;
+    v_t last_cluster_size; // the size of the last cluster
     std::vector<typename X_t::F_t> ReF;
     std::vector<typename X_t::F_t> ImF;
 
-    std::function <double(const X_t&, const X_t&)> J;
-#ifndef NOFIELD
-    std::function <double(const X_t&)> H;
-
-    state_t(D_t D, L_t L, double T, std::function <double(const X_t&, const X_t&)> J, std::function <double(const X_t&)> H) : D(D), L(L), g(D, L), T(T), R(), J(J), H(H) {
+#ifdef BOND_DEPENDENCE
+    std::function <double(v_t, const X_t&, v_t, const X_t&)> J; // coupling between sites
 #else
-    state_t(D_t D, L_t L, double T, std::function <double(const X_t&, const X_t&)> J) : D(D), L(L), g(D, L), T(T), R(), J(J) {
+    std::function <double(const X_t&, const X_t&)> J; // coupling between sites
 #endif
+
+#ifndef NOFIELD
+#ifdef SITE_DEPENDENCE
+    std::function <double(v_t, const X_t&)> H; // coupling with the external field
+#else
+    std::function <double(const X_t&)> H; // coupling with the external field
+#endif
+#endif
+
+    state_t(D_t D, L_t L, double T,
+#ifdef BOND_DEPENDENCE
+        std::function <double(v_t, const X_t&, v_t, const X_t&)> J
+#else
+        std::function <double(const X_t&, const X_t&)> J
+#endif
+#ifndef NOFIELD
+#ifdef SITE_DEPENDENCE
+        , std::function <double(v_t, const X_t&)> H
+#else
+        , std::function <double(const X_t&)> H
+#endif
+#endif
+           ) : D(D), L(L), g(D, L), T(T),
+#ifndef NOFIELD
+              R(),
+#endif
+              J(J)
+#ifndef NOFIELD
+               , H(H)
+#endif
+    {
       nv = g.nv;
       ne = g.ne;
       spins.resize(nv);
-#ifndef NOFIELD
-      g.add_ext();
-      E = - (double)ne * J(spins[0], spins[0]) - (double)nv * H(spins[0]);
+#ifdef BOND_DEPENDENCE
+      E = 0;
+      for (v_t v = 0; v < nv; v++) {
+        for (const v_t &vn : g.v_adj[v]) {
+          if (v < vn) {
+            E -= J(v, spins[v], vn, spins[vn]);
+          }
+        }
+      }
 #else
       E = - (double)ne * J(spins[0], spins[0]);
 #endif
+
+#ifndef NOFIELD
+      g.add_ext();
+#ifdef SITE_DEPENDENCE
+      for (v_t i = 0; i < nv; i++) {
+        E -= H(i, spins[i]);
+      }
+#else
+      E -= (double)nv * H(spins[0]);
+#endif
+#endif
+
       M = spins[0] * nv;
       last_cluster_size = 0;
       ReF.resize(D);
