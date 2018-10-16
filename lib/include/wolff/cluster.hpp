@@ -9,11 +9,11 @@
 #include "types.h"
 #include "state.hpp"
 #include "graph.hpp"
+#include "meas.h"
 
 template <class R_t, class X_t>
-void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand) {
-  std::uniform_real_distribution<double> dist(0.0,1.0);
-  v_t nv = 0;
+void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand, wolff_measurement<R_t, X_t>& m) {
+  std::uniform_real_distribution<double> dist(0.0, 1.0);
 
   std::stack<v_t> stack;
   stack.push(v0);
@@ -75,8 +75,8 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand
           prob = H_probs[state_to_ind(rs_old)][state_to_ind(rs_new)];
 #endif
 
-          s.update_magnetization(rs_old, rs_new);
-          s.update_fourierZero(non_ghost, rs_old, rs_new);
+          // run measurement hooks for encountering a ghost bond
+          m.ghost_bond_added(non_ghost, rs_old, rs_new, dE);
         } else // this is a perfectly normal bond!
 #endif
         {
@@ -90,9 +90,10 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand
 #ifdef FINITE_STATES
           prob = J_probs[state_to_ind(s.spins[v])][state_to_ind(si_new)][state_to_ind(s.spins[vn])];
 #endif
-        }
 
-        s.update_energy(dE);
+          // run measurement hooks for encountering a plain bond
+          m.plain_bond_added(v, s.spins[v], si_new, vn, s.spins[vn], dE);
+        }
 
 #ifndef FINITE_STATES
         prob = 1.0 - exp(-dE / s.T);
@@ -105,16 +106,15 @@ void flip_cluster(state_t<R_t, X_t>& s, v_t v0, const R_t& r, std::mt19937& rand
 
 #ifndef NOFIELD
       if (v_is_ghost) {
+        m.ghost_site_transformed(s.R, R_new);
         s.R = R_new;
       } else
 #endif
       {
+        m.plain_site_transformed(v, s.spins[v], si_new);
         s.spins[v] = si_new;
-        nv++;
       }
     }
   }
-
-  s.last_cluster_size = nv;
 }
 

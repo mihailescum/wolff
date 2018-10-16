@@ -6,18 +6,18 @@
 
 #include <fftw3.h>
 
-template <class R_t, class X_t>
-double correlation_length(const state_t <R_t, X_t>& s) {
+template <class X_t>
+double correlation_length(const std::vector<typename X_t::F_t>& ReF, const std::vector<typename X_t::F_t>& ImF, D_t D) {
   double total = 0;
 
 #ifdef DIMENSION
   for (D_t j = 0; j < DIMENSION; j++) {
 #else
-  for (D_t j = 0; j < s.D; j++) {
+  for (D_t j = 0; j < D; j++) {
 #endif
-    total += norm_squared(s.ReF[j]) + norm_squared(s.ImF[j]);
+    total += norm_squared(ReF[j]) + norm_squared(ImF[j]);
   }
 
-  return total / s.D;
+  return total / D;
 }
 

@@ -36,6 +36,7 @@ class symmetric_t : public std::array<q_t, q> {
         }
       }
 
+      printf("Your spin wasn't a valid state!", s.x);
       exit(EXIT_FAILURE);
     }
 

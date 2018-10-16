@@ -9,6 +9,7 @@
 #include "dihedral.hpp"
 #include "potts.hpp"
 #include <colors.h>
+#include <measure.hpp>
 
 // hack to speed things up considerably
 #define N_STATES POTTSQ
@@ -95,7 +96,7 @@ int main(int argc, char *argv[]) {
   std::function <dihedral_t<POTTSQ>(std::mt19937&, potts_t<POTTSQ>)> gen_R = [] (std::mt19937& r, potts_t<POTTSQ> v) -> dihedral_t<POTTSQ> {
     dihedral_t<POTTSQ> rot;
     rot.is_reflection = true;
-    std::uniform_int_distribution<q_t> dist(0, POTTSQ - 1);
+    std::uniform_int_distribution<q_t> dist(0, POTTSQ - 2);
     q_t x = dist(r);
     rot.x = (2 * v.x + x + 1) % POTTSQ;
 
@@ -103,13 +104,11 @@ int main(int argc, char *argv[]) {
   };
 
   // define function that updates any number of measurements
-  std::function <void(const sim_t&)> measurement;
+  std::function <void(const sim_t&, const wolff_research_measurements<dihedral_t<POTTSQ>, potts_t<POTTSQ>>&)> measurement;
 
-  double average_M = 0;
   if (!draw) {
     // a very simple example: measure the average magnetization
-    measurement = [&] (const sim_t& s) {
-      average_M += (double)s.M[0] / (double)N / (double)s.nv;
+    measurement = [&] (const sim_t& s, const wolff_research_measurements<dihedral_t<POTTSQ>, potts_t<POTTSQ>>&) {
     };
   } else {
     // a more complex example: measure the average magnetization, and draw the spin configuration to the screen
@@ -125,8 +124,7 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    measurement = [&] (const sim_t& s) {
-      average_M += (double)s.M[0] / (double)N / (double)s.nv;
+    measurement = [&] (const sim_t& s, const wolff_research_measurements<dihedral_t<POTTSQ>, potts_t<POTTSQ>>&) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
         potts_t<POTTSQ> tmp_s = s.R.act_inverse(s.spins[i]);
@@ -138,16 +136,12 @@ int main(int argc, char *argv[]) {
 #endif
   }
 
-  // run wolff for N cluster flips
-  wolff(N, s, gen_R, measurement, rng, silent);
+  wolff_research_measurements<dihedral_t<POTTSQ>, potts_t<POTTSQ>> m(0, 0, measurement, s, silent);
 
-  // tell us what we found!
-  printf("%" PRIcount " %d-Potts runs completed. D = %" PRID ", L = %" PRIL ", T = %g, H = %g, <M> = %g\n", N, POTTSQ, D, L, T, H_vec[0], average_M);
+  // run wolff for N cluster flips
+  wolff(N, s, gen_R, m, rng);
 
   // free the random number generator
-
-  if (draw) {
-  }
 
   return 0;
 

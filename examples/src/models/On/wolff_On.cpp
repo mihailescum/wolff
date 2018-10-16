@@ -188,14 +188,12 @@ int main(int argc, char *argv[]) {
 
   fclose(outfile_info);
 
-  FILE **outfiles = measure_setup_files(measurement_flags, timestamp);
-
-  std::function <void(const On_t&)> other_f;
+  std::function <void(const On_t&, const wolff_research_measurements<orthogonal_R_t, vector_R_t>&)> other_f;
   uint64_t sum_of_clusterSize = 0;
 
   if (N_is_sweeps) {
-    other_f = [&] (const On_t& s) {
-      sum_of_clusterSize += s.last_cluster_size;
+    other_f = [&] (const On_t& s, const wolff_research_measurements<orthogonal_R_t, vector_R_t>& m) {
+      sum_of_clusterSize += m.last_cluster_size;
     };
   } else if (draw) {
 #ifdef HAVE_GLUT
@@ -209,7 +207,7 @@ int main(int argc, char *argv[]) {
     glLoadIdentity();
     gluOrtho2D(0.0, L, 0.0, L);
 
-    other_f = [&] (const On_t& s) {
+    other_f = [&] (const On_t& s, const wolff_research_measurements<orthogonal_R_t, vector_R_t>& m) {
       glClear(GL_COLOR_BUFFER_BIT);
       for (v_t i = 0; i < pow(L, 2); i++) {
 #ifdef NOFIELD
@@ -228,10 +226,8 @@ int main(int argc, char *argv[]) {
     };
 #endif
   } else {
-    other_f = [] (const On_t& s) {};
+    other_f = [] (const On_t& s, const wolff_research_measurements<orthogonal_R_t, vector_R_t>& m) {};
   }
-
-  std::function <void(const On_t&)> measurements = measure_function_write_files(measurement_flags, outfiles, other_f);
 
   std::function <double(const vector_R_t&)> H;
 
@@ -251,20 +247,21 @@ int main(int argc, char *argv[]) {
   state_t <orthogonal_R_t, vector_R_t> s(D, L, T, dot <N_COMP, double>);
 #endif
 
+  wolff_research_measurements<orthogonal_R_t, vector_R_t> m(measurement_flags, timestamp, other_f, s, silent);
+
   if (N_is_sweeps) {
     count_t N_rounds = 0;
     printf("\n");
     while (sum_of_clusterSize < N * s.nv) {
-      printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
-      wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, measurements, rng, silent);
+      printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, m.E, m.last_cluster_size);
+      wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, m, rng);
       N_rounds++;
     }
-    printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, s.E, s.last_cluster_size);
+    printf("\033[F\033[J\033[F\033[JWOLFF: sweep %" PRIu64 " / %" PRIu64 ": E = %.2f, S = %" PRIv "\n\n", (count_t)((double)sum_of_clusterSize / (double)s.nv), N, m.E, m.last_cluster_size);
   } else {
-    wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, measurements, rng, silent);
+    wolff <orthogonal_R_t, vector_R_t> (N, s, gen_R, m, rng);
   }
 
-  measure_free_files(measurement_flags, outfiles);
   free(H_vec);
 
   return 0;
