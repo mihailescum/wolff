@@ -1,30 +1,27 @@
 
+#ifndef WOLFF_H
+#define WOLFF_H
+
 #include "wolff/cluster.hpp"
-#include "wolff/state.hpp"
 
 template <class R_t, class X_t>
-void wolff(count_t N, state_t <R_t, X_t>& s, std::function <R_t(std::mt19937&, X_t)> gen_R, wolff_measurement<R_t, X_t>& m, std::mt19937& r) {
+void wolff(N_t N, wolff_system<R_t, X_t>& S,
+           std::function <R_t(std::mt19937&, X_t)> r_gen,
+           wolff_measurement<R_t, X_t>& A, std::mt19937& rng) {
 
-#ifdef FINITE_STATES
-#ifdef NOFIELD
-  initialize_probs(s.J, s.T);
-#else
-  initialize_probs(s.J, s.H, s.T);
-#endif
-#endif
+  std::uniform_int_distribution<v_t> dist(0, S.nv - 1);
 
-  std::uniform_int_distribution<v_t> dist(0, s.nv);
+  for (N_t n = 0; n < N; n++) {
+    v_t i0 = dist(rng);
+    R_t r = r_gen(rng, S.s[i0]);
 
-  for (count_t steps = 0; steps < N; steps++) {
-    v_t v0 = dist(r);
-    R_t step = gen_R(r, s.spins[v0]);
+    A.pre_cluster(n, N, S, i0, r);
 
-    m.pre_cluster(s, steps, N, v0, step);
+    wolff_cluster_flip<R_t, X_t>(S, i0, r, rng, A);
 
-    flip_cluster<R_t, X_t>(s, v0, step, r, m);
-
-    m.post_cluster(s, steps, N);
+    A.post_cluster(n, N, S);
   }
-
 }
+
+#endif
 

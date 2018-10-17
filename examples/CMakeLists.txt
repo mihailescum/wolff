@@ -1,10 +1,11 @@
 
-add_library(wolff_examples INTERFACE)
+add_executable(ising ising.cpp)
+add_executable(animate_ising animate_ising.cpp)
+add_executable(xy On.cpp)
 
-target_include_directories(wolff_examples INTERFACE include)
+add_compile_definitions(xy WOLFF_N=2)
 
-add_executable(simple_ising simple_ising.cpp)
-target_link_libraries(simple_ising wolff)
-
-add_subdirectory(src)
+target_link_libraries(ising wolff)
+target_link_libraries(animate_ising wolff GL GLU glut)
+target_link_libraries(xy wolff)
 

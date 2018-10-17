@@ -1,11 +1,9 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <random>
 #include <cmath>
 
-#include <wolff/state.hpp>
 #include <wolff/types.h>
 #include "vector.hpp"
 
@@ -113,7 +111,6 @@ class orthogonal_t : public std::array<std::array<T, q>, q> {
   }
 
 };
-
 
 template <q_t q>
 orthogonal_t <q, double> generate_rotation_uniform (std::mt19937& r, const vector_t <q, double>& v) {

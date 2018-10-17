@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <array>
-#include <wolff/types.h>
+
+#include "../types.h"
 #include "potts.hpp"
 
 template <q_t q>
@@ -36,7 +36,6 @@ class symmetric_t : public std::array<q_t, q> {
         }
       }
 
-      printf("Your spin wasn't a valid state!", s.x);
       exit(EXIT_FAILURE);
     }
 
