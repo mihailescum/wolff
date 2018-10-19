@@ -1,6 +1,5 @@
 
 add_executable(ising ising.cpp)
-add_executable(ising_animation ising_animation.cpp)
 add_executable(ising_standalone ising_standalone.cpp)
 add_executable(ising_random_field ising_random_field.cpp)
 add_executable(ising_no_field ising_no_field.cpp)
@@ -15,7 +14,6 @@ target_compile_definitions(potts_3 PUBLIC WOLFF_POTTSQ=3)
 target_compile_definitions(clock_5 PUBLIC WOLFF_POTTSQ=5)
 
 target_link_libraries(ising wolff)
-target_link_libraries(ising_animation wolff GL GLU glut)
 target_link_libraries(ising_standalone wolff)
 target_link_libraries(ising_random_field wolff)
 target_link_libraries(ising_no_field wolff)
@@ -24,4 +22,14 @@ target_link_libraries(potts_3 wolff)
 target_link_libraries(clock_5 wolff)
 target_link_libraries(discrete_gaussian wolff)
 target_link_libraries(continuous_gaussian wolff)
+
+FIND_LIBRARY(GL NAMES GL)
+FIND_LIBRARY(GLU NAMES GLU)
+FIND_LIBRARY(GLUT NAMES glut)
+
+if (${GLUT} MATCHES "GLUT-NOTFOUND")
+else()
+  add_executable(ising_animation ising_animation.cpp)
+  target_link_libraries(ising_animation wolff GL GLU glut)
+endif()
 
