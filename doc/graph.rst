@@ -1,47 +1,52 @@
 
+.. default-domain:: cpp
+
 ******
 Graphs
 ******
 
 This class is defined in the header :file:`wolff/graph.hpp`.
 
-.. cpp:class:: graph
+.. class:: graph
 
-   Lattices are described by objects of class :cpp:class:`graph`, a minimal implementation of graphs.
+   Lattices are described by objects of class :class:`graph`, a minimal implementation of graphs.
 
-.. cpp:member:: D_t graph::D
+   .. member:: D_t graph::D
 
-   The dimension of the graph. This property is unused by the core library.
+      The dimension of the graph. This property is unused by the core library.
 
-.. cpp:member:: L_t graph::L
+   .. member:: L_t graph::L
 
-   The linear size of the graph. This property is unused by the core library.
+      The linear size of the graph. This property is unused by the core library.
 
-.. cpp:member:: v_t graph::ne
+   .. member:: v_t graph::ne
 
-   The number of edges in the graph. This property is unused by the core library.
+      The number of edges in the graph. This property is unused by the core library.
 
-.. cpp:member:: v_t graph::nv
+   .. member:: v_t graph::nv
 
-   The number of vertices in the graph.
+      The number of vertices in the graph.
 
-.. cpp:member:: std::vector<std::vector<v_t>> graph::adjacency
+   .. member:: std::vector<std::vector<v_t>> graph::adjacency
 
-   The adjacency list for the graph. The :math:`i\text{th}` element of :cpp:member:`adjacency` is a standard library vector containing the indices of all vertices adjacent to vertex :math:`i`.
+      The adjacency list for the graph. The :math:`i\text{th}` element of :member:`adjacency` is a standard library vector containing the indices of all vertices adjacent to vertex :math:`i`.
 
-.. cpp:member:: std::vector<std::vector<double>> graph::coordinate
+   .. member:: std::vector<std::vector<double>> graph::coordinate
 
-   The coordinates of the graph vertices. The :math:`i\text{th}` element of :cpp:var:`coordinate` is a standard library vector of length :cpp:var:`D` containing the spatial coordinates of vertex :math:`i`. This property is unused by the core library.
+      The coordinates of the graph vertices. The :math:`i\text{th}` element of :var:`coordinate` is a standard library vector of length :var:`D` containing the spatial coordinates of vertex :math:`i`. This property is unused by the core library.
 
-.. cpp:function:: graph::graph()
+   .. function:: graph::graph()
 
-   The default constructor. Initializes an empty graph, i.e., :cpp:var:`D`, :cpp:var:`L`, :cpp:var:`ne`, and :cpp:var:`nv` are all zero and :cpp:var:`adjacency` and :cpp:var:`coordinate` are uninitialized.
+      The default constructor. Initializes an empty graph, i.e., :var:`D`, :var:`L`, :var:`ne`, and :var:`nv` are all zero and :var:`adjacency` and :var:`coordinate` are uninitialized.
 
-.. cpp:function:: graph::graph(D_t D, L_t L)
+   .. function:: graph::graph(D_t D, L_t L)
 
-   Calling the constructor with :cpp:var:`D` and :cpp:var:`L` will initialize the graph of a :cpp:var:`D`-dimensional hypercubic lattice with :cpp:var:`L` vertices per side. This is the only nontrivial graph constructor supplied by the core library.
+      Initializes a graph of a :var:`D`-dimensional hypercubic lattice with :var:`L` vertices per side. This is the only nontrivial graph constructor supplied by the core library. The library will work with arbitrary graphs, and if a different lattice is needed consider calling the default constructor and populating the member objects youself before handing the graph to the :class:`system` constructor.
 
-.. cpp:function:: void graph::add_ghost()
+      :param D_t D: The dimension of space.
+      :param L_t L: The number of vertices per edge of the hypercube.
 
-   Calling this function on a graph object will add a ghost site to the graph. Explicitly, a new vertex is added that is adjacent to every other vertex in the graph. This vertex will have the last index, which is equal to number of vertices in the original graph.
+   .. function:: void graph::add_ghost()
+
+      Calling this function on a graph object will add a ghost site to the graph. Explicitly, a new vertex is added that is adjacent to every other vertex in the graph. This vertex will have the last index, which is equal to number of vertices in the original graph.
 

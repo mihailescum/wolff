@@ -3,8 +3,8 @@
 Defining a Model
 ****************
 
-To define your own model, you need a class for spin states, a class for spin transformations, a bond and site coupling, and a generator of transformations.
-
+To define your own model, you need a class for spin states, a class for spin transformations, a bond and site coupling, and a generator of transformations. Many examples of models can be found in the headers contained in :file:`wolff/models/`.
+ 
 Spin States
 ===========
 
@@ -23,17 +23,29 @@ Transformations
 
       The action of the transformation on a spin, returning the transformed spin.
 
+      :param const X_t&: The spin state to transform.
+      :returns: The transformed spin state.
+
    .. cpp:function:: R_t act(const R_t&)
 
       The action of the transformation on another transformation, returning the transformed transformation.
+
+      :param const R_t&: The transformation state to transform.
+      :returns: The transformed spin state.
 
    .. cpp:function:: X_t act_inverse(const X_t&)
 
       The action of the inverse transformation on a spin, returning the transformed spin.
 
+      :param const X_t&: The spin state to transform.
+      :returns: The transformed spin state.
+
    .. cpp:function:: R_t act_inverse(const R_t&)
 
       The action of the inverse transformation on another transformation, returning the transformed transformation.
+
+      :param const R_t&: The transformation state to transform.
+      :returns: The transformed spin state.
 
 Couplings
 =========

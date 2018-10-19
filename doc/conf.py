@@ -19,14 +19,40 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'wolff'
+from subprocess import Popen, PIPE
+
+def get_version():
+    """
+    Returns project version as string from 'git describe' command.
+    """
+    pipe = Popen('git describe --tags', stdout=PIPE, shell=True)
+    version = pipe.stdout.read()
+
+    if version:
+        return version
+    else:
+        return '0.0'
+
+def get_release():
+    """
+    Returns project version as string from 'git describe' command.
+    """
+    pipe = Popen('git describe --tags --always', stdout=PIPE, shell=True)
+    version = pipe.stdout.read()
+
+    if version:
+        return version
+    else:
+        return '0.0'
+
+project = 'Wolff'
 copyright = '2018, Jaron Kent-Dobias'
 author = 'Jaron Kent-Dobias'
 
 # The short X.Y version
-version = ''
+version = '0.0'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = get_version().lstrip('v').rstrip()
 
 
 # -- General configuration ---------------------------------------------------
@@ -64,10 +90,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'default'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -75,7 +101,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -102,7 +128,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'wolffdoc'
+htmlhelp_basename = 'Wolffdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -129,7 +155,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'wolff.tex', 'wolff Documentation',
+    (master_doc, 'Wolff.tex', 'Wolff Documentation',
      'Jaron Kent-Dobias', 'manual'),
 ]
 
@@ -139,7 +165,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'wolff', 'wolff Documentation',
+    (master_doc, 'Wolff', 'Wolff Documentation',
      [author], 1)
 ]
 
@@ -150,8 +176,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'wolff', 'wolff Documentation',
-     author, 'wolff', 'One line description of project.',
+    (master_doc, 'Wolff', 'Wolff Documentation',
+     author, 'Wolff', 'One line description of project.',
      'Miscellaneous'),
 ]
 
