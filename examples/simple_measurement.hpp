@@ -20,7 +20,27 @@ class simple_measurement : public measurement<R_t, X_t> {
     simple_measurement(const system<R_t, X_t>& S) {
       n = 0;
       M = S.nv * S.s[0];
-      E = - (S.ne * S.Z(S.s[0], S.s[0]) + S.nv * S.B(S.s[0]));
+      E = 0;
+
+#ifdef WOLFF_BOND_DEPENDENCE
+      for (v_t i = 0; i < S.nv; i++) {
+        for (v_t j : S.G.adjacency[i]) {
+          E -= 0.5 * S.Z(i, S.s[i], j, S.s[j]);
+        }
+      }
+#else
+      E -= S.ne * S.Z(S.s[0], S.s[0]);
+#endif
+
+#ifndef WOLFF_NO_FIELD
+#ifdef WOLFF_SITE_DEPENDENCE
+      for (v_t i = 0; i < S.nv; i++) {
+        E -= S.B(i, S.s[i]);
+      }
+#else
+      E -= S.nv * S.B(S.s[0]);
+#endif
+#endif
 
       totalE = 0;
       totalM = 0.0 * (S.s[0]);
@@ -40,8 +60,12 @@ class simple_measurement : public measurement<R_t, X_t> {
       M += s_new - s_old;
     }
 
-    void plain_site_transformed(const system<R_t, X_t>&, v_t,  const X_t&) {
+    void plain_site_transformed(const system<R_t, X_t>& S, v_t i, const X_t& si_new) {
       C++;
+
+#ifdef WOLFF_NO_FIELD
+      M += si_new - S.s[i];
+#endif
     }
 
     void ghost_site_transformed(const system<R_t, X_t>&, const R_t&) {}
