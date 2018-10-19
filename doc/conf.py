@@ -27,7 +27,7 @@ copyright = '2018, Jaron Kent-Dobias'
 author = 'Jaron Kent-Dobias'
 
 # The short X.Y version
-version = re.sub('^v', '', os.popen('git describe --always').read().strip())
+version = re.sub('^v', '', os.popen('git describe --tags --always').read().strip())
 # The full version, including alpha/beta/rc tags
 release = version
 
