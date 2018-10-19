@@ -4,23 +4,25 @@
 
 #include <functional>
 #include <vector>
+#include <random>
 
-#include "types.h"
 #include "graph.hpp"
 
+namespace wolff {
+
+#include "types.h"
+
 template <class R_t, class X_t>
-class wolff_system {
+class measurement;
+
+template <class R_t, class X_t>
+class system {
   public:
-    D_t D; // dimension
-    L_t L; // linear size
     v_t nv; // number of vertices
     v_t ne; // number of edges
-    graph_t G; // the graph defining the lattice with ghost
+    graph G; // the graph defining the lattice with ghost
     double T; // the temperature
     std::vector<X_t> s; // the state of the ordinary spins
-#ifndef WOLFF_NO_FIELD
-    R_t s0; // the current state of the ghost site
-#endif
 
 #ifdef WOLFF_BOND_DEPENDENCE
     std::function <double(v_t, const X_t&, v_t, const X_t&)> Z; // coupling between sites
@@ -29,6 +31,7 @@ class wolff_system {
 #endif
 
 #ifndef WOLFF_NO_FIELD
+    R_t s0; // the current state of the ghost site
 #ifdef WOLFF_SITE_DEPENDENCE
     std::function <double(v_t, const X_t&)> B; // coupling with the external field
 #else
@@ -36,7 +39,7 @@ class wolff_system {
 #endif
 #endif
 
-    wolff_system(D_t D, L_t L, double T,
+    system(graph g, double T,
 #ifdef WOLFF_BOND_DEPENDENCE
         std::function <double(v_t, const X_t&, v_t, const X_t&)> Z
 #else
@@ -49,7 +52,7 @@ class wolff_system {
         , std::function <double(const X_t&)> B
 #endif
 #endif
-        , lattice_t lat = SQUARE_LATTICE) : D(D), L(L), G(D, L, lat), T(T), Z(Z)
+        ) : G(g), T(T), Z(Z)
 #ifndef WOLFF_NO_FIELD
              , s0(), B(B)
 #endif
@@ -58,13 +61,18 @@ class wolff_system {
       ne = G.ne;
       s.resize(nv);
 #ifndef WOLFF_NO_FIELD
-      G.add_ext();
+      G.add_ghost();
 #endif
 #ifdef WOLFF_FINITE_STATES
       finite_states_init(*this);
 #endif
     }
+
+    void flip_cluster(v_t, const R_t&, std::mt19937&, measurement<R_t, X_t>&);
+    void run_wolff(N_t, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng);
 };
+
+}
 
 #endif
 

@@ -4,7 +4,8 @@
 #include <random>
 #include <cmath>
 
-#include <wolff/types.h>
+#include "../types.h"
+#include "../system.hpp"
 #include "vector.hpp"
 
 template <q_t q, class T>
@@ -113,7 +114,7 @@ class orthogonal_t : public std::array<std::array<T, q>, q> {
 };
 
 template <q_t q>
-orthogonal_t <q, double> generate_rotation_uniform (std::mt19937& r, const vector_t <q, double>& v) {
+orthogonal_t <q, double> generate_rotation_uniform (std::mt19937& r, const system<orthogonal_t<q, double>, vector_t<q, double>>&, v_t) {
   std::normal_distribution<double> dist(0.0,1.0);
   orthogonal_t <q, double> ptr;
   ptr.is_reflection = true;
@@ -135,7 +136,7 @@ orthogonal_t <q, double> generate_rotation_uniform (std::mt19937& r, const vecto
 }
 
 template <q_t q>
-orthogonal_t <q, double> generate_rotation_perturbation (std::mt19937& r, const vector_t <q, double>& v0, double epsilon, unsigned int n) {
+orthogonal_t <q, double> generate_rotation_perturbation (std::mt19937& r, const system<orthogonal_t<q, double>, vector_t<q, double>>& S, v_t i0, double epsilon, unsigned int n) {
   std::normal_distribution<double> dist(0.0,1.0);
   orthogonal_t <q, double> m;
   m.is_reflection = true;
@@ -149,14 +150,14 @@ orthogonal_t <q, double> generate_rotation_perturbation (std::mt19937& r, const 
     double cosr = cos(2 * M_PI * rotation / (double)n / 2.0);
     double sinr = sin(2 * M_PI * rotation / (double)n / 2.0);
 
-    v[0] = v0[0] * cosr - v0[1] * sinr;
-    v[1] = v0[1] * cosr + v0[0] * sinr;
+    v[0] = S.s[i0][0] * cosr - S.s[i0][1] * sinr;
+    v[1] = S.s[i0][1] * cosr + S.s[i0][0] * sinr;
 
     for (q_t i = 2; i < q; i++) {
-      v[i] = v0[i];
+      v[i] = S.s[i0][i];
     }
   } else {
-    v = v0;
+    v = S.s[i0];
   }
 
   double m_dot_v = 0;

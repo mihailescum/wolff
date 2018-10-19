@@ -7,14 +7,17 @@
 
 #include <wolff/models/ising.hpp>
 #include <wolff/finite_states.hpp>
+
 #include <wolff.hpp>
 
-class draw_ising : public wolff_measurement<ising_t, ising_t> {
+using namespace wolff;
+
+class draw_ising : public measurement<ising_t, ising_t> {
   private:
     unsigned int frame_skip;
     v_t C;
   public:
-    draw_ising(const wolff_system<ising_t, ising_t>& S, unsigned int window_size, unsigned int frame_skip, int argc, char *argv[]) : frame_skip(frame_skip){
+    draw_ising(const system<ising_t, ising_t>& S, unsigned int window_size, unsigned int frame_skip, int argc, char *argv[]) : frame_skip(frame_skip){
       glutInit(&argc, argv);
       glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
       glutInitWindowSize(window_size, window_size);
@@ -22,39 +25,39 @@ class draw_ising : public wolff_measurement<ising_t, ising_t> {
       glClearColor(0.0,0.0,0.0,0.0);
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
-      gluOrtho2D(0.0, S.L, 0.0, S.L);
+      gluOrtho2D(0.0, S.G.L, 0.0, S.G.L);
     }
 
-    void pre_cluster(N_t, N_t, const wolff_system<ising_t, ising_t>& S, v_t, const ising_t&) {
+    void pre_cluster(N_t, N_t, const system<ising_t, ising_t>& S, v_t, const ising_t&) {
       glClear(GL_COLOR_BUFFER_BIT);
-      for (v_t i = 0; i < pow(S.L, 2); i++) {
+      for (v_t i = 0; i < pow(S.G.L, 2); i++) {
         if (S.s[i].x == S.s0.x) {
           glColor3f(0.0, 0.0, 0.0);
         } else {
           glColor3f(1.0, 1.0, 1.0);
         }
-        glRecti(i / S.L, i % S.L, (i / S.L) + 1, (i % S.L) + 1);
+        glRecti(i / S.G.L, i % S.G.L, (i / S.G.L) + 1, (i % S.G.L) + 1);
       }
       glFlush();
       C = 0;
     }
 
-    void plain_bond_visited(const wolff_system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double dE) {}
+    void plain_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double dE) {}
 
-    void ghost_bond_visited(const wolff_system<ising_t, ising_t>&, v_t, const ising_t& s_old, const ising_t& s_new, double dE) {}
+    void ghost_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t& s_old, const ising_t& s_new, double dE) {}
 
-    void plain_site_transformed(const wolff_system<ising_t, ising_t>& S, v_t i, const ising_t&) {
+    void plain_site_transformed(const system<ising_t, ising_t>& S, v_t i, const ising_t&) {
       glColor3f(1.0, 0.0, 0.0);
-      glRecti(i / S.L, i % S.L, (i / S.L) + 1, (i % S.L) + 1);
+      glRecti(i / S.G.L, i % S.G.L, (i / S.G.L) + 1, (i % S.G.L) + 1);
       C++;
       if (C % frame_skip == 0) {
         glFlush();
       }
     }
 
-    void ghost_site_transformed(const wolff_system<ising_t, ising_t>&, const ising_t&) {}
+    void ghost_site_transformed(const system<ising_t, ising_t>&, const ising_t&) {}
 
-    void post_cluster(N_t, N_t, const wolff_system<ising_t, ising_t>&) {}
+    void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) {}
 };
 
 int main(int argc, char *argv[]) {
@@ -109,11 +112,14 @@ int main(int argc, char *argv[]) {
     return H * s;
   };
 
+  // initialize the lattice
+  graph G(D, L);
+
   // initialize the system
-  wolff_system<ising_t, ising_t> S(D, L, T, Z, B);
+  system<ising_t, ising_t> S(G, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const ising_t&)> gen_R = [] (std::mt19937&, const ising_t& s) -> ising_t {
+  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_R = [] (std::mt19937&, const system<ising_t, ising_t>&, v_t) -> ising_t {
     return ising_t(true);
   };
 
@@ -125,7 +131,7 @@ int main(int argc, char *argv[]) {
   std::mt19937 rng{seed};
 
   // run wolff N times
-  wolff<ising_t, ising_t>(N, S, gen_R, A, rng);
+  S.run_wolff(N, gen_R, A, rng);
 
   // exit
   return 0;

@@ -7,6 +7,7 @@
 
 #include <wolff/models/vector.hpp>
 #include <wolff/models/orthogonal.hpp>
+
 #include <wolff.hpp>
 
 int main(int argc, char *argv[]) {
@@ -56,10 +57,13 @@ int main(int argc, char *argv[]) {
     return H * s;
   };
 
-  // initialize the system
-  wolff_system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(D, L, T, Z, B);
+  // initialize the lattice
+  graph G(D, L);
 
-  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const vector_t<WOLFF_N, double>&)> gen_R = generate_rotation_uniform<WOLFF_N>;
+  // initialize the system
+  system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(G, T, Z, B);
+
+  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>>&, v_t)> gen_R = generate_rotation_uniform<WOLFF_N>;
 
   // initailze the measurement object
   simple_measurement A(S);
@@ -69,7 +73,7 @@ int main(int argc, char *argv[]) {
   std::mt19937 rng{seed};
 
   // run wolff N times
-  wolff<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>>(N, S, gen_R, A, rng);
+  S.run_wolff(N, gen_R, A, rng);
 
   // print the result of our measurements
   std::cout << "Wolff complete!\nThe average energy per site was " << A.avgE() / S.nv

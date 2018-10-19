@@ -7,7 +7,10 @@
 
 #include <wolff/models/ising.hpp>
 #include <wolff/finite_states.hpp>
+
 #include <wolff.hpp>
+
+using namespace wolff;
 
 int main(int argc, char *argv[]) {
 
@@ -53,23 +56,24 @@ int main(int argc, char *argv[]) {
     return H * s;
   };
 
+  // initialize the lattice
+  graph G(D, L);
+
   // initialize the system
-  wolff_system<ising_t, ising_t> S(D, L, T, Z, B);
+  system<ising_t, ising_t> S(G, T, Z, B);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::mt19937 rng{seed};
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const ising_t&)> gen_R = [] (std::mt19937&, const ising_t& s) -> ising_t {
-    return ising_t(true);
-  };
+  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_r = gen_ising;
 
   // initailze the measurement object
   simple_measurement A(S);
 
   // run wolff N times
-  wolff<ising_t, ising_t>(N, S, gen_R, A, rng);
+  S.run_wolff(N, gen_r, A, rng);
 
   // print the result of our measurements
   std::cout << "Wolff complete!\nThe average energy per site was " << A.avgE() / S.nv

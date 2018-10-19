@@ -8,7 +8,7 @@ typedef uint_fast16_t L_t;     // linear size
 typedef uint_fast64_t N_t;     // cycle iterator
 
 #define MAX_v UINT_FAST32_MAX
-#define MAX_Q UINT_FAST8_MAX
+#define MAX_q UINT_FAST8_MAX
 #define MAX_D UINT_FAST8_MAX
 #define MAX_L UINT_FAST16_MAX
 #define MAX_N UINT_FAST64_MAX

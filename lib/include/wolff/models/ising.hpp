@@ -3,6 +3,9 @@
 #define WOLFF_MODELS_ISING
 
 #include "../types.h"
+#include "../system.hpp"
+
+namespace wolff {
 
 class ising_t {
   public:
@@ -73,9 +76,15 @@ inline ising_t::F_t operator*(double a, const ising_t& s) {
   return s * a;
 }
 
+ising_t gen_ising(std::mt19937&, const system<ising_t, ising_t>&, v_t) {
+  return ising_t(true);
+};
+
 #define WOLFF_FINITE_STATES_N 2
 const ising_t finite_states_possible[2] = {ising_t(0), ising_t(1)};
-q_t finite_states_enum(ising_t state) { return (q_t)state.x; }
+q_t finite_states_enum(const ising_t& state) { return (q_t)state.x; }
+
+}
 
 #endif
 

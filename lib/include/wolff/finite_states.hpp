@@ -8,13 +8,15 @@
 
 #include "system.hpp"
 
+namespace wolff {
+
 std::array<std::array<std::array<double, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N> finite_states_Zp;
 #ifndef WOLFF_NO_FIELD
 std::array<std::array<double, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N> finite_states_Bp;
 #endif
 
 template <class R_t, class X_t>
-void finite_states_init(const wolff_system<R_t, X_t>& S) {
+void finite_states_init(const system<R_t, X_t>& S) {
 #ifndef WOLFF_NO_FIELD
   for (q_t i = 0; i < WOLFF_FINITE_STATES_N; i++) {
     for (q_t j = 0; j < WOLFF_FINITE_STATES_N; j++) {
@@ -29,6 +31,8 @@ void finite_states_init(const wolff_system<R_t, X_t>& S) {
       }
     }
   }
+}
+
 }
 
 #endif

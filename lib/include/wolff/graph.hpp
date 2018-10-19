@@ -5,23 +5,26 @@
 #include <cmath>
 #include <vector>
 
+namespace wolff {
+
 #include "types.h"
 
-typedef enum lattice_t {
-  SQUARE_LATTICE,
-  DIAGONAL_LATTICE
-} lattice_t;
-
-class graph_t {
+class graph {
   public:
+    D_t D;
+    L_t L;
     v_t ne;
     v_t nv;
-    std::vector<std::vector<v_t>> adj;
+    std::vector<std::vector<v_t>> adjacency;
     std::vector<std::vector<double>> coordinate;
 
-    graph_t(D_t D, L_t L, lattice_t lat = SQUARE_LATTICE);
-    void add_ext();
+    graph();
+    graph(D_t D, L_t L);
+
+    void add_ghost();
 };
+
+}
 
 #endif
 
