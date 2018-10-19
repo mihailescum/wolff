@@ -12,6 +12,3 @@ install(TARGETS wolff EXPORT wolffConfig
     RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT wolffConfig DESTINATION share/wolff/cmake)
-
-export(TARGETS wolff FILE wolffConfig.cmake)
