@@ -13,7 +13,7 @@ namespace wolff {
 
 template <class R_t, class X_t>
 void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
-                  std::mt19937& rng, measurement<R_t, X_t>& A) {
+                  std::mt19937& rng, measurement<R_t, X_t>& A, double x) {
   std::uniform_real_distribution<double> dist(0.0, 1.0);
 
   std::queue<v_t> queue;
@@ -69,7 +69,7 @@ void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
 #endif
 
 #ifdef WOLFF_FINITE_STATES
-          p = finite_states_Bp[finite_states_enum(s0s_old)]
+          p = 1.0 - x + x * finite_states_Bp[finite_states_enum(s0s_old)]
                               [finite_states_enum(s0s_new)];
 #endif
 
@@ -85,7 +85,7 @@ void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
 #endif
 
 #ifdef WOLFF_FINITE_STATES
-          p = finite_states_Zp[finite_states_enum(s[i])]
+          p = 1.0 - x + x * finite_states_Zp[finite_states_enum(s[i])]
                               [finite_states_enum(si_new)]
                               [finite_states_enum(s[j])];
 #endif
@@ -95,7 +95,7 @@ void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
         }
 
 #ifndef FINITE_STATES
-        p = 1.0 - exp(-dE / T);
+        p = 1.0 - x * exp(-dE / T);
 #endif
 
         if (dist(rng) < p) {
