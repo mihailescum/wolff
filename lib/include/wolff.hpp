@@ -10,7 +10,7 @@ namespace wolff{
 template <class R_t, class X_t>
 void system<R_t, X_t>::run_wolff(N_t N,
            std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen,
-           measurement<R_t, X_t>& A, std::mt19937& rng, double x) {
+           measurement<R_t, X_t>& A, std::mt19937& rng) {
 
   std::uniform_int_distribution<v_t> dist(0, nv - 1);
 
@@ -20,7 +20,7 @@ void system<R_t, X_t>::run_wolff(N_t N,
 
     A.pre_cluster(n, N, *this, i0, r);
 
-    this->flip_cluster(i0, r, rng, A, x);
+    this->flip_cluster(i0, r, rng, A);
 
     A.post_cluster(n, N, *this);
   }

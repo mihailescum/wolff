@@ -68,8 +68,8 @@ class system {
 #endif
     }
 
-    void flip_cluster(v_t, const R_t&, std::mt19937&, measurement<R_t, X_t>&, double x = 1.0);
-    void run_wolff(N_t, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng, double x = 1.0);
+    void flip_cluster(v_t, const R_t&, std::mt19937&, measurement<R_t, X_t>&);
+    void run_wolff(N_t, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng);
 };
 
 }

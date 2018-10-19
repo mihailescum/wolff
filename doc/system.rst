@@ -56,7 +56,7 @@ This class and associated member functions are defined in the header files :file
          
          The states of the spins and ghost site are initialized using the default constructors for :type:`X_t` and :type:`R_t`, respectively. :any:`nv` and :any:`ne` are taken directly from :any:`G`, after which the ghost site is added to :any:`G`.
 
-   .. function:: system::flip_cluster(v_t i0, const R_t& r, std::mt19937& rng, measurement<R_t, X_t>& A, double x = 1.0)
+   .. function:: system::flip_cluster(v_t i0, const R_t& r, std::mt19937& rng, measurement<R_t, X_t>& A)
 
          Performs one Wolff cluster flip to the system. 
          
@@ -64,9 +64,8 @@ This class and associated member functions are defined in the header files :file
          :param const R_t& r: The transformation by which the cluster is flipped.
          :param std\:\:mt19937& rng: A random number generator.
          :param measurement<R_t, X_t>& A: Object whose class inherits :class:`measurement` and provides relevant measurement hooks.
-         :param double x = 1.0: Optional argument. When assigned, changes the bond activation probability to :math:`p=1-xe^{-\beta\Delta\mathcal H}`.
 
-   .. function:: system::run_wolff(N_t N, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng, double x = 1.0)
+   .. function:: system::run_wolff(N_t N, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng)
 
          Performs :any:`N` Wolff cluster flips to the system.
          
@@ -74,6 +73,5 @@ This class and associated member functions are defined in the header files :file
          :param std\:\:function <R_t(std\:\:mt19937&, const system<R_t, X_t>&, v_t>)> r_gen: Generator of transformations for the cluster flips.
          :param measurement<R_t, X_t>& A: Object whose class inherits :class:`measurement` and provides relevant measurement hooks.
          :param std\:\:mt19937& rng: A random number generator.
-         :param double x = 1.0: Optional argument. When assigned, changes the bond activation probability to :math:`p=1-xe^{-\beta\Delta\mathcal H}`.
 
 
