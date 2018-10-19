@@ -23,8 +23,10 @@ class ising_t {
 };
 
 class measure_clusters : public measurement<ising_t, ising_t> {
-  public:
+  private:
     v_t C;
+
+  public:
     double Ctotal;
 
     measure_clusters() {

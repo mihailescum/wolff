@@ -6,6 +6,8 @@
 #include "../types.h"
 #include "potts.hpp"
 
+namespace wolff {
+
 template <q_t q>
 class symmetric_t : public std::array<q_t, q> {
   public:
@@ -48,4 +50,6 @@ class symmetric_t : public std::array<q_t, q> {
       return r_rot;
     }
 };
+
+}
 

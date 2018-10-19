@@ -3,6 +3,8 @@
 #include <cmath>
 #include "height.hpp"
 
+namespace wolff {
+
 template <class T>
 class dihedral_inf_t {
   public:
@@ -44,4 +46,6 @@ class dihedral_inf_t {
     }
   }
 };
+
+}
 

@@ -4,6 +4,8 @@
 #include <wolff/types.h>
 #include "potts.hpp"
 
+namespace wolff {
+
 template <q_t q>
 class dihedral_t {
   public:
@@ -45,4 +47,6 @@ class dihedral_t {
       }
     }
 };
+
+}
 

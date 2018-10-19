@@ -1,10 +1,11 @@
 
-Wolff Libraries
-+++++++++++++++
+Wolff Library
++++++++++++++
 
 .. toctree ::
    :maxdepth: 2
    
+   examples
    models
    system
    measurement
