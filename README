@@ -1,10 +1,10 @@
 
 A library for running the Wolff algorithm on arbitrary systems in arbitrary
 fields. A "spin state" and "spin symmetry transformation" type must be
-supplied to defined a system, along with a spin-spin coupling, a spin-field
+supplied to define a system, along with a spin-spin coupling, a spin-field
 coupling, and a generator of transformations of rank two. The library then
-supplies the tools to run Wolff cluster-flip steps on the resulting (for now)
-hypercubic lattice system, with arbitrary measurements taken along the way.
+supplies the tools to run Wolff cluster-flip Monte Carlo on the resulting
+system, with arbitrary measurements taken along the way.
 
 See INSTALL for installation details.
 
