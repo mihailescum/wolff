@@ -5,8 +5,9 @@
 
 #include <GL/glut.h>
 
+#define WOLFF_USE_FINITE_STATES
+
 #include <wolff/models/ising.hpp>
-#include <wolff/finite_states.hpp>
 
 #include <wolff.hpp>
 

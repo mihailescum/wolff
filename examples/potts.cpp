@@ -3,11 +3,13 @@
 #include <iostream>
 #include <chrono>
 
-#include "simple_measurement.hpp"
+#define WOLFF_USE_FINITE_STATES
+#define WOLFF_FINITE_STATES_N WOLFF_POTTSQ
 
 #include <wolff/models/potts.hpp>
 #include <wolff/models/symmetric.hpp>
-#include <wolff/finite_states.hpp>
+
+#include "simple_measurement.hpp"
 
 #include <wolff.hpp>
 

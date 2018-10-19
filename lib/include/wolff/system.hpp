@@ -39,6 +39,13 @@ class system {
 #endif
 #endif
 
+#ifdef WOLFF_USE_FINITE_STATES
+    std::array<std::array<std::array<double, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N> Zp;
+#ifndef WOLFF_NO_FIELD
+    std::array<std::array<double, WOLFF_FINITE_STATES_N>, WOLFF_FINITE_STATES_N> Bp;
+#endif
+#endif
+
     system(graph g, double T,
 #ifdef WOLFF_BOND_DEPENDENCE
         std::function <double(v_t, const X_t&, v_t, const X_t&)> Z
@@ -63,13 +70,33 @@ class system {
 #ifndef WOLFF_NO_FIELD
       G.add_ghost();
 #endif
-#ifdef WOLFF_FINITE_STATES
-      finite_states_init(*this);
+#ifdef WOLFF_USE_FINITE_STATES
+      this->finite_states_init();
 #endif
     }
 
     void flip_cluster(v_t, const R_t&, std::mt19937&, measurement<R_t, X_t>&);
     void run_wolff(N_t, std::function <R_t(std::mt19937&, const system<R_t, X_t>&, v_t)> r_gen, measurement<R_t, X_t>& A, std::mt19937& rng);
+
+#ifdef WOLFF_USE_FINITE_STATES
+    void finite_states_init() {
+#ifndef WOLFF_NO_FIELD
+      for (q_t i = 0; i < WOLFF_FINITE_STATES_N; i++) {
+        for (q_t j = 0; j < WOLFF_FINITE_STATES_N; j++) {
+          Bp[i][j] = 1.0 - exp(-(B(X_t(i)) - B(X_t(j))) / T);
+        }
+      }
+#endif
+      for (q_t i = 0; i < WOLFF_FINITE_STATES_N; i++) {
+        for (q_t j = 0; j < WOLFF_FINITE_STATES_N; j++) {
+          for (q_t k = 0; k < WOLFF_FINITE_STATES_N; k++) {
+            Zp[i][j][k] = 1.0 - exp(-(Z(X_t(i), X_t(k)) - Z(X_t(j), X_t(k))) / T);
+          }
+        }
+      }
+    }
+#endif
+
 };
 
 }

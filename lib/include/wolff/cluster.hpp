@@ -68,9 +68,8 @@ void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
           dE = B(s0s_old) - B(s0s_new);
 #endif
 
-#ifdef WOLFF_FINITE_STATES
-          p = finite_states_Bp[finite_states_enum(s0s_old)]
-                              [finite_states_enum(s0s_new)];
+#ifdef WOLFF_USE_FINITE_STATES
+          p = Bp[s0s_old.enumerate()][s0s_new.enumerate()];
 #endif
 
           // run measurement hooks for encountering a ghost bond
@@ -84,17 +83,15 @@ void system<R_t, X_t>::flip_cluster(v_t i0, const R_t& r,
           dE = Z(s[i], s[j]) - Z(si_new, s[j]);
 #endif
 
-#ifdef WOLFF_FINITE_STATES
-          p = finite_states_Zp[finite_states_enum(s[i])]
-                              [finite_states_enum(si_new)]
-                              [finite_states_enum(s[j])];
+#ifdef WOLFF_USE_FINITE_STATES
+          p = Zp[s[i].enumerate()][si_new.enumerate()][s[j].enumerate()];
 #endif
 
           // run measurement hooks for encountering a plain bond
           A.plain_bond_visited(*this, i, si_new, j, dE);
         }
 
-#ifndef FINITE_STATES
+#ifndef WOLFF_USE_FINITE_STATES
         p = 1.0 - exp(-dE / T);
 #endif
 

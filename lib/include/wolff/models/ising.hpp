@@ -2,6 +2,8 @@
 #ifndef WOLFF_MODELS_ISING
 #define WOLFF_MODELS_ISING
 
+#define WOLFF_FINITE_STATES_N 2
+
 #include "../types.h"
 #include "../system.hpp"
 
@@ -14,7 +16,7 @@ class ising_t {
     ising_t() : x(false) {}
 
     ising_t(bool x) : x(x) {} 
-    ising_t(int x) : x((bool)x) {}
+    ising_t(q_t x) : x((bool)x) {}
 
     ising_t act(const ising_t& s) const {
       if (x) {
@@ -66,6 +68,10 @@ class ising_t {
         return -1;
       }
     }
+
+    q_t enumerate() const {
+      return (q_t)x;
+    }
 };
 
 inline ising_t::M_t operator*(v_t a, const ising_t& s) {
@@ -79,10 +85,6 @@ inline ising_t::F_t operator*(double a, const ising_t& s) {
 ising_t gen_ising(std::mt19937&, const system<ising_t, ising_t>&, v_t) {
   return ising_t(true);
 };
-
-#define WOLFF_FINITE_STATES_N 2
-const ising_t finite_states_possible[2] = {ising_t(0), ising_t(1)};
-q_t finite_states_enum(const ising_t& state) { return (q_t)state.x; }
 
 }
 

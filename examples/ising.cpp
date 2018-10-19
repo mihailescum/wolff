@@ -3,12 +3,13 @@
 #include <iostream>
 #include <chrono>
 
-#include "simple_measurement.hpp"
+#define WOLFF_USE_FINITE_STATES
 
 #include <wolff/models/ising.hpp>
-#include <wolff/finite_states.hpp>
 
 #include <wolff.hpp>
+
+#include "simple_measurement.hpp"
 
 using namespace wolff;
 

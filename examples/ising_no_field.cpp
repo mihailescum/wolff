@@ -4,12 +4,14 @@
 #include <chrono>
 
 #define WOLFF_NO_FIELD
-#include "simple_measurement.hpp"
+#define WOLFF_USE_FINITE_STATES
 
 #include <wolff/models/ising.hpp>
-#include <wolff/finite_states.hpp>
 
 #include <wolff.hpp>
+
+#include "simple_measurement.hpp"
+
 
 using namespace wolff;
 
