@@ -19,40 +19,17 @@
 
 # -- Project information -----------------------------------------------------
 
-from subprocess import Popen, PIPE
-
-def get_version():
-    """
-    Returns project version as string from 'git describe' command.
-    """
-    pipe = Popen('git describe --tags', stdout=PIPE, shell=True)
-    version = pipe.stdout.read()
-
-    if version:
-        return version
-    else:
-        return '0.0'
-
-def get_release():
-    """
-    Returns project version as string from 'git describe' command.
-    """
-    pipe = Popen('git describe --tags --always', stdout=PIPE, shell=True)
-    version = pipe.stdout.read()
-
-    if version:
-        return version
-    else:
-        return '0.0'
+import re
+import os
 
 project = 'Wolff'
 copyright = '2018, Jaron Kent-Dobias'
 author = 'Jaron Kent-Dobias'
 
 # The short X.Y version
-version = '0.0'
+version = re.sub('^v', '', os.popen('git describe --always').read().strip())
 # The full version, including alpha/beta/rc tags
-release = get_version().lstrip('v').rstrip()
+release = version
 
 
 # -- General configuration ---------------------------------------------------
