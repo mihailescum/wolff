@@ -6,14 +6,9 @@ coupling, and a generator of transformations of rank two. The library then
 supplies the tools to run Wolff cluster-flip steps on the resulting (for now)
 hypercubic lattice system, with arbitrary measurements taken along the way.
 
-The core code resides in lib. lib/include/wolff.hpp is the principle
-interface, but lib/include/wolff/cluster.hpp does the heavy lifting, with
-essential data structures defined by lib/include/wolff/graph.h and
-lib/include/wolff/state.h. Skimming these files, or reviewing how they are
-used in the included examples, should help with their use. The simplest
-example is contained in examples/src/models/ising.
+See INSTALL for installation details.
 
-lib/include/wolff/finite_states.h can be invoked when special objects have
-been defined to significantly speed computation for systems whose spins have
-finitely many states.
+Documentation is present in doc/ and can be built using Sphinx into a variety
+of formats. The current version of this documentation can also be found at
+https://doc.kent-dobias.com/wolff.
 

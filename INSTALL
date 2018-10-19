@@ -1,12 +1,24 @@
 
-To install, initialize cmake in a build directory, e.g.,
+To build all examples and install the library, initialize cmake in a build
+directory, e.g.,
 
 # mkdir build
 # cd build
 # cmake ..
 # make
+# make install
 
 The core library requires only the standard C++ libraries and a modern
-compiler. Most of the example code also has no dependencies. Compilation of
-examples/tools/analyze_correlations.cpp requires the FFTW3 library.
+compiler. Most of the example code also has no dependencies, with the exception
+of ising_animation, which requires the glut library.
+
+The documentation can be built into a variety of formats using Sphinx. To list available options,
+
+# cd doc
+# mkdir _build
+# make
+
+Building the documentation on the website is accomplished by then running
+
+# make html
 
