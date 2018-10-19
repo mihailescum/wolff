@@ -28,6 +28,7 @@ FIND_LIBRARY(GLU NAMES GLU)
 FIND_LIBRARY(GLUT NAMES glut)
 
 if (${GLUT} MATCHES "GLUT-NOTFOUND")
+  message(WARNING "Executable examples/ising_animation is not being built because the glut library can't be found.")
 else()
   add_executable(ising_animation ising_animation.cpp)
   target_link_libraries(ising_animation wolff GL GLU glut)
