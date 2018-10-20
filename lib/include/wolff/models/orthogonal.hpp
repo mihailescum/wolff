@@ -1,12 +1,16 @@
 
-#pragma once
+#ifndef WOLFF_MODELS_ORTHOGONAL_H
+#define WOLFF_MODELS_ORTHOGONAL_H
 
 #include <random>
 #include <cmath>
 
-#include "../types.h"
 #include "../system.hpp"
 #include "vector.hpp"
+
+namespace wolff {
+
+#include "../types.h"
 
 template <q_t q, class T>
 class orthogonal_t : public std::array<std::array<T, q>, q> {
@@ -197,4 +201,8 @@ orthogonal_t <q, double> generate_rotation_perturbation (std::mt19937& r, const 
 
   return m;
 }
+
+}
+
+#endif
 

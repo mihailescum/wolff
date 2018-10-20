@@ -1,4 +1,7 @@
 
+#ifndef WOLFF_TYPES_H
+#define WOLFF_TYPES_H
+
 #include <inttypes.h>
 
 typedef uint_fast32_t v_t;     // vertex and edge indices
@@ -24,4 +27,6 @@ typedef uint_fast64_t N_t;     // cycle iterator
 #define SCND SCNuFAST8
 #define SCNL SCNuFAST16
 #define SCNN SCNuFAST64
+
+#endif
 

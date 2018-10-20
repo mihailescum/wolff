@@ -1,6 +1,6 @@
 
-#ifndef WOLFF_STATE_H
-#define WOLFF_STATE_H
+#ifndef WOLFF_SYSTEM_H
+#define WOLFF_SYSTEM_H
 
 #include <functional>
 #include <vector>

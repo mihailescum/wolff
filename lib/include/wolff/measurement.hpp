@@ -1,6 +1,6 @@
 
-#ifndef WOLFF_MEASUREMENTS
-#define WOLFF_MEASUREMENTS
+#ifndef WOLFF_MEASUREMENTS_H
+#define WOLFF_MEASUREMENTS_H
 
 #include "system.hpp"
 

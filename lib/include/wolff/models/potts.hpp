@@ -1,12 +1,14 @@
 
-#pragma once
+#ifndef WOLFF_MODELS_POTTS_H
+#define WOLFF_MODELS_POTTS_H
 
 #include <cmath>
 
-#include "../types.h"
 #include "vector.hpp"
 
 namespace wolff {
+
+#include "../types.h"
 
 template <q_t q>
 class potts_t {
@@ -61,4 +63,6 @@ inline typename potts_t<q>::F_t operator*(double a, const potts_t<q>& s) {
 }
 
 }
+
+#endif
 

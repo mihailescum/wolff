@@ -1,10 +1,12 @@
 
-#pragma once
+#ifndef WOLFF_MODELS_DIHEDRAL_H
+#define WOLFF_MODELS_DIHEDRAL_H
 
-#include <wolff/types.h>
 #include "potts.hpp"
 
 namespace wolff {
+
+#include "../types.h"
 
 template <q_t q>
 class dihedral_t {
@@ -49,4 +51,6 @@ class dihedral_t {
 };
 
 }
+
+#endif
 

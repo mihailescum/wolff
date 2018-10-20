@@ -1,12 +1,14 @@
 
-#pragma once
+#ifndef WOLFF_MODELS_SYMMETRIC_H
+#define WOLFF_MODELS_SYMMETRIC_H
 
 #include <array>
 
-#include "../types.h"
 #include "potts.hpp"
 
 namespace wolff {
+
+#include "../types.h"
 
 template <q_t q>
 class symmetric_t : public std::array<q_t, q> {
@@ -52,4 +54,6 @@ class symmetric_t : public std::array<q_t, q> {
 };
 
 }
+
+#endif
 

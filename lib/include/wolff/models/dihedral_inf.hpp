@@ -1,9 +1,13 @@
 
-#include "../types.h"
+#ifndef WOLFF_MODELS_DIHEDRAL_INF_H
+#define WOLFF_MODELS_DIHEDRAL_INF_H
+
 #include <cmath>
 #include "height.hpp"
 
 namespace wolff {
+
+#include "../types.h"
 
 template <class T>
 class dihedral_inf_t {
@@ -48,4 +52,6 @@ class dihedral_inf_t {
 };
 
 }
+
+#endif
 

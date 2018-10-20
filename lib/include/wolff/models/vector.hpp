@@ -1,9 +1,12 @@
 
-#pragma once
+#ifndef WOLFF_MODELS_VECTOR_H
+#define WOLFF_MODELS_VECTOR_H
 
 #include <cmath>
 #include <array>
 #include <iostream>
+
+namespace wolff {
 
 #include <wolff/types.h>
 
@@ -105,4 +108,8 @@ std::ostream& operator<<(std::ostream& os, const vector_t<q, T>&v) {
   os << ")";
   return os;
 }
+
+}
+
+#endif
 

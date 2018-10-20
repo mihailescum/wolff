@@ -1,13 +1,14 @@
 
-#ifndef WOLFF_MODELS_ISING
-#define WOLFF_MODELS_ISING
+#ifndef WOLFF_MODELS_ISING_H
+#define WOLFF_MODELS_ISING_H
 
 #define WOLFF_FINITE_STATES_N 2
 
-#include "../types.h"
 #include "../system.hpp"
 
 namespace wolff {
+
+#include "../types.h"
 
 class ising_t {
   public:
