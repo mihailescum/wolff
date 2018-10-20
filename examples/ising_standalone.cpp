@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <chrono>
 
@@ -29,31 +28,22 @@ class measure_clusters : public measurement<ising_t, ising_t> {
   public:
     double Ctotal;
 
-    measure_clusters() {
-      Ctotal = 0;
-    }
+    measure_clusters() { Ctotal = 0; }
 
-    void pre_cluster(N_t, N_t, const system<ising_t, ising_t>&, v_t, const ising_t&) {
-      C = 0;
-    }
+    void pre_cluster(N_t, N_t, const system<ising_t, ising_t>&, v_t, const ising_t&) { C = 0; }
 
-    void plain_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double dE) {}
+    void plain_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double) {}
 
-    void ghost_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t& s_old, const ising_t& s_new, double dE) {}
+    void ghost_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, const ising_t&, double) {}
 
-    void plain_site_transformed(const system<ising_t, ising_t>&, v_t, const ising_t&) {
-      C++;
-    }
+    void plain_site_transformed(const system<ising_t, ising_t>&, v_t, const ising_t&) { C++; }
 
     void ghost_site_transformed(const system<ising_t, ising_t>&, const ising_t&) {}
 
-    void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) {
-      Ctotal += C;
-    }
+    void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) { Ctotal += C; }
 };
 
 int main(int argc, char *argv[]) {
-
   // set defaults
   N_t N = (N_t)1e3;
   D_t D = 2;
@@ -62,14 +52,16 @@ int main(int argc, char *argv[]) {
   double H = 0.01;
 
   // define the spin-spin coupling
-  std::function <double(const ising_t&, const ising_t&)> Z = [] (const ising_t& s1, const ising_t& s2) -> double {
-    return (double)(s1.s * s2.s);
-  };
+  std::function <double(const ising_t&, const ising_t&)> Z =
+    [](const ising_t& s1, const ising_t& s2) -> double {
+      return (double)(s1.s * s2.s);
+    };
 
   // define the spin-field coupling
-  std::function <double(const ising_t&)> B = [=] (const ising_t& s) -> double {
-    return H * s.s;
-  };
+  std::function <double(const ising_t&)> B =
+    [=](const ising_t& s) -> double {
+      return H * s.s;
+    };
 
   // initialize the lattice
   graph G(D, L);
@@ -78,9 +70,10 @@ int main(int argc, char *argv[]) {
   system<ising_t, ising_t> S(G, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_R = [] (std::mt19937&, const system<ising_t, ising_t>&, v_t) -> ising_t {
-    return ising_t(-1);
-  };
+  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_R =
+    [] (std::mt19937&, const system<ising_t, ising_t>&, v_t) -> ising_t {
+      return ising_t(-1);
+    };
 
   // initailze the measurement object
   measure_clusters A;
@@ -98,4 +91,3 @@ int main(int argc, char *argv[]) {
   // exit
   return 0;
 }
-
