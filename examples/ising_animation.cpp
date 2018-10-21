@@ -43,10 +43,6 @@ class draw_ising : public measurement<ising_t, ising_t> {
       C = 0;
     }
 
-    void plain_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double dE) {}
-
-    void ghost_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t& s_old, const ising_t& s_new, double dE) {}
-
     void plain_site_transformed(const system<ising_t, ising_t>& S, v_t i, const ising_t&) {
       glColor3f(1.0, 0.0, 0.0);
       glRecti(i / S.G.L, i % S.G.L, (i / S.G.L) + 1, (i % S.G.L) + 1);
@@ -55,10 +51,6 @@ class draw_ising : public measurement<ising_t, ising_t> {
         glFlush();
       }
     }
-
-    void ghost_site_transformed(const system<ising_t, ising_t>&, const ising_t&) {}
-
-    void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) {}
 };
 
 int main(int argc, char *argv[]) {

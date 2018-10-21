@@ -68,8 +68,6 @@ class simple_measurement : public measurement<R_t, X_t> {
 #endif
     }
 
-    void ghost_site_transformed(const system<R_t, X_t>&, const R_t&) {}
-
     void post_cluster(N_t, N_t, const system<R_t, X_t>&) {
       totalE += E;
       totalM += M;

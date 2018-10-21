@@ -32,13 +32,7 @@ class measure_clusters : public measurement<ising_t, ising_t> {
 
     void pre_cluster(N_t, N_t, const system<ising_t, ising_t>&, v_t, const ising_t&) { C = 0; }
 
-    void plain_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, v_t, double) {}
-
-    void ghost_bond_visited(const system<ising_t, ising_t>&, v_t, const ising_t&, const ising_t&, double) {}
-
     void plain_site_transformed(const system<ising_t, ising_t>&, v_t, const ising_t&) { C++; }
-
-    void ghost_site_transformed(const system<ising_t, ising_t>&, const ising_t&) {}
 
     void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) { Ctotal += C; }
 };
