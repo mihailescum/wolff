@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
 
   // print the result of our measurements
   std::cout << "Wolff complete!\nThe average energy per site was " << A.avgE() / S.nv
-    << ".\nThe average magnetization per site was " << A.avgM() / S.nv
-    << ".\nThe average cluster size per site was " << A.avgC() / S.nv << ".\n";
+            << ".\nThe average magnetization per site was " << A.avgM() / S.nv
+            << ".\nThe average cluster size per site was " << A.avgC() / S.nv << ".\n";
 
   // exit
   return 0;
