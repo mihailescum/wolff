@@ -32,8 +32,10 @@ The only dependencies are a modern C++ compiler, cmake, and the standard librari
 
 Custom install paths and compiler optimizations can be passed to cmake in the standard ways.
 
-License 
-=======
+License & Use
+=============
 
 Wolff is licensed under the MIT license, a copy of which is included with the source code. The terms can be found here: https://spdx.org/licenses/MIT.html.
+
+If you use or modify the library for use for academic purposes, please cite *Cluster representations and the Wolff algorithm in arbitrary external fields*, Jaron Kent-Dobias & James P Sethna, arXiv:1805.04019 [cond-mat.stat-mech].
 
