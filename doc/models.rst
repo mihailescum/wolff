@@ -3,7 +3,7 @@
 Defining a Model
 ****************
 
-To define your own model, you need a class for spin states, a class for spin transformations, a bond and site coupling, and a generator of transformations. Many examples of models can be found in the headers contained in :file:`wolff/models/`.
+To define your own model, you need a class for spin states, a class for spin transformations, a bond and site coupling, and a generator of transformations. Many examples of models can be found in the headers contained in :file:`lib/wolff_models/`.
  
 Spin States
 ===========

@@ -21,27 +21,30 @@ class ising_t {
     }
 };
 
+typedef graph<> G_t;
+typedef system<ising_t, ising_t> sys;
+
 class measure_clusters : public measurement<ising_t, ising_t> {
   private:
-    v_t C;
+    unsigned C;
 
   public:
     double Ctotal;
 
     measure_clusters() { Ctotal = 0; }
 
-    void pre_cluster(N_t, N_t, const system<ising_t, ising_t>&, v_t, const ising_t&) { C = 0; }
+    void pre_cluster(unsigned, unsigned, const sys&, const G_t::vertex&, const ising_t&) override { C = 0; }
 
-    void plain_site_transformed(const system<ising_t, ising_t>&, v_t, const ising_t&) { C++; }
+    void plain_site_transformed(const sys&, const G_t::vertex&, const ising_t&) override { C++; }
 
-    void post_cluster(N_t, N_t, const system<ising_t, ising_t>&) { Ctotal += C; }
+    void post_cluster(unsigned, unsigned, const sys&) override { Ctotal += C; }
 };
 
 int main(int argc, char *argv[]) {
   // set defaults
-  N_t N = (N_t)1e3;
-  D_t D = 2;
-  L_t L = 128;
+  unsigned N = (unsigned)1e3;
+  unsigned D = 2;
+  unsigned L = 128;
   double T = 2.26918531421;
   double H = 0.01;
 
@@ -58,14 +61,14 @@ int main(int argc, char *argv[]) {
     };
 
   // initialize the lattice
-  graph G(D, L);
+  G_t G(D, L);
 
   // initialize the system
-  system<ising_t, ising_t> S(G, T, Z, B);
+  sys S(G, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_R =
-    [] (std::mt19937&, const system<ising_t, ising_t>&, v_t) -> ising_t {
+  std::function <ising_t(std::mt19937&, const sys&, const G_t::vertex&)> gen_R =
+    [] (std::mt19937&, const sys&, const G_t::vertex&) -> ising_t {
       return ising_t(-1);
     };
 

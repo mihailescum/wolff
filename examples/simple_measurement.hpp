@@ -1,31 +1,31 @@
 
-#include <wolff/measurement.hpp>
+#include <wolff.hpp>
 
 using namespace wolff;
 
-template <class R_t, class X_t>
-class simple_measurement : public measurement<R_t, X_t> {
+template <class R_t, class X_t, class G_t>
+class simple_measurement : public measurement<R_t, X_t, G_t> {
   private:
-    N_t n;
+    unsigned n;
 
     double E;
     typename X_t::M_t M;
-    v_t C;
+    unsigned C;
 
     double totalE;
     typename X_t::F_t totalM;
     double totalC;
 
   public:
-    simple_measurement(const system<R_t, X_t>& S) {
+    simple_measurement(const system<R_t, X_t, G_t>& S) {
       n = 0;
       M = S.nv * S.s[0];
       E = 0;
 
 #ifdef WOLFF_BOND_DEPENDENCE
-      for (v_t i = 0; i < S.nv; i++) {
-        for (v_t j : S.G.adjacency[i]) {
-          E -= 0.5 * S.Z(i, S.s[i], j, S.s[j]);
+      for (unsigned i = 0; i < S.nv; i++) {
+        for (const typename G_t::halfedge& e : S.G.vertices[i].edges) {
+          E -= 0.5 * S.Z(e, S.s[i], S.s[j]);
         }
       }
 #else
@@ -34,8 +34,8 @@ class simple_measurement : public measurement<R_t, X_t> {
 
 #ifndef WOLFF_NO_FIELD
 #ifdef WOLFF_SITE_DEPENDENCE
-      for (v_t i = 0; i < S.nv; i++) {
-        E -= S.B(i, S.s[i]);
+      for (unsigned i = 0; i < S.nv; i++) {
+        E -= S.B(S.G.vertices[i], S.s[i]);
       }
 #else
       E -= S.nv * S.B(S.s[0]);
@@ -47,28 +47,30 @@ class simple_measurement : public measurement<R_t, X_t> {
       totalC = 0;
     }
 
-    void pre_cluster(N_t, N_t, const system<R_t, X_t>&, v_t, const R_t&) {
+    void pre_cluster(unsigned, unsigned, const system<R_t, X_t, G_t>&, const typename G_t::vertex&, const R_t&) override {
       C = 0;
     }
 
-    void plain_bond_visited(const system<R_t, X_t>&, v_t, const X_t&, v_t, double dE) {
+    void plain_bond_visited(const system<R_t, X_t, G_t>&, const typename G_t::halfedge&, const X_t&, double dE) override {
       E += dE;
     }
 
-    void ghost_bond_visited(const system<R_t, X_t>&, v_t, const X_t& s_old, const X_t& s_new, double dE) {
+#ifndef WOLFF_NO_FIELD
+    void ghost_bond_visited(const system<R_t, X_t, G_t>&, const typename G_t::vertex&, const X_t& s_old, const X_t& s_new, double dE) override {
       E += dE;
       M += s_new - s_old;
     }
+#endif
 
-    void plain_site_transformed(const system<R_t, X_t>& S, v_t i, const X_t& si_new) {
+    void plain_site_transformed(const system<R_t, X_t, G_t>& S, const typename G_t::vertex& v, const X_t& si_new) override {
       C++;
 
 #ifdef WOLFF_NO_FIELD
-      M += si_new - S.s[i];
+      M += si_new - S.s[v.ind];
 #endif
     }
 
-    void post_cluster(N_t, N_t, const system<R_t, X_t>&) {
+    void post_cluster(unsigned, unsigned, const system<R_t, X_t, G_t>&) override {
       totalE += E;
       totalM += M;
       totalC += C;

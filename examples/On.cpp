@@ -3,23 +3,21 @@
 #include <iostream>
 #include <chrono>
 
+#include <wolff_models/vector.hpp>
+#include <wolff_models/orthogonal.hpp>
+
 #include "simple_measurement.hpp"
-
-#include <wolff/models/vector.hpp>
-#include <wolff/models/orthogonal.hpp>
-
-#include <wolff.hpp>
 
 int main(int argc, char *argv[]) {
 
   // set defaults
-  N_t N = (N_t)1e4;
-  D_t D = 2;
-  L_t L = 128;
+  unsigned N = (unsigned)1e4;
+  unsigned D = 2;
+  unsigned L = 128;
   double T = 0.8;
   vector_t<WOLFF_N, double> H;
   H.fill(0.0);
-  q_t Hi = 0;
+  unsigned Hi = 0;
 
   int opt;
 
@@ -27,7 +25,7 @@ int main(int argc, char *argv[]) {
   while ((opt = getopt(argc, argv, "N:D:L:T:H:")) != -1) {
     switch (opt) {
     case 'N': // number of steps
-      N = (N_t)atof(optarg);
+      N = (unsigned)atof(optarg);
       break;
     case 'D': // dimension
       D = atoi(optarg);
@@ -58,12 +56,12 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize the lattice
-  graph G(D, L);
+  graph<> G(D, L);
 
   // initialize the system
   system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(G, T, Z, B);
 
-  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>>&, v_t)> gen_R = generate_rotation_uniform<WOLFF_N>;
+  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>, graph<>>&, const graph<>::vertex)> gen_R = generate_rotation_uniform<WOLFF_N, graph<>>;
 
   // initailze the measurement object
   simple_measurement A(S);

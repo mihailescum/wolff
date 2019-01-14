@@ -6,19 +6,18 @@
 #include <GL/glut.h>
 
 #define WOLFF_USE_FINITE_STATES
-
-#include <wolff/models/ising.hpp>
-
-#include <wolff.hpp>
+#include <wolff_models/ising.hpp>
 
 using namespace wolff;
 
-class draw_ising : public measurement<ising_t, ising_t> {
+typedef system<ising_t, ising_t, graph<>> sys;
+
+class draw_ising : public measurement<ising_t, ising_t, graph<>> {
   private:
     unsigned int frame_skip;
-    v_t C;
+    unsigned C;
   public:
-    draw_ising(const system<ising_t, ising_t>& S, unsigned int window_size, unsigned int frame_skip, int argc, char *argv[]) : frame_skip(frame_skip){
+    draw_ising(const sys& S, unsigned int window_size, unsigned int frame_skip, int argc, char *argv[]) : frame_skip(frame_skip){
       glutInit(&argc, argv);
       glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
       glutInitWindowSize(window_size, window_size);
@@ -29,9 +28,9 @@ class draw_ising : public measurement<ising_t, ising_t> {
       gluOrtho2D(0.0, S.G.L, 0.0, S.G.L);
     }
 
-    void pre_cluster(N_t, N_t, const system<ising_t, ising_t>& S, v_t, const ising_t&) {
+    void pre_cluster(unsigned, unsigned, const sys& S, const graph<>::vertex&, const ising_t&) override {
       glClear(GL_COLOR_BUFFER_BIT);
-      for (v_t i = 0; i < pow(S.G.L, 2); i++) {
+      for (unsigned i = 0; i < pow(S.G.L, 2); i++) {
         if (S.s[i].x == S.s0.x) {
           glColor3f(0.0, 0.0, 0.0);
         } else {
@@ -43,9 +42,9 @@ class draw_ising : public measurement<ising_t, ising_t> {
       C = 0;
     }
 
-    void plain_site_transformed(const system<ising_t, ising_t>& S, v_t i, const ising_t&) {
+    void plain_site_transformed(const sys& S, const graph<>::vertex& v, const ising_t&) override {
       glColor3f(1.0, 0.0, 0.0);
-      glRecti(i / S.G.L, i % S.G.L, (i / S.G.L) + 1, (i % S.G.L) + 1);
+      glRecti(v.ind / S.G.L, v.ind % S.G.L, (v.ind / S.G.L) + 1, (v.ind % S.G.L) + 1);
       C++;
       if (C % frame_skip == 0) {
         glFlush();
@@ -56,9 +55,9 @@ class draw_ising : public measurement<ising_t, ising_t> {
 int main(int argc, char *argv[]) {
 
   // set defaults
-  N_t N = (N_t)1e4;
-  D_t D = 2;
-  L_t L = 128;
+  unsigned N = (unsigned)1e4;
+  unsigned D = 2;
+  unsigned L = 128;
   double T = 2.26918531421;
   double H = 0.0;
   unsigned int window_size = 512;
@@ -69,29 +68,29 @@ int main(int argc, char *argv[]) {
   // take command line arguments
   while ((opt = getopt(argc, argv, "N:D:L:T:H:w:f:")) != -1) {
     switch (opt) {
-    case 'N': // number of steps
-      N = (N_t)atof(optarg);
-      break;
-    case 'D': // dimension
-      D = atoi(optarg);
-      break;
-    case 'L': // linear size
-      L = atoi(optarg);
-      break;
-    case 'T': // temperature
-      T = atof(optarg);
-      break;
-    case 'H': // external field
-      H = atof(optarg);
-      break;
-    case 'w':
-      window_size = atoi(optarg);
-      break;
-    case 'f':
-      frame_skip = atoi(optarg);
-      break;
-    default:
-      exit(EXIT_FAILURE);
+      case 'N': // number of steps
+        N = (unsigned)atof(optarg);
+        break;
+      case 'D': // dimension
+        D = atoi(optarg);
+        break;
+      case 'L': // linear size
+        L = atoi(optarg);
+        break;
+      case 'T': // temperature
+        T = atof(optarg);
+        break;
+      case 'H': // external field
+        H = atof(optarg);
+        break;
+      case 'w':
+        window_size = atoi(optarg);
+        break;
+      case 'f':
+        frame_skip = atoi(optarg);
+        break;
+      default:
+        exit(EXIT_FAILURE);
     }
   }
 
@@ -106,15 +105,10 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize the lattice
-  graph G(D, L);
+  graph<> G(D, L);
 
   // initialize the system
-  system<ising_t, ising_t> S(G, T, Z, B);
-
-  // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_R = [] (std::mt19937&, const system<ising_t, ising_t>&, v_t) -> ising_t {
-    return ising_t(true);
-  };
+  sys S(G, T, Z, B);
 
   // initailze the measurement object
   draw_ising A(S, window_size, frame_skip, argc, argv);
@@ -124,7 +118,7 @@ int main(int argc, char *argv[]) {
   std::mt19937 rng{seed};
 
   // run wolff N times
-  S.run_wolff(N, gen_R, A, rng);
+  S.run_wolff(N, gen_ising<graph<>>, A, rng);
 
   // exit
   return 0;

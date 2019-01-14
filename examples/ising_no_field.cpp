@@ -5,22 +5,18 @@
 
 #define WOLFF_NO_FIELD
 #define WOLFF_USE_FINITE_STATES
-
-#include <wolff/models/ising.hpp>
-
-#include <wolff.hpp>
+#include <wolff_models/ising.hpp>
 
 #include "simple_measurement.hpp"
-
 
 using namespace wolff;
 
 int main(int argc, char *argv[]) {
 
   // set defaults
-  N_t N = (N_t)1e4;
-  D_t D = 2;
-  L_t L = 128;
+  unsigned N = (unsigned)1e4;
+  unsigned D = 2;
+  unsigned L = 128;
   double T = 2.26918531421;
 
   int opt;
@@ -29,7 +25,7 @@ int main(int argc, char *argv[]) {
   while ((opt = getopt(argc, argv, "N:D:L:T:")) != -1) {
     switch (opt) {
     case 'N': // number of steps
-      N = (N_t)atof(optarg);
+      N = (unsigned)atof(optarg);
       break;
     case 'D': // dimension
       D = atoi(optarg);
@@ -51,17 +47,17 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize the lattice
-  graph G(D, L);
+  graph<> G(D, L);
 
   // initialize the system
-  system<ising_t, ising_t> S(G, T, Z);
+  system<ising_t, ising_t, graph<>> S(G, T, Z);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   std::mt19937 rng{seed};
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t>&, v_t)> gen_r = gen_ising;
+  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t, graph<>>&, const graph<>::vertex&)> gen_r = gen_ising<graph<>>;
 
   // initailze the measurement object
   simple_measurement A(S);

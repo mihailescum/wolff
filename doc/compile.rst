@@ -23,7 +23,7 @@ Building With Bond Dependence
 
    When this flag is defined Wolff will ask for the indices of the spins on each side a bond, allowing the implementation of random bonds or anisotropic interactions.
 
-   When defined, the bond coupling must be a function of the form :cpp:any:`double Z(v_t, const X_t&, v_t, const X_t&)`, where the first argument is the index of the first spin and the third argument is the index of the second spin. A function of this type is passed to :cpp:class:`system` in place of the original bond coupling.
+   When defined, the bond coupling must be a function of the form :cpp:any:`double Z(const G_t::halfedge&, const X_t&, const X_t&)`, where the first argument is the edge being considered. A function of this type is passed to :cpp:class:`system` in place of the original bond coupling.
 
 
 Building With Site Dependence
@@ -33,5 +33,6 @@ Building With Site Dependence
 
    When this flag is defined Wolff will ask for the indices of the spin when measuring the external field, allowing the implementation of random fields or to emulate boundaries.
 
-   When defined, the field coupling must be a function of the form :cpp:any:`double B(v_t, const X_t&)`, where the first argument is the index of the spin. A function of this type is passed to :cpp:class:`system` in place of the original field coupling.
+   When defined, the field coupling must be a function of the form :cpp:any:`double B(const G_t::vertex&, const X_t&)`, where the first argument is the vertex the spin is on. A function of this type is passed to :cpp:class:`system` in place of the original field coupling.
 
+   An example of a system of this type can be found in :file:`examples/ising_random_field.cpp`, which uses a non-trivial vertex property to communicate vertex dependence to the field coupling function.
