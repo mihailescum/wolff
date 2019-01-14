@@ -10,7 +10,7 @@ and a generator of transformations of rank two. The library then supplies the
 tools to run Wolff cluster-flip Monte Carlo on the resulting system, with
 arbitrary measurements taken along the way.
 
-A detailed description of the algorithm and its requirements can be found at https://arxiv.org/abs/1805.04019.
+A detailed description of the algorithm and its requirements can be found at https://journals.aps.org/pre/abstract/10.1103/PhysRevE.98.063306.
 
 Getting Wolff
 =============
@@ -37,5 +37,5 @@ License & Use
 
 Wolff is licensed under the MIT license, a copy of which is included with the source code. The terms can be found here: https://spdx.org/licenses/MIT.html.
 
-If you use or modify the library for use for academic purposes, please cite *Cluster representations and the Wolff algorithm in arbitrary external fields*, Jaron Kent-Dobias & James P Sethna, arXiv:1805.04019 [cond-mat.stat-mech].
+If you use or modify the library for use for academic purposes, please cite *Cluster representations and the Wolff algorithm in arbitrary external fields*, Jaron Kent-Dobias & James P Sethna, Physical Review E 98, 063306 (2018).
 
