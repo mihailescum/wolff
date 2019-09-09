@@ -4,7 +4,7 @@
 
 #define WOLFF_FINITE_STATES_N 2
 
-#include "wolff.hpp"
+#include "../wolff.hpp"
 
 namespace wolff {
 
