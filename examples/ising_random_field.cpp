@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // define the spin-field coupling
   std::normal_distribution<double> distribution(0.0, H);
@@ -68,10 +68,10 @@ int main(int argc, char *argv[]) {
   };
 
   // initialize the system
-  system<ising_t, ising_t, graph<double>> S(G, T, Z, B);
+wolff::system<ising_t, ising_t, graph<double>> S(G, T, Z, B);
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t, graph<double>>&, const graph<double>::vertex&)> gen_r = gen_ising<graph<double>>;
+  std::function <ising_t(std::mt19937&, const wolff::system<ising_t, ising_t, graph<double>>&, const graph<double>::vertex&)> gen_r = gen_ising<graph<double>>;
 
   // initailze the measurement object
   simple_measurement A(S);

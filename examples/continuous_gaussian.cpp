@@ -57,11 +57,11 @@ int main(int argc, char *argv[]) {
   graph<> G(D, L);
 
   // initialize the system
-  system<dihedral_inf_t<double>, height_t<double>, graph<>> S(G, T, Z, B);
+  wolff::system<dihedral_inf_t<double>, height_t<double>, graph<>> S(G, T, Z, B);
 
   bool odd_run = false;
 
-  std::function <dihedral_inf_t<double>(std::mt19937&, const system<dihedral_inf_t<double>, height_t<double>, graph<>>&, const graph<>::vertex&)> gen_R_IH = [&](std::mt19937& r, const system<dihedral_inf_t<double>, height_t<double>, graph<>>& S, const graph<>::vertex& v) -> dihedral_inf_t<double> {
+  std::function <dihedral_inf_t<double>(std::mt19937&, const wolff::system<dihedral_inf_t<double>, height_t<double>, graph<>>&, const graph<>::vertex&)> gen_R_IH = [&](std::mt19937& r, const wolff::system<dihedral_inf_t<double>, height_t<double>, graph<>>& S, const graph<>::vertex& v) -> dihedral_inf_t<double> {
     dihedral_inf_t<double> rot;
     rot.is_reflection = true;
 
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // run wolff N times
   S.run_wolff(N, gen_R_IH, A, rng);

@@ -17,7 +17,7 @@ class simple_measurement : public measurement<R_t, X_t, G_t> {
     double totalC;
 
   public:
-    simple_measurement(const system<R_t, X_t, G_t>& S) {
+    simple_measurement(const wolff::system<R_t, X_t, G_t>& S) {
       n = 0;
       M = S.nv * S.s[0];
       E = 0;
@@ -47,22 +47,22 @@ class simple_measurement : public measurement<R_t, X_t, G_t> {
       totalC = 0;
     }
 
-    void pre_cluster(unsigned, unsigned, const system<R_t, X_t, G_t>&, const typename G_t::vertex&, const R_t&) override {
+    void pre_cluster(unsigned, unsigned, const wolff::system<R_t, X_t, G_t>&, const typename G_t::vertex&, const R_t&) override {
       C = 0;
     }
 
-    void plain_bond_visited(const system<R_t, X_t, G_t>&, const typename G_t::halfedge&, const X_t&, double dE) override {
+    void plain_bond_visited(const wolff::system<R_t, X_t, G_t>&, const typename G_t::halfedge&, const X_t&, double dE) override {
       E += dE;
     }
 
 #ifndef WOLFF_NO_FIELD
-    void ghost_bond_visited(const system<R_t, X_t, G_t>&, const typename G_t::vertex&, const X_t& s_old, const X_t& s_new, double dE) override {
+    void ghost_bond_visited(const wolff::system<R_t, X_t, G_t>&, const typename G_t::vertex&, const X_t& s_old, const X_t& s_new, double dE) override {
       E += dE;
       M += s_new - s_old;
     }
 #endif
 
-    void plain_site_transformed(const system<R_t, X_t, G_t>& S, const typename G_t::vertex& v, const X_t& si_new) override {
+    void plain_site_transformed(const wolff::system<R_t, X_t, G_t>& S, const typename G_t::vertex& v, const X_t& si_new) override {
       C++;
 
 #ifdef WOLFF_NO_FIELD
@@ -70,7 +70,7 @@ class simple_measurement : public measurement<R_t, X_t, G_t> {
 #endif
     }
 
-    void post_cluster(unsigned, unsigned, const system<R_t, X_t, G_t>&) override {
+    void post_cluster(unsigned, unsigned, const wolff::system<R_t, X_t, G_t>&) override {
       totalE += E;
       totalM += M;
       totalC += C;

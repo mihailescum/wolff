@@ -50,14 +50,14 @@ int main(int argc, char *argv[]) {
   graph<> G(D, L);
 
   // initialize the system
-  system<ising_t, ising_t, graph<>> S(G, T, Z);
+  wolff::system<ising_t, ising_t, graph<>> S(G, T, Z);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // define function that generates self-inverse rotations
-  std::function <ising_t(std::mt19937&, const system<ising_t, ising_t, graph<>>&, const graph<>::vertex&)> gen_r = gen_ising<graph<>>;
+  std::function <ising_t(std::mt19937&, const wolff::system<ising_t, ising_t, graph<>>&, const graph<>::vertex&)> gen_r = gen_ising<graph<>>;
 
   // initailze the measurement object
   simple_measurement A(S);

@@ -68,14 +68,14 @@ int main(int argc, char *argv[]) {
   graph<> G(D, L);
 
   // initialize the system
-  system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>> S(G, T, Z, B);
+  wolff::system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>> S(G, T, Z, B);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // define function that generates self-inverse rotations
-  std::function <symmetric_t<WOLFF_POTTSQ>(std::mt19937&, const system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>&, const graph<>::vertex&)> gen_r = [] (std::mt19937& r, const system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>& S, const graph<>::vertex& v) -> symmetric_t<WOLFF_POTTSQ> {
+  std::function <symmetric_t<WOLFF_POTTSQ>(std::mt19937&, const wolff::system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>&, const graph<>::vertex&)> gen_r = [] (std::mt19937& r, const wolff::system<symmetric_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>& S, const graph<>::vertex& v) -> symmetric_t<WOLFF_POTTSQ> {
     symmetric_t<WOLFF_POTTSQ> rot;
 
     std::uniform_int_distribution<unsigned> dist(0, WOLFF_POTTSQ - 2);

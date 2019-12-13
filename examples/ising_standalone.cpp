@@ -22,7 +22,7 @@ class ising_t {
 };
 
 typedef graph<> G_t;
-typedef system<ising_t, ising_t> sys;
+typedef wolff::system<ising_t, ising_t> sys;
 
 class measure_clusters : public measurement<ising_t, ising_t> {
   private:
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // run wolff N times
   S.run_wolff(N, gen_R, A, rng);

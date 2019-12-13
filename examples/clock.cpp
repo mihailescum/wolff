@@ -64,14 +64,14 @@ int main(int argc, char *argv[]) {
   graph<> G(D, L);
 
   // initialize the system
-  system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>> S(G, T, Z, B);
+  wolff::system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>> S(G, T, Z, B);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // define function that generates self-inverse rotations
-  std::function <dihedral_t<WOLFF_POTTSQ>(std::mt19937&, const system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>&, const graph<>::vertex&)> gen_r = [] (std::mt19937& r, const system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>& S, const graph<>::vertex& v) -> dihedral_t<WOLFF_POTTSQ> {
+  std::function <dihedral_t<WOLFF_POTTSQ>(std::mt19937&, const wolff::system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>&, const graph<>::vertex&)> gen_r = [] (std::mt19937& r, const wolff::system<dihedral_t<WOLFF_POTTSQ>, potts_t<WOLFF_POTTSQ>, graph<>>& S, const graph<>::vertex& v) -> dihedral_t<WOLFF_POTTSQ> {
     dihedral_t<WOLFF_POTTSQ> rot;
     rot.is_reflection = true;
     std::uniform_int_distribution<unsigned> dist(0, WOLFF_POTTSQ - 2);

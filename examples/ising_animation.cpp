@@ -10,7 +10,7 @@
 
 using namespace wolff;
 
-typedef system<ising_t, ising_t, graph<>> sys;
+typedef wolff::system<ising_t, ising_t, graph<>> sys;
 
 class draw_ising : public measurement<ising_t, ising_t, graph<>> {
   private:
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // run wolff N times
   S.run_wolff(N, gen_ising<graph<>>, A, rng);

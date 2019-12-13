@@ -59,16 +59,16 @@ int main(int argc, char *argv[]) {
   graph<> G(D, L);
 
   // initialize the system
-  system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(G, T, Z, B);
+  wolff::system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(G, T, Z, B);
 
-  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>, graph<>>&, const graph<>::vertex)> gen_R = generate_rotation_uniform<WOLFF_N, graph<>>;
+  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const wolff::system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>, graph<>>&, const graph<>::vertex)> gen_R = generate_rotation_uniform<WOLFF_N, graph<>>;
 
   // initailze the measurement object
   simple_measurement A(S);
 
   // initialize the random number generator
   auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  std::mt19937 rng{seed};
+  std::mt19937 rng(seed);
 
   // run wolff N times
   S.run_wolff(N, gen_R, A, rng);
