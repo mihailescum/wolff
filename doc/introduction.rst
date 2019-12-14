@@ -24,7 +24,7 @@ The only dependencies are a modern C++ compiler, cmake, and the standard librari
 
 .. code-block:: bash
 
-   git clone https://git.kent-dobias.com/wolff/
+   git clone https://git.kent-dobias.com/research/wolff/code/c++
    mkdir wolff/build
    cd wolff/build
    cmake ..
