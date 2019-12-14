@@ -239,7 +239,11 @@ namespace wolff{
               }
 
 #ifndef WOLFF_USE_FINITE_STATES
-              p = 1.0 - exp(-dE / T);
+              if (dE < 0) {
+                p = 0;
+              } else {
+                p = 1.0 - exp(-dE / T);
+              }
 #endif
 
               if (dist(rng) < p) {
