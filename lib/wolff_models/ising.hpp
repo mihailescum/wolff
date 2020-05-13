@@ -60,6 +60,14 @@ namespace wolff {
         }
       }
 
+      inline int operator+(int a) const {
+        if (x) {
+          return a - 1;
+        } else {
+          return a + 1;
+        }
+      }
+
       inline int operator*(const ising_t& s) const {
         if (x == s.x) {
           return 1;
@@ -72,6 +80,10 @@ namespace wolff {
         return (unsigned)x;
       }
   };
+
+  inline int operator+(int a, const ising_t& s) {
+    return s + a;
+  }
 
   inline ising_t::M_t operator*(unsigned a, const ising_t& s) {
     return s * a;
