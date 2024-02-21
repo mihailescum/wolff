@@ -22,3 +22,5 @@ Building the documentation on the website is accomplished by then running
 
 # make html
 
+To compile the examples which render their output to the screen, please install GLFW 3.3
+(https://www.glfw.org/)

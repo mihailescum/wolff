@@ -12,3 +12,10 @@ Documentation is present in doc/ and can be built using Sphinx into a variety
 of formats. The current version of this documentation can also be found at
 https://doc.kent-dobias.com/wolff.
 
+This is a fork of the original implementation of Jaron Kent-Dobias, licensed under
+the MIT license. The original code can be found at https://git.kent-dobias.com/research/wolff/code/c++
+See also the published Paper 
+
+> "Cluster representations and the Wolff algorithm in arbitrary external fields" 
+> Jaron Kent-Dobias & James P Sethna
+> Physical Review E 98, 063306 (2018).

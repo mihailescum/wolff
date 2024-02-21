@@ -8,10 +8,11 @@
 
 #include "simple_measurement.hpp"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
   // set defaults
-  unsigned N = (unsigned)1e4;
+  unsigned N = (unsigned)1e2;
   unsigned D = 2;
   unsigned L = 128;
   double T = 0.8;
@@ -22,8 +23,10 @@ int main(int argc, char *argv[]) {
   int opt;
 
   // take command line arguments
-  while ((opt = getopt(argc, argv, "N:D:L:T:H:")) != -1) {
-    switch (opt) {
+  while ((opt = getopt(argc, argv, "N:D:L:T:H:")) != -1)
+  {
+    switch (opt)
+    {
     case 'N': // number of steps
       N = (unsigned)atof(optarg);
       break;
@@ -46,12 +49,14 @@ int main(int argc, char *argv[]) {
   }
 
   // define the spin-spin coupling
-  std::function <double(const vector_t<WOLFF_N, double>&, const vector_t<WOLFF_N, double>&)> Z = [] (const vector_t<WOLFF_N, double>& s1, const vector_t<WOLFF_N, double>& s2) -> double {
+  std::function<double(const vector_t<WOLFF_N, double> &, const vector_t<WOLFF_N, double> &)> Z = [](const vector_t<WOLFF_N, double> &s1, const vector_t<WOLFF_N, double> &s2) -> double
+  {
     return s1 * s2;
   };
 
   // define the spin-field coupling
-  std::function <double(const vector_t<WOLFF_N, double>&)> B = [&] (const vector_t<WOLFF_N, double>& s) -> double {
+  std::function<double(const vector_t<WOLFF_N, double> &)> B = [&](const vector_t<WOLFF_N, double> &s) -> double
+  {
     return H * s;
   };
 
@@ -61,7 +66,7 @@ int main(int argc, char *argv[]) {
   // initialize the system
   wolff::system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>> S(G, T, Z, B);
 
-  std::function <orthogonal_t<WOLFF_N, double>(std::mt19937&, const wolff::system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>, graph<>>&, const graph<>::vertex)> gen_R = generate_rotation_uniform<WOLFF_N, graph<>>;
+  std::function<orthogonal_t<WOLFF_N, double>(std::mt19937 &, const wolff::system<orthogonal_t<WOLFF_N, double>, vector_t<WOLFF_N, double>, graph<>> &, const graph<>::vertex)> gen_R = generate_rotation_uniform<WOLFF_N, graph<>>;
 
   // initailze the measurement object
   simple_measurement A(S);
@@ -75,10 +80,9 @@ int main(int argc, char *argv[]) {
 
   // print the result of our measurements
   std::cout << "Wolff complete!\nThe average energy per site was " << A.avgE() / S.nv
-    << ".\nThe average magnetization per site was " << A.avgM() / S.nv
-    << ".\nThe average cluster size per site was " << A.avgC() / S.nv << ".\n";
+            << ".\nThe average magnetization per site was " << A.avgM() / S.nv
+            << ".\nThe average cluster size per site was " << A.avgC() / S.nv << ".\n";
 
   // exit
   return 0;
 }
-
