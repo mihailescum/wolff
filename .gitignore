@@ -1,3 +1,7 @@
 build/*
 doc/_build/*
 .vscode
+plotting/*.txt
+plotting/*.svg
+plotting/*.eps
+plotting/*.png

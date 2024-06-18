@@ -19,10 +19,10 @@ private:
     unsigned L;
 
     Renderer renderer;
-    std::function<Vector4f(const X_t &, const wolff::system<R_t, X_t, G_t> &)> color_conversion;
+    std::function<Vector4f(unsigned, const wolff::system<R_t, X_t, G_t> &)> color_conversion;
 
 public:
-    render2d_measurement(unsigned d1, unsigned d2, unsigned pivot, unsigned int L, std::function<Vector4f(const X_t &, const wolff::system<R_t, X_t, G_t> &)> color_conversion, unsigned int window_size, const std::string title, int argc, char *argv[])
+    render2d_measurement(unsigned d1, unsigned d2, unsigned pivot, unsigned int L, std::function<Vector4f(unsigned, const wolff::system<R_t, X_t, G_t> &)> color_conversion, unsigned int window_size, const std::string title, int argc, char *argv[])
         : progress_measurement<R_t, X_t, G_t>(), d1(d1), d2(d2), pivot(pivot), L(L), color_conversion(color_conversion)
     {
         renderer.create(window_size, title);
@@ -47,7 +47,7 @@ public:
             {
                 unsigned i = pivot + x * pow(L, d1) + y * pow(L, d2);
 
-                Vector4f color = color_conversion(S.s[i], S);
+                Vector4f color = color_conversion(i, S);
                 Vector2f position{static_cast<float>(x), static_cast<float>(y)};
                 Vector2f scale{1.0f, 1.0f};
                 renderer.draw_rect(position, scale, color);

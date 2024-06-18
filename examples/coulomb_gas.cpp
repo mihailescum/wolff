@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
     }
-    unsigned int window_size = std::max(512U, L);
+    unsigned int window_size = std::max(1024U, L);
 
     // define the spin-spin coupling
     auto Z = [](const height_t<double> &s1, const height_t<double> &s2) -> double
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     // define the spin-field coupling
     auto B = [=](const box_graph::vertex &v, const height_t<double> &s) -> double
     {
-        double result = -H * s.x * s.x * (s.x - 4) * (s.x - 4); //(1 - cos(s.x * sqrt(T)));
+        double result = -H * (1 - cos(s.x * sqrt(T)));
 
         for (auto &p : v.prop)
         {
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     // initailze the measurement object
     float spin_min = NAN;
     float spin_max = NAN;
-    auto color_conversion = [&](const height_t<double> &s, const sys &S) -> Vector4f
+    auto color_conversion = [&](unsigned index, const sys &S) -> Vector4f
     {
         if (std::isnan(spin_min))
         {
@@ -132,14 +132,15 @@ int main(int argc, char *argv[])
             std::cout << "Maximal spin: " << spin_max << "\n";
         }
 
+        auto s = S.s[index];
         float r = (s.x - spin_min) / (spin_max - spin_min);
         if (r > 1.0)
             r = 1.0;
         else if (r < 0.0)
             r = 0.0;
 
-        float g = 1 - cos(s.x * sqrt(T));
-        float b = r;
+        float g = 0.0; // 1 - cos(s.x * sqrt(T));
+        float b = 0.0;
         Vector4f color{r, g, b, 1.0};
         return color;
     };

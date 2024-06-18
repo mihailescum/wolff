@@ -1,6 +1,9 @@
 
 #include <getopt.h>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
 #include <chrono>
 
 #include <wolff_models/vector.hpp>
@@ -82,6 +85,20 @@ int main(int argc, char *argv[])
   std::cout << "Wolff complete!\nThe average energy per site was " << A.avgE() / S.nv
             << ".\nThe average magnetization per site was " << A.avgM() / S.nv
             << ".\nThe average cluster size per site was " << A.avgC() / S.nv << ".\n";
+
+  std::stringstream result_array;
+  for (const auto &s : S.s)
+  {
+    for (const auto &e : s)
+    {
+      result_array << std::setprecision(4) << e << " ";
+    }
+    // result_array << "\n";
+  }
+
+  std::ofstream outFile("on_result.txt");
+  outFile << result_array.rdbuf();
+  outFile.close();
 
   // exit
   return 0;

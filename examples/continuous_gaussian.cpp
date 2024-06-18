@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
     // run wolff N times
     auto init_spins = [&](unsigned) -> height_t<double>
     {
-        std::uniform_real_distribution<double> initialization_distribution(-10, 10);
+        std::normal_distribution<double> initialization_distribution(0.0, 1.0);
         return height_t(initialization_distribution(rng) + boundary_value);
     };
     S.init_spins(init_spins);
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
     float spin_min = NAN;
     float spin_max = NAN;
-    auto color_conversion = [&](const height_t<double> &s, const wolff::system<dihedral_inf_t<double>, height_t<double>, box_graph> &S) -> Vector4f
+    auto color_conversion = [&](unsigned index, const wolff::system<dihedral_inf_t<double>, height_t<double>, box_graph> &S) -> Vector4f
     {
         if (std::isnan(spin_min))
         {
@@ -174,14 +174,28 @@ int main(int argc, char *argv[])
             std::cout << "Maximal spin: " << spin_max << "\n";
         }
 
+        auto s = S.s[index];
         float r = (s.x - spin_min) / (spin_max - spin_min);
         if (r > 1.0)
             r = 1.0;
         else if (r < 0.0)
             r = 0.0;
 
-        float g = r; // cos(s * sqrt(T));
-        float b = r;
+        float g = 0.0;
+        float b = 0.0;
+        for (unsigned d = 0; d < D; d++)
+        {
+            int touches_boundary = G.touches_boundary(index, d);
+            if (touches_boundary == 1)
+            {
+                g = 1.0;
+            }
+            else if (touches_boundary == -1)
+            {
+                b = 1.0;
+            }
+        }
+
         Vector4f color{r, g, b, 1.0};
         return color;
     };
