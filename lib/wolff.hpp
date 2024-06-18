@@ -10,6 +10,8 @@
 #include <list>
 #include <tuple>
 #include <queue>
+#include <sstream>
+#include <string>
 
 namespace wolff
 {
@@ -59,9 +61,10 @@ namespace wolff
             is_torus = false;
         };
 
-        graph(unsigned D, unsigned L, bool is_torus = true) : D(D), L(L), is_torus(is_torus)
+        graph(unsigned D, unsigned L, bool is_torus = true) : D(D), L(L), is_torus(is_torus) {}
+
+        virtual void init()
         {
-            // default constructor for square lattice graph
             nv = pow(L, D);
             if (is_torus)
             {
@@ -143,6 +146,27 @@ namespace wolff
             ne += nv;
             nv++;
         };
+
+        friend std::ostream &operator<<(std::ostream &os, graph<vertex_prop, edge_prop> &g)
+        {
+            for (const auto &v : g.vertices)
+            {
+                os << v.ind << ": ";
+                for (const auto &e : v.edges)
+                {
+                    os << e.neighbor.ind << " ";
+                }
+                os << "\n";
+            }
+            return os;
+        }
+
+        inline std::string to_string(const graph<vertex_prop, edge_prop> &g) const
+        {
+            std::ostringstream ss;
+            ss << g;
+            return ss.str();
+        }
     };
 
     template <class R_t, class X_t, class G_t = graph<>>
@@ -397,17 +421,17 @@ namespace wolff
     class measurement
     {
     public:
-        virtual void pre_cluster(unsigned, unsigned, const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const R_t &){};
+        virtual void pre_cluster(unsigned, unsigned, const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const R_t &) {};
 
-        virtual void plain_bond_visited(const system<R_t, X_t, G_t> &, const typename G_t::halfedge &e, const X_t &, double){};
-        virtual void plain_site_transformed(const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const X_t &){};
+        virtual void plain_bond_visited(const system<R_t, X_t, G_t> &, const typename G_t::halfedge &e, const X_t &, double) {};
+        virtual void plain_site_transformed(const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const X_t &) {};
 
 #ifndef WOLFF_NO_FIELD
-        virtual void ghost_bond_visited(const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const X_t &, const X_t &, double){};
-        virtual void ghost_site_transformed(const system<R_t, X_t, G_t> &, const R_t &){};
+        virtual void ghost_bond_visited(const system<R_t, X_t, G_t> &, const typename G_t::vertex &v, const X_t &, const X_t &, double) {};
+        virtual void ghost_site_transformed(const system<R_t, X_t, G_t> &, const R_t &) {};
 #endif
 
-        virtual void post_cluster(unsigned, unsigned, const system<R_t, X_t, G_t> &){};
+        virtual void post_cluster(unsigned, unsigned, const system<R_t, X_t, G_t> &) {};
     };
 }
 

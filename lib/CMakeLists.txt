@@ -7,4 +7,6 @@ target_compile_features(wolff INTERFACE cxx_std_17)
 
 install(FILES "wolff.hpp" DESTINATION include)
 install(DIRECTORY "wolff_models" DESTINATION include)
+install(DIRECTORY "wolff_graphs" DESTINATION include)
+
 
